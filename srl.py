@@ -5,7 +5,7 @@ import time
 
 from logging_context import logging
 from RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
-from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response
+from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response
 import RL866.state
 
 log = logging.getLogger(__name__)
@@ -53,8 +53,12 @@ def read(ser, msg_class: type):
   #rv = ser.read(255)
   rv = ser.readline()
   for b in rv: print(hex(b), ' ', end='')
+  # Read again after a small break, to see if there is something more to read.
+  time.sleep(0.1)
+  rv2 = ser.readline()
+  for b in rv2: print(hex(b), ' ', end='')
   print()
-  msg = msg_class(rv)
+  msg = msg_class(rv+rv2)
   log.info(f"-->READ {msg}")
   return msg
 
@@ -94,3 +98,9 @@ msg = IBlock_TagConnect(tag)
 write(ser, msg)
 msg = read(ser, IBlock_TagConnect_Response)
 msg.bind_tag(tag)
+
+log.info("\n-------IBlock_TagDisconnect-------")
+msg = IBlock_TagDisconnect(tag)
+write(ser, msg)
+msg = read(ser, IBlock_TagDisconnect_Response)
+msg.disconnect_tag(tag)

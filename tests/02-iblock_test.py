@@ -2,7 +2,7 @@
 
 import context
 
-from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response
+from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response
 import RL866.state
 
 def test_IBlock_ReadSystemConfigurationBlock():
@@ -66,3 +66,20 @@ def test_IBlock_TagConnect():
   msg_response = b'\xfa\x09\x01\x40\x32\x00\x00\x01\xb2\x93'
   res = IBlock_TagConnect_Response(msg_response)
   assert res.pack() == msg_response
+  res.bind_tag(tag)
+
+def test_IBlock_TagDisconnect():
+  RL866.state.transmission_sequence_number = 0
+  req = IBlock_TagDisconnect(tag)
+  assert req.sof() == b'\xFA'
+  assert req.len() == b'\x07'
+  assert req.rid() == b'\xFF'
+  assert req.pcb() == b'\x00'
+  assert req.inf() == b'\x33\x01'
+  assert req.chk() == b'\xc5\x48'
+  assert req.pack() == b'\xfa\x07\xff\x00\x33\x01\xc5\x48'
+
+  msg_response = b'\xfa\x08\x01\x00\x33\x00\x00\xa6\x4b'
+  res = IBlock_TagDisconnect_Response(msg_response)
+  assert res.pack() == msg_response
+  res.disconnect_tag(tag)

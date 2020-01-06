@@ -11,6 +11,7 @@ class Tag():
     self._tag_type_id = None
     self._serial_number = None
     self._tag_memory = None
+    self._connected_handle = None
 
   def antenna_id(self, antenna_id=None):
     if antenna_id: self._antenna_id = antenna_id
@@ -37,6 +38,13 @@ class Tag():
     if None == self._tag_memory: raise AttributeError(f"tag_memory not set for tag '{self.__dict__}'")
     return self._tag_memory
 
-  def connected(self, handle: bytes):
+  def connect(self, handle: bytes):
     self._connected_handle = handle
     log.info(f"Connected as handle '{handle}' to tag '{self.__dict__}'")
+
+  def disconnect(self):
+    log.info(f"Disconnected old handle '{self._connected_handle}' to tag '{self.__dict__}'")
+    self._connected_handle = None
+
+  def get_connection_handle(self) -> bytes:
+    return self._connected_handle

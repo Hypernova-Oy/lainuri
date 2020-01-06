@@ -377,7 +377,7 @@ class IBlock_TagConnect(IBlock, Request):
 
   def __init__(self, tag: Tag):
     self.INF = self.CMD
-    import pdb; pdb.set_trace()
+
     """
     Field 1.Antenna ID:
     Data type:BYTE;
@@ -468,4 +468,39 @@ class IBlock_TagConnect_Response(IBlock, Response):
     """
     Notify the tag that it has been succesfully connected to
     """
-    tag.connected(self.field1)
+    tag.connect(self.field1)
+
+
+class IBlock_TagDisconnect(IBlock, Request):
+  CMD = b'\x33'
+
+  def __init__(self, tag: Tag):
+    self.INF = self.CMD
+
+    """
+    Field 1.Handle of connected tag:
+    Data type:BYTE
+    00: Disconnect all tags connected
+    """
+    self.field1 = tag.get_connection_handle()
+    if None == self.field1: raise Exception(f"Trying to disconnect from a tag that has not been connected to? Tag '{tag.__dict__}'")
+    self.INF += self.field1
+
+    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+
+
+class IBlock_TagDisconnect_Response(IBlock, Response):
+  CMD = b'\x33'
+  def __init__(self, resp_bytes: bytearray):
+    parseMessage(self, resp_bytes)
+    parseIBlockResponseINF(self)
+
+    if len(self.PARM) != 0: raise Exception(f"Message '{self}' must not have response PARM!")
+
+    super().__init__(RID=self.RID, INF=self.INF)
+
+  def disconnect_tag(self, tag: Tag):
+    """
+    Notify the tag that it has been succesfully connected to
+    """
+    tag.disconnect()
