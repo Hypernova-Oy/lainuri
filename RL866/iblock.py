@@ -2,6 +2,7 @@ from logging_context import logging
 log = logging.getLogger(__name__)
 
 import helpers
+from RL866.tag_memory_access_command import TagMemoryAccessCommand
 from RL866.message import Message, Request, Response, parseMessage, parseIBlockResponseINF
 from RL866.tag import Tag
 import RL866.state
@@ -376,6 +377,7 @@ class IBlock_TagConnect(IBlock, Request):
   CMD = b'\x32'
 
   def __init__(self, tag: Tag):
+    self.tag = tag
     self.INF = self.CMD
 
     """
@@ -450,7 +452,8 @@ class IBlock_TagConnect(IBlock, Request):
 
 class IBlock_TagConnect_Response(IBlock, Response):
   CMD = b'\x32'
-  def __init__(self, resp_bytes: bytearray):
+  def __init__(self, resp_bytes: bytearray, tag: Tag):
+    self.tag = tag
     parseMessage(self, resp_bytes)
     parseIBlockResponseINF(self)
 
@@ -464,10 +467,6 @@ class IBlock_TagConnect_Response(IBlock, Response):
 
     super().__init__(RID=self.RID, INF=self.INF)
 
-  def bind_tag(self, tag: Tag):
-    """
-    Notify the tag that it has been succesfully connected to
-    """
     tag.connect(self.field1)
 
 
@@ -475,6 +474,7 @@ class IBlock_TagDisconnect(IBlock, Request):
   CMD = b'\x33'
 
   def __init__(self, tag: Tag):
+    self.tag = tag
     self.INF = self.CMD
 
     """
@@ -483,7 +483,7 @@ class IBlock_TagDisconnect(IBlock, Request):
     00: Disconnect all tags connected
     """
     self.field1 = tag.get_connection_handle()
-    if None == self.field1: raise Exception(f"Trying to disconnect from a tag that has not been connected to? Tag '{tag.__dict__}'")
+    if None == self.field1: raise Exception(f"Trying to disconnect a tag that has not been connected to? Tag '{tag.__dict__}'")
     self.INF += self.field1
 
     super().__init__(RID=RL866.state.RID_request, INF=self.INF)
@@ -491,7 +491,8 @@ class IBlock_TagDisconnect(IBlock, Request):
 
 class IBlock_TagDisconnect_Response(IBlock, Response):
   CMD = b'\x33'
-  def __init__(self, resp_bytes: bytearray):
+  def __init__(self, resp_bytes: bytearray, tag: Tag):
+    self.tag = tag
     parseMessage(self, resp_bytes)
     parseIBlockResponseINF(self)
 
@@ -499,8 +500,136 @@ class IBlock_TagDisconnect_Response(IBlock, Response):
 
     super().__init__(RID=self.RID, INF=self.INF)
 
-  def disconnect_tag(self, tag: Tag):
-    """
-    Notify the tag that it has been succesfully connected to
-    """
     tag.disconnect()
+
+
+class IBlock_TagMemoryAccess(IBlock, Request):
+  """
+  Use this command to read and write the tag's memory data.
+  Only the tag types supported by the device will be successful.
+  The following describes which air protocols support
+  connectionless mode:
+  1.ISO15693 air interface protocol can use the connection and connectionless
+    mode.
+  2.ISO14443A air interface protocol can only use the
+    connection mode.
+  3.ISO14443B air interface protocol can only use the
+    connection mode
+  4.ISO18000-3 mode The air interface protocol can use the
+    connection and connectionless mode.
+  """
+  CMD = b'\x34'
+
+  def __init__(self, tag: Tag, mac_command: TagMemoryAccessCommand):
+    self.tag = tag
+    self.mac_command = mac_command
+    self.INF = self.CMD
+
+    """
+    Field 1.Hanlde of connected tag:
+    Data type:BYTE ;
+    0:  Connectionless mode
+    >0: Hanlde of connected tag
+    """
+    self.field1 = tag.get_connection_handle()
+    if None == self.field1: raise Exception(f"Trying to memory access a tag that has not been connected to? Tag '{tag.__dict__}'")
+    self.INF += self.field1
+
+    """
+    Field 2. Connectionless connection parameters:
+    This parameter is present only when the handle of connected tag = 0
+    """
+    self.field2 = b''
+
+    self.field3 = self.field3_tag_access_operation(mac_command)
+    self.INF += self.field3
+
+    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+
+  def field3_tag_access_operation(self, mac_command: TagMemoryAccessCommand):
+    """
+    Field 3.Tag access operatio#1:
+      Field 3.1.Accesss operation length:
+        Data type:EBV
+        The length contains the length of the access code and the
+        access parameter.
+      Field 3.2.Access code:
+        Data type:WORD
+        For details on tag operation codes and parameters, see the section
+        "Tag Memory Access Commands".
+      Field 3.3.Access parameter:
+        Data type:BYTE[n]
+    Field 3.Tag access operatio#2
+      Same as above
+    ......
+    Field 3.Tag access operatio#n
+    """
+    self.field31 = bytes([mac_command.len()])
+    self.field32 = mac_command.command
+    self.field33 = mac_command.parameter
+
+    return self.field31 + self.field32 + self.field33
+
+
+class IBlock_TagMemoryAccess_Response(IBlock, Response):
+  CMD = b'\x34'
+  def __init__(self, resp_bytes: bytearray, tag: Tag, mac_command: TagMemoryAccessCommand):
+    self.tag = tag
+    self.mac_command = mac_command
+
+    parseMessage(self, resp_bytes)
+    parseIBlockResponseINF(self)
+
+    if len(self.PARM) < 4: raise Exception(f"${type(self)} - Response '${resp_bytes}' has too small INF-block '{self.INF}'! Expected atleast 3 parameters, got '{self.PARM}'")
+
+    self.field1 = self.field1_access_operation_result(tag, mac_command)
+
+    super().__init__(RID=self.RID, INF=self.INF)
+
+  def field1_access_operation_result(self, tag: Tag, mac_command: TagMemoryAccessCommand):
+    """
+    Field 1.Access operation result#1:
+      Field 1.1.The length of access result:
+        Data type:EBV;
+        The length contains the length of the access code, the
+        access status, and the access result data
+      Field 1.2.Access code:
+        Data type:WORD;
+        For details on tag operation codes and parameters, see the section "Tag
+        Memory Access Commands".
+      Filed 1.3.Access status:
+        Data type:BYTE;
+        Status = 1 indicates success.
+        Status = 0 indicates a failure and the data contains a 2-byte error
+        code.
+      Field 1.4.Access result data:
+        Data type:BYTE[n] ;
+        When the result status = 0, the data is a 2-byte error code.
+        When the result status = 1, the data definition is described in the
+        section "Tag Memory Access Commands"
+    ......
+    Field n. Access operation result#n
+    """
+    self.field11 = self.PARM[0:1] # TODO: Presume length is always only 1 byte
+    self.length_of_access_result = self.field11[0]
+    self.field12 = self.PARM[1:3]
+    self.access_code = helpers.word_to_int(self.field12)
+    self.field13 = self.PARM[3:4]
+    self.access_status = self.field13[0]
+    self.field14 = self.PARM[4:]
+
+    if self.field12 != mac_command.command:
+      raise Exception(f"Access code/command of the request '{mac_command.command}' and response '{self.field12}' do not match! Message '{self.__dict__}'")
+
+    if self.access_status != 1:
+      self.error_code = helpers.word_to_int(self.field14)
+      error = RL866.state.error_codes.get(self.error_code)
+      if not error: raise Exception(f"Given message '{self}' has status error '{hex(self.error_code)}' but there is no matching error code?")
+      raise Exception(f"Given message '{self}' has status error '{error}'")
+
+    if not mac_command.response_parser:
+      raise Exception(f"No response handler in mac_command '{mac_command}'! Message '{self.__dict__}'")
+
+    mac_command.response_parser(self, tag)
+
+    return self.field11 + self.field12 + self.field13 + self.field14

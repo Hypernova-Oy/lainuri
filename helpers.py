@@ -1,3 +1,5 @@
+import math
+
 from logging_context import logging
 log = logging.getLogger(__name__)
 
@@ -46,3 +48,17 @@ def lower_byte_fo_to_int(bs: bytes) -> int:
   EBV # TODO: EBV looks like a big mess
   """
   return int.from_bytes(bs, 'little')
+
+def int_to_byte(intgr: int) -> bytes:
+  return int_to_bytes(intgr, 1)
+
+def int_to_word(intgr: int) -> bytes:
+  return int_to_bytes(intgr, 2)
+
+def int_to_dword(intgr: int) -> bytes:
+  return int_to_bytes(intgr, 4)
+
+def int_to_bytes(intgr: int, bytes_count: int = None) -> bytes:
+  if not bytes_count:
+    bytes_count = math.ceil(intgr.bit_length() / 8)
+  return intgr.to_bytes(bytes_count, byteorder='little')
