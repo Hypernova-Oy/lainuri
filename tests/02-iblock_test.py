@@ -2,8 +2,9 @@
 
 import context
 
-from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response
+from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response, IBlock_TagMemoryAccess, IBlock_TagMemoryAccess_Response
 import RL866.state
+from RL866.tag_memory_access_command import TagMemoryAccessCommand
 
 def test_IBlock_ReadSystemConfigurationBlock():
   RL866.state.transmission_sequence_number = 0
@@ -64,9 +65,19 @@ def test_IBlock_TagConnect():
   assert req.pack() == b'\xfa\x13\xff\x40\x32\x00\x01\x01\x09\x01\xa7\x27\x38\x3f\x00\x01\x04\xe0\xa3\xbf'
 
   msg_response = b'\xfa\x09\x01\x40\x32\x00\x00\x01\xb2\x93'
-  res = IBlock_TagConnect_Response(msg_response)
+  res = IBlock_TagConnect_Response(msg_response, tag)
   assert res.pack() == msg_response
-  res.bind_tag(tag)
+
+def test_IBlock_TagMemoryAccess__ISO15693_GetTagSystemInformation():
+  RL866.state.transmission_sequence_number = 1
+  mac = TagMemoryAccessCommand().ISO15693_GetTagSystemInformation()
+  req = IBlock_TagMemoryAccess(tag, mac)
+  assert req.inf()  == b'\x34\x01\x02\x0a\x00'
+  assert req.pack() == b'\xfa\x0a\xff\x40\x34\x01\x02\x0a\x00\x99\x7b'
+
+  msg_response = b'\xfa\x1a\x01\x40\x34\x00\x00\x11\x0a\x00\x01\x0f\xa7\x27\x38\x3f\x00\x01\x04\xe0\x00\x00\x1b\x03\x01\x20\xe7'
+  res = IBlock_TagMemoryAccess_Response(msg_response, tag, mac)
+  assert res.pack() == msg_response
 
 def test_IBlock_TagDisconnect():
   RL866.state.transmission_sequence_number = 0
@@ -80,6 +91,5 @@ def test_IBlock_TagDisconnect():
   assert req.pack() == b'\xfa\x07\xff\x00\x33\x01\xc5\x48'
 
   msg_response = b'\xfa\x08\x01\x00\x33\x00\x00\xa6\x4b'
-  res = IBlock_TagDisconnect_Response(msg_response)
+  res = IBlock_TagDisconnect_Response(msg_response, tag)
   assert res.pack() == msg_response
-  res.disconnect_tag(tag)

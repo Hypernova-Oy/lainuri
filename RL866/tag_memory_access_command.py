@@ -59,7 +59,7 @@ class TagMemoryAccessCommand():
     self.expected_result_bytes = EXPECTED_MULTIPLE_BYTES
     return self
 
-  def ISO15693_WriteSingleBlock(self, block_address, block_data):
+  def ISO15693_WriteSingleBlock(self, block_address: int, block_data: bytes):
     log.info(f"TagMemoryAccessCommand ISO15693_WriteSingleBlock chosen")
     """
     Field 1.Block address:
@@ -68,7 +68,7 @@ class TagMemoryAccessCommand():
       Data type: BYTE[n]
     """
     self.command = helpers.int_to_word(0x0050)
-    self.parameter = helpers.int_to_word(block_address) + helpers.int_to_bytes(block_data)
+    self.parameter = helpers.int_to_word(block_address) + block_data
     self.response_parser = self._no_response_parser
     return self
 
@@ -85,11 +85,13 @@ class TagMemoryAccessCommand():
     Field 3.Number of blocks to read:
       Data type: WORD
     """
+    if read_security_status: self.read_security_status = read_security_status
+
     self.command = helpers.int_to_word(0x0003)
     self.parameter = helpers.int_to_byte(read_security_status) + \
                      helpers.int_to_word(start_block_address) + \
                      helpers.int_to_word(number_of_blocks_to_read)
-    self.expected_result_bytes = EXPECTED_MULTIPLE_BYTES
+    self.response_parser = self.ISO15693_ReadMultipleBlocks_ParseResponse
     return self
 
   def ISO15693_GetTagSystemInformation(self):
@@ -162,6 +164,25 @@ class TagMemoryAccessCommand():
 
     self.field6 = message.field14[13:14]
     self.ic_reference = helpers.lower_byte_fo_to_int(self.field6)
+
+  def ISO15693_ReadMultipleBlocks_ParseResponse(self, message: Message, tag: Tag):
+    """
+    Field 1.Number of blocks read:
+      Data type: WORD
+    Field 2.Data of blocks read:
+      Data type: BYTE[n]
+      When read security status is 0:
+      n= Number of blocks read * Block size
+      When read security status is 1:
+      N= Number of blocks read * (Block size + security status (1Byte))
+    """
+    self.field1 = message.field14[0:2]
+    self.number_blocks_read = helpers.word_to_int(self.field1)
+
+    if hasattr(tag, 'block_size'):
+      self.field2 = message.field14[2:tag.block_size*self.number_blocks_read]
+    else:
+      self.field2 = message.field14[2:]
 
   def _no_response_parser(self, message: Message, tag: Tag):
     if len(message.field14) != 0: raise Exception(f"Expected 0 bytes from response, but got bytes '{message.field14}'. Using command '{self.__dict__}'")
