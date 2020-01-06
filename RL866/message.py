@@ -128,7 +128,7 @@ def parseIBlockResponseINF(self):
   self.STA = self.INF[1:3] # Extract WORD bytes
   self.PARM = self.INF[3:]
 
-  if not self.CMD == CMD: raise Exception(f"Trying to parse IBlock INF but the given message '{self}' has conflicting CMDs? Class isntance CMD='{self.CMD}'. INF contains CMD='{CMD}'?")
+  if not self.CMD == CMD: raise Exception(f"Trying to parse IBlock INF but the given message '{self}' has conflicting CMDs? Class instance CMD='{self.CMD}'. INF contains CMD='{CMD}'?")
 
   if self.STA[0] or self.STA[1]:
     # TODO: Not sure about the endianness of the bytes

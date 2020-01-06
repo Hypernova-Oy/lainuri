@@ -12,6 +12,27 @@ def increment_transmission_sequence_number():
 
 RID_request = b'\xFF'
 
+AIR_PROTO_ISO15693 = 1
+AIR_PROTO_ISO14443A = 2
+AIR_PROTO_ISO14443B = 3
+AIR_PROTO_RFID_APL_I18000P3M3_ID = 6
+AIR_PROTO_RFID_APL_ICODESLI_ID = 12
+TAG_NXP_ICODE_SLI = 1
+TAG_TI_HFI_PLUS = 2
+TAG_ST_M24LRXX = 3
+TAG_FUJ_MB89R118C = 4
+TAG_NXP_ICODE_SLIX = 7
+TAG_TI_HFI_STANDARD = 8
+TAG_TI_HFI_PRO = 9
+TAG_NXP_ICODE_SLIX2 = 10
+TAG_CIT83128 = 11
+TAG_NXP_ICODE_SLIX_S = 12
+TAG_Mifare_Ultralight = 1
+TAG_MIFARE_S50 = 2
+TAG_MIFARE_S70 = 3
+TAG_DESFIRE_EV1 = 4
+TAG_NTAG21X = 5
+
 air_protocol_type_table = helpers._two_way_link_dict({
   0: 'Unknown',
   1: 'ISO15693',               # supported
@@ -27,6 +48,32 @@ air_protocol_type_table = helpers._two_way_link_dict({
   11: 'Reserved',
   12: 'RFID_APL_ICODESLI_ID',  # supported
 })
+
+#Appendix A.Supported tag types
+supported_tag_types = {
+  #1.ISO15693 tag types:
+  AIR_PROTO_ISO15693: helpers._two_way_link_dict({
+    1:  'NXP ICODE SLI',
+    2:  'TI HFI PLUS',
+    3:  'ST M24LRXX',
+    4:  'FUJ MB89R118C',
+    7:  'NXP ICODE SLIX',
+    8:  'TI HFI STANDARD',
+    9:  'TI HFI PRO',
+    10: 'NXP ICODE SLIX2',
+    11: 'CIT83128',
+    12: 'NXP ICODE SLIX-S',
+  }),
+
+  #2.ISO14443a tag types:
+  AIR_PROTO_ISO14443A: helpers._two_way_link_dict({
+    1: 'Mifare Ultralight',
+    2: 'MIFARE S50',
+    3: 'MIFARE S70',
+    4: 'DESFIRE/Desfire EV1',
+    5: 'NTAG21X',
+  })
+}
 
 def getAirProtocolCode(air_protocol_inventory_parameters) -> int:
   if isinstance(air_protocol_inventory_parameters.air_interface_protocol, int):

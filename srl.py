@@ -5,7 +5,7 @@ import time
 
 from logging_context import logging
 from RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
-from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response
+from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response
 import RL866.state
 
 log = logging.getLogger(__name__)
@@ -56,7 +56,7 @@ def read(ser, msg_class: type):
   print()
   msg = msg_class(rv)
   log.info(f"-->READ {msg}")
-  return rv
+  return msg
 
 ser = serial.Serial()
 ser.baudrate = 38400
@@ -87,3 +87,10 @@ log.info("\n-------IBlock_TagInventory-------")
 msg = IBlock_TagInventory()
 write(ser, msg)
 msg = read(ser, IBlock_TagInventory_Response)
+tag = msg.tags[0]
+
+log.info("\n-------IBlock_TagConnect-------")
+msg = IBlock_TagConnect(tag)
+write(ser, msg)
+msg = read(ser, IBlock_TagConnect_Response)
+msg.bind_tag(tag)
