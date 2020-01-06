@@ -2,11 +2,13 @@
 
 import serial
 import time
+
+from logging_context import logging
 from RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
-from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_TagInventory, IBlock_TagInventory_Response
+from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response
 import RL866.state
 
-
+log = logging.getLogger(__name__)
 
 def bic(bin: str):
   return chr(int(str(bin),2))
@@ -27,17 +29,19 @@ def ii(i: int):
   return chr(i)
 
 
-def write(ser, data):
-  print('WRITE-->')
+def write(ser, msg):
+  log.info(f"WRITE--> {type(msg)}")
+  data = msg.pack()
   for b in data: print(hex(b), ' ', end='')
+  print()
   rv = ser.write(data)
-  print("\n", rv)
-  print('-->WRITE')
+  log.info(rv)
+  log.info(f"-->WRITE {type(msg)}")
   return rv
 
 timeout = 5
-def read(ser):
-  print("READ WAITING-->")
+def read(ser, msg_class: type):
+  log.info(f"READ WAITING--> {msg_class}")
   slept = 0
   while(ser.in_waiting == 0):
     time.sleep(0.1)
@@ -45,16 +49,14 @@ def read(ser):
     if slept > timeout:
       raise Exception("read timeout")
 
-  print('READ-->')
+  log.info(f"READ--> {msg_class}")
   #rv = ser.read(255)
   rv = ser.readline()
   for b in rv: print(hex(b), ' ', end='')
   print()
-  print('-->READ')
+  msg = msg_class(rv)
+  log.info(f"-->READ {msg}")
   return rv
-
-msg = SBlock_RESYNC()
-
 
 ser = serial.Serial()
 ser.baudrate = 38400
@@ -63,24 +65,25 @@ ser.port = '/dev/ttyUSB0'
 ser.timeout = 0
 ser.open()
 
-print(ser.__dict__)
+log.info("\n-------serial-------")
+log.info(ser.__dict__)
 
-write(ser, msg.pack())
+log.info("\n-------RESYNC-------")
+msg = SBlock_RESYNC()
+write(ser, msg)
+msg = read(ser, SBlock_RESYNC_Response)
 
-rv = read(ser)
-rr = SBlock_RESYNC_Response(rv)
+log.info("\n-------IBlock_ReadSystemConfigurationBlock-------")
+msg = IBlock_ReadSystemConfigurationBlock(read_ROM=0, read_blocks=1)
+write(ser, msg)
+msg = read(ser, IBlock_ReadSystemConfigurationBlock_Response)
 
-print(rr.__dict__)
-
+log.info("\n-------IBlock_ReadSystemConfigurationBlock-------")
 msg = IBlock_ReadSystemConfigurationBlock()
-write(ser, msg.pack())
-rv = read(ser)
+write(ser, msg)
+msg = read(ser, IBlock_ReadSystemConfigurationBlock_Response)
 
-msg = IBlock_ReadSystemConfigurationBlock()
-write(ser, msg.pack())
-rv = read(ser)
-
+log.info("\n-------IBlock_TagInventory-------")
 msg = IBlock_TagInventory()
-write(ser, msg.pack())
-rv = read(ser)
-IBlock_TagInventory_Response(rv)
+write(ser, msg)
+msg = read(ser, IBlock_TagInventory_Response)

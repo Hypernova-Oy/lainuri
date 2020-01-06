@@ -1,21 +1,27 @@
 #!/usr/bin/python3
 
-import pdb
-
 import context
 
-from RL866.message import Message2
+from RL866.message import Message, parseMessage
+import helpers
+
 
 def test_Message2():
+  msg = Message()
   msg_response = b'\xFA\x05\x01\xE0\x58\xFE'
-  msg = Message2(msg_response)
+  parseMessage(msg, msg_response)
   assert msg.SOF == b'\xFA'
   assert msg.CHK == b'\x58\xFE'
   assert msg.INF == b''
 
+  msg = Message()
   msg_response = b'\xfa\x08\xff\x00\x01\x81\x0f\x4d\xeb'
-  msg = Message2(msg_response)
+  parseMessage(msg, msg_response)
   assert msg.SOF == b'\xFA'
   assert msg.CHK == b'\x4D\xEB'
   assert msg.INF == b'\x01\x81\x0F'
 
+def test_lower_byte_first_out_to_int():
+  assert helpers.word_to_int(b'\xFF\x00') == 255
+  assert helpers.dword_to_int(b'\x01\x02\x03\x04') == 67305985
+  assert helpers.lower_byte_fo_to_int(b'\x01\x02\x03') == 197121

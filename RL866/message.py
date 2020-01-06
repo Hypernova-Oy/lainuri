@@ -1,8 +1,11 @@
+from logging_context import logging
+log = logging.getLogger(__name__)
+
 import RL866.CRC16
 import RL866.state
 
-class Message():
 
+class Message():
   """
   SOF = b'\xFA' # Start byte of frame
   LEN = b'\x00' # The length including all data field except SOF
@@ -33,9 +36,9 @@ class Message():
   CMD = b''
 
   def __init__(self, RID=None, PCB=None, INF=None):
-    self.RID = RID or b''
-    self.PCB = PCB or b''
-    self.INF = INF or b''
+    if RID: self.RID = RID
+    if PCB: self.PCB = PCB
+    if INF: self.INF = INF
 
   def sof(self, SOF=None) -> bytes:
     if SOF:
@@ -90,6 +93,18 @@ class Message():
 
     if CHK and CHK != self.CHK: raise Exception(f"${type(self)} - Given checksum '{CHK}' is not the expected checksum '{self.CHK}'")
     return self.CHK
+
+class Request():
+  """
+  Decorator
+  """
+  pass
+
+class Response():
+  """
+  Decorator
+  """
+  pass
 
 def parseMessage(self, bs: bytes):
   """

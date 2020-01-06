@@ -1,5 +1,9 @@
+from logging_context import logging
+log = logging.getLogger(__name__)
+
 from RL866.message import Message, parseMessage
 import RL866.state
+
 
 class SBlock(Message):
   def __init__(self, RID, PCB):

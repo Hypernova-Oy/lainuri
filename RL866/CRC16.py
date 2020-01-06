@@ -1,4 +1,5 @@
-#!/usr/bin/python3
+from logging_context import logging
+log = logging.getLogger(__name__)
 
 import inline
 c = inline.c(r'''
