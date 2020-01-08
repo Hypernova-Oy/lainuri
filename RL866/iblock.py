@@ -206,6 +206,7 @@ class IBlock_TagInventory_Response(IBlock, Response):
   CMD = b'\x31'
 
   tags_buffered = -1
+  tags: Tag = []
 
   def __init__(self, resp_bytes: bytearray):
       parseMessage(self, resp_bytes)
