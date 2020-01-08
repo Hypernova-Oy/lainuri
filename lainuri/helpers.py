@@ -1,3 +1,4 @@
+from typing import Any, List
 import math
 
 from logging_context import logging
@@ -62,3 +63,35 @@ def int_to_bytes(intgr: int, bytes_count: int = None) -> bytes:
   if not bytes_count:
     bytes_count = math.ceil(intgr.bit_length() / 8)
   return intgr.to_bytes(bytes_count, byteorder='little')
+
+PRIMITIVE_TYPES = (int, float, complex, str, bool, type(None))
+CONTAINER_TYPES = (dict, list, tuple, range)
+def null_safe_lookup(obckt, keys: List, value: Any = None) -> Any:
+  """
+  As Python3 doesn't seem to have a null-safe nested map/dict lookup feature, here is my own.
+  Given an Object or Dict, safely lookups a nested data structure
+  """
+  if isinstance(keys, str): keys = keys.split('.')
+  try:
+    if isinstance(obckt, CONTAINER_TYPES):
+      if len(keys) == 1:
+        if value != None:
+          obckt[keys[0]] = value
+          return obckt[keys[0]]
+        else:
+          return obckt[keys[0]]
+      return null_safe_lookup(obckt[keys[0]], keys[1:])
+    elif hasattr(obckt, '__dict__'):  # with a high probability this is a class instance or a class object
+      if len(keys) == 1:
+        if value != None:
+          obckt[keys[0]] = value
+          return getattr(obckt, keys[0])
+        else:
+          return getattr(obckt, keys[0])
+      return null_safe_lookup(getattr(obckt, keys[0]), keys[1:])
+    elif isinstance(obckt, PRIMITIVE_TYPES):
+      return None
+    else:
+      raise LookupError(f"Object/Dict '{obckt}' is not a dict or object? Cannot look for keys='{keys}'")
+  except IndexError:  # Accesing 0-length lists or similar raises this type of exception. We can just conclude that None is found
+    return None

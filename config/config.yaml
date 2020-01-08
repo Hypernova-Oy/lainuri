@@ -1,0 +1,11 @@
+---
+
+ringtones:
+  success: "ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5"
+  error:   "ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c"
+
+devices:
+  ringtone-player:
+    enabled: False
+  rfid-reader:
+    enabled: True
