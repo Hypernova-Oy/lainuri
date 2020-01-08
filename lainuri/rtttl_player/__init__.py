@@ -144,11 +144,11 @@ def rtttl_daemon():
     event_play_ringtone.clear()
     import lainuri.rtttl_player # Initializes the RTTTL-Player on import
     if play_ringtone_event.ringtone:
-      lainuri.rtttl_player.play_rtttl(lainuri.config.get_ringtone(play_ringtone_event.ringtone))
-      lainuri.websocket_server.push_event(LEvent("ringtone-played", {'ringtone': play_ringtone_event.ringtone}))
+      lainuri.rtttl_player.play_rtttl(lainuri.config.get_ringtone(play_ringtone_event.message.ringtone))
+      lainuri.websocket_server.push_event(LEvent("ringtone-played", {'ringtone': play_ringtone_event.message.ringtone}))
     else:
-      lainuri.rtttl_player.play_rtttl(lainuri.config.get_ringtone(play_ringtone_event.ringtone_type))
-      lainuri.websocket_server.push_event(LEvent("ringtone-played", {'ringtone_type': play_ringtone_event.ringtone_type}))
+      lainuri.rtttl_player.play_rtttl(lainuri.config.get_ringtone(play_ringtone_event.message.ringtone_type))
+      lainuri.websocket_server.push_event(LEvent("ringtone-played", {'ringtone_type': play_ringtone_event.message.ringtone_type}))
 
   log.info(f"Terminating RTTTL-Player thread")
   exit(0)

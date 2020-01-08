@@ -9,9 +9,9 @@ import time
 import json
 
 from lainuri.event import LEvent, LEventException
-from lainuri.rfid_reader import rfid_reader
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.config
+import lainuri.rfid_reader
 
 
 
@@ -46,7 +46,7 @@ def message_clients(event: LEvent):
   for client in clients:
     if (event.recipient and event.recipient == client) or (not(event.recipient) and not(client == event.client)):
       log.info(f"Message to client '{client.address}': '{event.message}'")
-      client.send_message(event.message)
+      client.send_message(json.dumps(event.message))
 
 
 
@@ -85,5 +85,7 @@ class SimpleChat(WebSocket):
       push_event(LEventException('exception', None, e))
       raise e
 
-server = WebSocketServer('localhost', 12345, SimpleChat)
-server.serve_forever()
+def start():
+  lainuri.rfid_reader.start()
+  server = WebSocketServer('localhost', 12345, SimpleChat)
+  server.serve_forever()

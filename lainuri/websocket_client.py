@@ -9,7 +9,7 @@ import time
 import json
 
 
-def test_run(ws: WebSocket):
+def test_run(ws: WebSocket, string: str =''):
   ws.send(json.dumps({
     'event': 'ringtone-play',
     'ringtone_type': 'success',
@@ -33,7 +33,7 @@ def on_close(ws: WebSocket):
   print("### closed ###")
 
 def on_open(ws: WebSocket):
-  thread.start_new_thread(test_run, ())
+  thread.start_new_thread(test_run, (ws,''))
 
 
 if __name__ == "__main__":

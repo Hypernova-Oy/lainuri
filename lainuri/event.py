@@ -9,9 +9,8 @@ class LEvent():
     self.recipient = recipient
 
   def from_ws(self, client: WebSocket):
-    d = json.load(client.data)
-    self.event = d['event']
-    self.message = json.loads(d['message'])
+    self.message = json.loads(client.data)
+    self.event = self.message['event']
     self.client = client
     return self
 

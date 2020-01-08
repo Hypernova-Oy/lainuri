@@ -68,8 +68,6 @@ class RFID_reader():
     log.info(f"-->READ {msg_class}")
     return rv_a
 
-rfid_reader = RFID_reader()
-
 
 
 tags_present: Tag = []
@@ -79,6 +77,7 @@ def rfid_poll(*args):
   global tags_present, tags_lost, tags_new
 
   log.info("RFID polling starting")
+  rfid_reader = RFID_reader()
 
   while(1):
     rfid_reader.write(IBlock_TagInventory())
@@ -125,10 +124,13 @@ def rfid_poll(*args):
 
   log.info(f"Terminating RFID thread")
   exit(0)
-thread.start_new_thread(rfid_poll, ())
+
 
 def get_current_inventory_status():
   global tags_present
   return {
     'tags_present': [tag.serial_number() for tag in tags_present],
   }
+
+def start():
+  thread.start_new_thread(rfid_poll, ())
