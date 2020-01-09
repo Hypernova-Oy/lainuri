@@ -39,7 +39,7 @@ def on_open(ws: WebSocket):
 if __name__ == "__main__":
     websocket.enableTrace(True)
     ws = WebSocketApp(
-      "ws://localhost:12345/",
+      "ws://localhost:53153/",
       on_message = on_message,
       on_error = on_error,
       on_close = on_close

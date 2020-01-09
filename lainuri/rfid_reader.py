@@ -5,6 +5,7 @@ import time
 import _thread as thread
 import json
 
+from lainuri.config import get_config
 from lainuri.logging_context import logging
 from lainuri.event import LEvent
 from lainuri.RL866.message import Message
@@ -118,7 +119,7 @@ def rfid_poll(*args):
         'tags_present': tags_present_serial_numbers,
       }))
 
-    time.sleep(1) # TODO: This should be something like 0.1 or maybe even no sleep?
+    time.sleep(120) # TODO: This should be something like 0.1 or maybe even no sleep?
     tags_lost = []
     tags_new  = []
 
@@ -133,4 +134,7 @@ def get_current_inventory_status():
   }
 
 def start():
-  thread.start_new_thread(rfid_poll, ())
+  if get_config('devices.rfid-reader.enabled'):
+    thread.start_new_thread(rfid_poll, ())
+  else:
+    log.info("RFID reader is disabled by config")

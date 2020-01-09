@@ -53,5 +53,5 @@ def get_ringtone(ringtone_type) -> str:
   if None == ringtone: raise Exception(f"Missing ringtone for ringtone type '{ringtone_type}'!")
   return ringtone
 
-def get(lookup: str):
+def get_config(lookup: str):
   return null_safe_lookup(c, lookup)
