@@ -10,7 +10,7 @@ import json
 import lainuri.helpers
 from lainuri.WGCUsb300AT.commands import *
 
-from lainuri.event import LEvent
+from lainuri.event import LEvent, LEBarcodeRead
 import lainuri.websocket_server
 
 class BarcodeReader():
@@ -99,9 +99,8 @@ class BarcodeReader():
         rv = rv + self.serial.read(255)
 
       if (rv):
-        log.info(f"Received barcode '{rv}'")
-        lainuri.websocket_server.push_event(LEvent("barcode-read", {
-          'barcode': rv,
-        }))
+        barcode = rv[0:-1].decode('latin1') # Pop the last character, as it it the barcode termination character
+        log.info(f"Received barcode='{barcode}' bytes='{rv}'")
+        lainuri.websocket_server.push_event(LEBarcodeRead(barcode))
 
     log.info(f"Terminating WGC300 thread")

@@ -9,9 +9,10 @@ import threading
 import time
 import traceback
 
-from lainuri.event import LEvent, LEvent
+from lainuri.event import LEvent, LERFIDTagsPresent
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.config
+import lainuri.websocket_handlers.test
 import lainuri.rfid_reader
 import lainuri.WGCUsb300AT
 
@@ -35,6 +36,8 @@ def push_event(event: LEvent):
       register_client(event)
     elif event.event == 'deregister-client':
       deregister_client(event)
+    elif event.event == 'test-mock-devices':
+      lainuri.websocket_handlers.test.mock_devices(event)
     elif event.event == 'exception':
       log.error(f"Client exception: '{event.message}'")
     else:
@@ -56,8 +59,10 @@ def message_clients(event: LEvent):
 def register_client(event):
   global clients
   clients.append(event.client)
-  tag_serials = lainuri.rfid_reader.get_current_inventory_status()
-  lainuri.websocket_server.push_event(LEvent("rfid-tags-present", tag_serials, recipient=event.client))
+
+  tags_present = lainuri.rfid_reader.get_current_inventory_status()
+  lainuri.websocket_server.push_event(LERFIDTagsPresent(tags_present, recipient=event.client))
+
   lainuri.websocket_handlers.config.get_public_configs()
 
 def deregister_client(event):

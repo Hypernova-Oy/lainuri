@@ -58,13 +58,14 @@ class LEvent {
 
     let instance_data: [string, Object, string, string] = [event, message, sender, recipient];
     let instance: LEvent;
-    if (event == 'ringtone-play')              { instance = new LERingtonePlay(message.ringtone_type, message.ringtone, sender, recipient, event_id) }
+    if (event == 'barcode-read')               { instance = new LEBarcodeRead(message.barcode, sender, recipient, event_id) }
+    else if (event == 'ringtone-play')         { instance = new LERingtonePlay(message.ringtone_type, message.ringtone, sender, recipient, event_id) }
     else if (event == 'ringtone-played')       { instance = new LERingtonePlayed(message.ringtone_type, message.ringtone, sender, recipient, event_id) }
     else if (event === 'config-getpublic-response') { instance = new LEConfigGetpublic_Response(message.config, sender, recipient, event_id) }
     else if (event === 'config-getpublic')     { instance = new LEConfigGetpublic(sender, recipient, event_id) }
     else if (event === 'config-write')         { instance = new LEConfigWrite(message.variable, message.new_value, sender, recipient, event_id) }
-    else if (event === 'rfid-tags-new')        { instance = new LERFIDTagsNew(message.tags_new, sender, recipient, event_id) }
-    else if (event === 'rfid-tags-lost')       { instance = new LERFIDTagsLost(message.tags_lost, sender, recipient, event_id) }
+    else if (event === 'rfid-tags-new')        { instance = new LERFIDTagsNew(message.tags_new, message.tags_present, sender, recipient, event_id) }
+    else if (event === 'rfid-tags-lost')       { instance = new LERFIDTagsLost(message.tags_lost, message.tags_present, sender, recipient, event_id) }
     else if (event === 'rfid-tags-present')    { instance = new LERFIDTagsPresent(message.tags_present, sender, recipient, event_id) }
     else if (event === 'server-connected')     { instance = new LEServerConnected(event_id) }
     else if (event === 'server-disconnected')  { instance = new LEServerDisconnected(event_id) }
@@ -181,12 +182,14 @@ class LEConfigWrite extends LEvent {
 class LERFIDTagsNew extends LEvent {
   static event = 'rfid-tags-new';
 
-  serializable_attributes: any = ['tags_new'];
+  serializable_attributes: any = ['tags_new','tags_present'];
   tags_new: any;
+  tags_present: any;
 
-  constructor(tags_new: any, sender: string, recipient: string, event_id: string = undefined) {
+  constructor(tags_new: any, tags_present: any, sender: string, recipient: string, event_id: string = undefined) {
     super(event_id);
     this.tags_new = tags_new;
+    this.tags_present = tags_present;
     this.construct(sender, recipient);
     this.validate_params()
   }
@@ -194,12 +197,14 @@ class LERFIDTagsNew extends LEvent {
 class LERFIDTagsLost extends LEvent {
   static event = 'rfid-tags-lost';
 
-  serializable_attributes: any = ['tags_lost'];
+  serializable_attributes: any = ['tags_lost','tags_present'];
   tags_lost: any;
+  tags_present: any;
 
-  constructor(tags_lost: any, sender: string, recipient: string, event_id: string = undefined) {
+  constructor(tags_lost: any, tags_present: any, sender: string, recipient: string, event_id: string = undefined) {
     super(event_id);
     this.tags_lost = tags_lost;
+    this.tags_present = tags_present;
     this.construct(sender, recipient);
     this.validate_params()
   }
@@ -249,6 +254,19 @@ class LEException extends LEvent {
     }
     this.construct(sender, recipient);
     this.validate_params()
+  }
+}
+/**
+ * Trigger the server to send mocked RFID tag reads and barcode reads
+ */
+class LETestMockDevices extends LEvent {
+  static event = 'test-mock-devices';
+  default_dispatch = 'server';
+
+  serializable_attributes: any = [];
+
+  constructor(event_id: string = undefined) {
+    super(event_id);
   }
 }
 

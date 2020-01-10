@@ -5,11 +5,11 @@ log = logging.getLogger(__name__)
 
 class Tag():
 
-  def __init__(self):
+  def __init__(self, serial_number: str = None):
     self._antenna_id = None
     self._air_protocol_type_id = None
     self._tag_type_id = None
-    self._serial_number = None
+    self._serial_number = serial_number
     self._tag_memory = None
     self._connected_handle = None
 
