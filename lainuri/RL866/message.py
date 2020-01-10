@@ -1,8 +1,9 @@
-from logging_context import logging
+from lainuri.config import get_config
+from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
-import RL866.CRC16
-import RL866.state
+import lainuri.RL866.CRC16
+import lainuri.RL866.state
 
 
 class Message():
@@ -89,7 +90,7 @@ class Message():
     data = self.LEN + self.RID + self.PCB
     if self.INF: data += self.INF
 
-    self.CHK = RL866.CRC16.crc16(data)
+    self.CHK = lainuri.RL866.CRC16.crc16(data)
 
     if CHK and CHK != self.CHK: raise Exception(f"${type(self)} - Given checksum '{CHK}' is not the expected checksum '{self.CHK}'")
     return self.CHK
@@ -117,7 +118,7 @@ def parseMessage(self, bs: bytes):
   self.CHK = bs[-2:]
   self.INF = bs[4:-2]
 
-  if not self.CHK == RL866.CRC16.crc16(self.LEN + self.RID + self.PCB + self.INF):
+  if not self.CHK == lainuri.RL866.CRC16.crc16(self.LEN + self.RID + self.PCB + self.INF):
     raise Exception("CRC not matches")
 
 def parseIBlockResponseINF(self):
@@ -134,6 +135,6 @@ def parseIBlockResponseINF(self):
     # TODO: Not sure about the endianness of the bytes
     #status = (self.STA[0] <<8) + self.STA[1]
     status = (self.STA[1] <<8) + self.STA[0]
-    error = RL866.state.error_codes.get(status)
+    error = lainuri.RL866.state.error_codes.get(status)
     if not error: raise Exception(f"Given message '{self}' has status error '{hex(status)}' but there is no matching error code?")
     raise Exception(f"Given message '{self}' has status error '{error}'")

@@ -1,4 +1,5 @@
-from logging_context import logging
+from lainuri.config import get_config
+from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 from typing import Callable
@@ -9,6 +10,7 @@ from RL866.tag import Tag
 
 EXPECTED_NO_BYTES = 0
 EXPECTED_MULTIPLE_BYTES = 255
+
 
 class TagMemoryAccessCommand():
   """

@@ -1,8 +1,9 @@
-import lainuri.config
+from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 from simple_websocket_server import WebSocketServer, WebSocket
+
 import _thread as thread
 import threading
 import time
@@ -12,7 +13,7 @@ from lainuri.event import LEvent, LEvent
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.config
 import lainuri.rfid_reader
-
+import lainuri.WGCUsb300AT
 
 
 clients = []
@@ -107,6 +108,12 @@ class SimpleChat(WebSocket):
       log.exception(e2)
 
 def start():
-  lainuri.rfid_reader.start()
+
+  rfid_reader = lainuri.rfid_reader.RFID_Reader()
+  rfid_reader.start_polling_rfid_tags()
+
+  barcode_reader = lainuri.WGCUsb300AT.BarcodeReader()
+  barcode_reader.start_polling_barcodes()
+
   server = WebSocketServer('localhost', 53153, SimpleChat)
   server.serve_forever()

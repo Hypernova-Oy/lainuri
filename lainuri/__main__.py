@@ -1,4 +1,4 @@
-import lainuri.config
+from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 

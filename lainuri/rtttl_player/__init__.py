@@ -1,3 +1,7 @@
+from lainuri.config import get_config
+from lainuri.logging_context import logging
+log = logging.getLogger(__name__)
+
 import inline
 c = inline.c(r'''
 #include <stdint.h>
@@ -120,10 +124,6 @@ int main(int argc,char const *argv[])
 #endif
 
 ''')
-
-
-from lainuri.logging_context import logging
-log = logging.getLogger(__name__)
 
 import _thread as thread
 import threading

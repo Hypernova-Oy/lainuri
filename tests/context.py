@@ -7,3 +7,6 @@ sys.path.append(
         '../',
     )
 )
+
+import lainuri.config
+from lainuri.logging_context import logging

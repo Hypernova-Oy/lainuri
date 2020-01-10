@@ -96,6 +96,19 @@ class LEvent {
   }
 }
 
+class LEBarcodeRead extends LEvent {
+  static event = 'barcode-read';
+
+  serializable_attributes: any = ['barcode'];
+  barcode: string;
+
+  constructor(barcode: string = undefined, sender: string, recipient: string, event_id: string = undefined) {
+    super(event_id);
+    this.barcode = barcode;
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
 class LERingtonePlay extends LEvent {
   static event = 'ringtone-play';
   default_dispatch = 'server';

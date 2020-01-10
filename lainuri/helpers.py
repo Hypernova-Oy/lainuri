@@ -1,8 +1,11 @@
-from typing import Any, List
-import math
-
-from logging_context import logging
+#from lainuri.config import get_config # This causes circular import
+from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
+
+from typing import Any, List
+import glob
+import math
+import re, subprocess
 
 def _two_way_link_dict(d) -> dict:
   tmp = dict()
@@ -95,3 +98,27 @@ def null_safe_lookup(obckt, keys: List, value: Any = None) -> Any:
       raise LookupError(f"Object/Dict '{obckt}' is not a dict or object? Cannot look for keys='{keys}'")
   except IndexError:  # Accesing 0-length lists or similar raises this type of exception. We can just conclude that None is found
     return None
+
+def find_dev_path(usb_vendor, usb_model) -> str:
+  tty_lookalikes = glob.glob('/dev/ttyACM*')
+  for tty_dev_path in tty_lookalikes:
+    dev_info = _parse_udevadm_info(tty_dev_path)
+    if dev_info['vendor_id'] == usb_vendor and dev_info['model_id'] == usb_model:
+      return tty_dev_path
+  raise Exception(f"No device vendor='{usb_vendor}' model='{usb_model}' found in '{tty_lookalikes}'")
+
+def _parse_udevadm_info(dev_path: str) -> dict:
+  # pylint: disable=anomalous-backslash-in-string
+  dev_info = subprocess.check_output(f"udevadm info -q all -n {dev_path}", shell=True).decode('latin1')
+  parse_vendor_model = re.compile("""
+    ID_VENDOR_ID=(?P<vendor_id>\w+)$
+    .+?
+    ID_MODEL_ID=(?P<model_id>\w+)$
+  """, re.S | re.M | re.X)
+  match = parse_vendor_model.search(dev_info)
+  if match:
+    return {
+      'vendor_id': match.group('vendor_id'),
+      'model_id':  match.group('model_id'),
+    }
+  raise Exception(f"Couldn't parse udevadm info '{dev_info}'")

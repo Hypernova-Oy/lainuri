@@ -1,4 +1,5 @@
-from logging_context import logging
+from lainuri.config import get_config
+from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 from RL866.message import Message, parseMessage

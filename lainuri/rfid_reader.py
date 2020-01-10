@@ -1,12 +1,12 @@
-#!/usr/bin/python3
+from lainuri.config import get_config
+from lainuri.logging_context import logging
+log = logging.getLogger(__name__)
 
 import serial
 import time
 import _thread as thread
 import json
 
-from lainuri.config import get_config
-from lainuri.logging_context import logging
 from lainuri.event import LEvent
 from lainuri.RL866.message import Message
 from lainuri.RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
@@ -15,12 +15,15 @@ from lainuri.RL866.tag import Tag
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 import lainuri.websocket_server
 
-log = logging.getLogger(__name__)
 
+rfid_readers = []
 
-class RFID_reader():
-
+class RFID_Reader():
   def __init__(self):
+    rfid_readers.append(self)
+    self.tags_present: Tag = []
+    self.tags_lost: Tag = []
+    self.tags_new: Tag = []
     self.serial = self.connect_serial()
 
     log.info("Connecting serial():> RESYNC")
@@ -69,72 +72,67 @@ class RFID_reader():
     log.info(f"-->READ {msg_class}")
     return rv_a
 
+  def start_polling_rfid_tags(self):
+    if get_config('devices.rfid-reader.enabled'):
+      thread.start_new_thread(self._rfid_poll, ())
+    else:
+      log.info("RFID reader is disabled by config")
 
+  def _rfid_poll(self):
+    log.info("RFID polling starting")
+    self
 
-tags_present: Tag = []
-tags_lost: Tag = []
-tags_new: Tag = []
-def rfid_poll(*args):
-  global tags_present, tags_lost, tags_new
+    while(1):
+      self.write(IBlock_TagInventory())
+      resp = IBlock_TagInventory_Response(self.read(IBlock_TagInventory_Response))
 
-  log.info("RFID polling starting")
-  rfid_reader = RFID_reader()
-
-  while(1):
-    rfid_reader.write(IBlock_TagInventory())
-    resp = IBlock_TagInventory_Response(rfid_reader.read(IBlock_TagInventory_Response))
-
-    for new_tag in resp.tags:
-
-      new_tag_already_present = 0
-      for tag_old in tags_present:
-        if tag_old.serial_number() == new_tag.serial_number():
-          new_tag_already_present = 1
-          break
-      if not new_tag_already_present:
-        tags_new.append(new_tag)
-        tags_present.append(new_tag)
-
-    for tag_old in tags_present:
-      old_tag_missing = 1
       for new_tag in resp.tags:
-        if tag_old.serial_number() == new_tag.serial_number():
-          old_tag_missing = 0
-          break
-      if old_tag_missing:
-        tags_lost.append(tag_old)
 
-    #tags_present = [tag in tags_present if not filter(lambda tag_lost: tag.serial_number() == tag_lost.serial_number(), tags_lost) ]
-    tags_present = [tag for tag in tags_present if not [tag_lost for tag_lost in tags_lost if tag.serial_number() == tag_lost.serial_number()]]
-    tags_present_serial_numbers = [tag.serial_number() for tag in tags_present]
+        new_tag_already_present = 0
+        for tag_old in self.tags_present:
+          if tag_old.serial_number() == new_tag.serial_number():
+            new_tag_already_present = 1
+            break
+        if not new_tag_already_present:
+          self.tags_new.append(new_tag)
+          self.tags_present.append(new_tag)
 
-    if tags_new:
-      lainuri.websocket_server.push_event(LEvent("rfid-tags-new", {
-        'tags_new': [tag.serial_number() for tag in tags_new],
-        'tags_present': tags_present_serial_numbers,
-      }))
-    if tags_lost:
-      lainuri.websocket_server.push_event(LEvent("rfid-tags-lost", {
-        'tags_lost': [tag.serial_number() for tag in tags_lost],
-        'tags_present': tags_present_serial_numbers,
-      }))
+      for tag_old in self.tags_present:
+        old_tag_missing = 1
+        for new_tag in resp.tags:
+          if tag_old.serial_number() == new_tag.serial_number():
+            old_tag_missing = 0
+            break
+        if old_tag_missing:
+          self.tags_lost.append(tag_old)
 
-    time.sleep(120) # TODO: This should be something like 0.1 or maybe even no sleep?
-    tags_lost = []
-    tags_new  = []
+      #tags_present = [tag in tags_present if not filter(lambda tag_lost: tag.serial_number() == tag_lost.serial_number(), tags_lost) ]
+      self.tags_present = [tag for tag in self.tags_present if not [tag_lost for tag_lost in self.tags_lost if tag.serial_number() == tag_lost.serial_number()]]
+      tags_present_serial_numbers = [tag.serial_number() for tag in self.tags_present]
 
-  log.info(f"Terminating RFID thread")
-  exit(0)
+      if self.tags_new:
+        lainuri.websocket_server.push_event(LEvent("rfid-tags-new", {
+          'tags_new': [tag.serial_number() for tag in self.tags_new],
+          'tags_present': tags_present_serial_numbers,
+        }))
+      if self.tags_lost:
+        lainuri.websocket_server.push_event(LEvent("rfid-tags-lost", {
+          'tags_lost': [tag.serial_number() for tag in self.tags_lost],
+          'tags_present': tags_present_serial_numbers,
+        }))
+
+      time.sleep(120) # TODO: This should be something like 0.1 or maybe even no sleep?
+      self.tags_lost = []
+      self.tags_new  = []
+
+    log.info(f"Terminating RFID thread")
 
 
 def get_current_inventory_status():
-  global tags_present
+  global rfid_readers
+  tags_present = []
+  for reader in rfid_readers:
+    tags_present += reader.tags_present
   return {
     'tags_present': [tag.serial_number() for tag in tags_present],
   }
-
-def start():
-  if get_config('devices.rfid-reader.enabled'):
-    thread.start_new_thread(rfid_poll, ())
-  else:
-    log.info("RFID reader is disabled by config")
