@@ -19,7 +19,7 @@ class BarcodeReader():
     self.autoconfigure()
 
   def connect_serial(self) -> serial.Serial:
-    port = lainuri.helpers.find_dev_path('8888', '0007');
+    port = lainuri.helpers.find_dev_path('8888', '0007')
     log.info(f"Connecting WGC300 to port='{port}'")
     ser = serial.Serial()
     ser.baudrate = 115200
@@ -82,10 +82,7 @@ class BarcodeReader():
     Forks a thread to poll the serial connection for barcodes.
     Turns the read barcodes into push notifications.
     """
-    if get_config('devices.barcode-reader.enabled'):
-      thread.start_new_thread(self.polling_barcodes_thread, ())
-    else:
-      log.info("WGC300 reader is disabled by config")
+    thread.start_new_thread(self.polling_barcodes_thread, ())
 
   def polling_barcodes_thread(self):
     log.info("Barcodes polling starting")

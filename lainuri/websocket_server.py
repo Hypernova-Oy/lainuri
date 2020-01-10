@@ -114,11 +114,17 @@ class SimpleChat(WebSocket):
 
 def start():
 
-  rfid_reader = lainuri.rfid_reader.RFID_Reader()
-  rfid_reader.start_polling_rfid_tags()
+  if get_config('devices.rfid-reader.enabled'):
+    rfid_reader = lainuri.rfid_reader.RFID_Reader()
+    rfid_reader.start_polling_rfid_tags()
+  else:
+    log.info("RFID reader is disabled by config")
 
-  barcode_reader = lainuri.WGCUsb300AT.BarcodeReader()
-  barcode_reader.start_polling_barcodes()
+  if get_config('devices.barcode-reader.enabled'):
+    barcode_reader = lainuri.WGCUsb300AT.BarcodeReader()
+    barcode_reader.start_polling_barcodes()
+  else:
+    log.info("WGC300 reader is disabled by config")
 
   server = WebSocketServer('localhost', 53153, SimpleChat)
   server.serve_forever()

@@ -73,10 +73,7 @@ class RFID_Reader():
     return rv_a
 
   def start_polling_rfid_tags(self):
-    if get_config('devices.rfid-reader.enabled'):
-      thread.start_new_thread(self._rfid_poll, ())
-    else:
-      log.info("RFID reader is disabled by config")
+    thread.start_new_thread(self._rfid_poll, ())
 
   def _rfid_poll(self):
     log.info("RFID polling starting")
