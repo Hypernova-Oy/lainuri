@@ -1,11 +1,17 @@
 devices:
   rfid-reader:
-    enabled: true
+    enabled: false
   ringtone-player:
     enabled: false
   barcode-reader:
-    enabled: true
+    enabled: false
 
 ringtones:
   error: ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c
   success: ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5
+
+koha:
+  baseurl: https://pkks.intra.production-1.koha.fi
+  userid: test-!@
+  password: '98f982wh3f89pnaw89p3hfaw'
+  branchcode: 'TIEKI'

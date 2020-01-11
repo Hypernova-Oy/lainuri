@@ -4,8 +4,9 @@ version: 1
 formatters:
   simple:
     format: '%(asctime)s %(name)s [%(levelname)s] %(message)s'
-  complex:
-    format: '%(asctime)s %(name)s [%(levelname)s] %(message)s at %(funcName)s'
+  colored:
+    class: colorlog.ColoredFormatter
+    format: '%(log_color)s%(asctime)s %(name)s [%(levelname)s]%(reset)s %(message)s at %(funcName)s'
 handlers:
   console:
     class: logging.StreamHandler
@@ -15,13 +16,23 @@ handlers:
   console_complex:
     class: logging.StreamHandler
     level: DEBUG
-    formatter: complex
+    formatter: colored
     stream: ext://sys.stdout
+  scraper:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: DEBUG
+    formatter: colored
+    filename: {lainuri_log_dir}/scraper.log
+    when: 'D'
 loggers:
+  lainuri.scraping:
+    level: DEBUG
+    handlers: [scraper]
+    propagate: no
   RL866.state:
     level: DEBUG
     handlers: [console_complex]
     propagate: no
-root:
-  level: DEBUG
-  handlers: [console]
+  root:
+    level: DEBUG
+    handlers: [console]

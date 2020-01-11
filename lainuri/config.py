@@ -12,6 +12,10 @@ def validate_environment():
     print(f"Environment variable LAINURI_CONF_DIR is not set, looking for config from cwd '{os.getcwd()}'")
     os.environ.update({'LAINURI_CONF_DIR': './config/'})
   print(f"  LAINURI_CONF_DIR='{os.environ.get('LAINURI_CONF_DIR')}'")
+  if not os.environ.get('LAINURI_LOG_DIR'):
+    print(f"Environment variable LAINURI_LOG_DIR is not set, setting log dir based on cwd '{os.getcwd()}'")
+    os.environ.update({'LAINURI_LOG_DIR': './logs/'})
+  print(f"  LAINURI_LOG_DIR='{os.environ.get('LAINURI_LOG_DIR')}'")
 validate_environment()
 
 path_to_config_file = os.path.join(os.environ.get('LAINURI_CONF_DIR'), 'config.yaml')
