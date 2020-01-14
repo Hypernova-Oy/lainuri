@@ -15,3 +15,4 @@ koha:
   userid: test-!@
   password: '98f982wh3f89pnaw89p3hfaw'
   branchcode: 'TIEKI'
+  api_memoize_cache_size: 8

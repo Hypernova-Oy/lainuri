@@ -6,11 +6,13 @@ log_scrape = logging.getLogger('lainuri.scraping')
 
 from bs4 import BeautifulSoup
 import bs4
+import functools
 import json
 from pprint import pprint
 import re
 import traceback
 from urllib3 import PoolManager, HTTPResponse
+
 
 class KohaAPI():
   required_permissions = {
@@ -35,6 +37,7 @@ class KohaAPI():
     data = r.data.decode('utf-8')
     log_scrape.info(self._scrape_log_header(r) + "\n" + data)
     payload = json.loads(data)
+    self._maybe_not_logged_in(payload)
     self._maybe_missing_permission(payload)
     return payload
 
@@ -55,15 +58,22 @@ class KohaAPI():
       log_scrape.info(f"event_id='{self.todo_event_id}'\n" + data)
       log.error(f"Failed to parse HTML for event_id='{self.todo_event_id}': {traceback.format_exc()}")
       raise e
+
+    self._maybe_not_logged_in(soup)
     return (soup, alerts, messages)
 
   def _maybe_not_logged_in(self, payload):
+    reauthenticate = 0
     if isinstance(payload, dict) and payload.get('error'):
-      pass
+      if payload.get('error') == 'Not authenticated':
+        reauthenticate = 1
     elif isinstance(payload, BeautifulSoup) and payload.get('error'):
       login_error = payload.select("#login_error")
       if login_error:
-        raise Exception(f"Lainuri device is missing permissions to checkin. Lainuri needs these permissions to access Koha: '{self.required_permissions}'")
+        reauthenticate = 1
+    if reauthenticate:
+      if not self.authenticate():
+        raise Exception(f"Lainuri device was not authenticated to Koha and failed to automatically reauthenticate.")
 
   def _maybe_missing_permission(self, payload):
     if isinstance(payload, dict) and payload.get('error'):
@@ -107,6 +117,7 @@ class KohaAPI():
     self.sessionid = payload['sessionid']
     return payload
 
+  @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_borrower(self, cardnumber):
     r = self.http.request(
       'GET',
@@ -117,6 +128,7 @@ class KohaAPI():
     )
     return self._expected_one_list_element(self._receive_json(r), f"cardnumber='{cardnumber}'")
 
+  @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_item(self, barcode):
     r = self.http.request(
       'GET',
@@ -127,6 +139,7 @@ class KohaAPI():
     )
     return self._expected_one_list_element(self._receive_json(r), f"barcode='{barcode}'")
 
+  @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_record(self, biblionumber):
     r = self.http.request(
       'GET',
@@ -240,3 +253,7 @@ class MARCRecord():
           if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_book_cover_url_fields[field_code]:
             self._book_cover_url = sf
             return self._book_cover_url
+
+
+# TODO: Thread safety for KohaAPI()
+koha_api = KohaAPI()
