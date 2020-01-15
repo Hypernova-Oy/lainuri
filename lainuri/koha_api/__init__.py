@@ -267,9 +267,7 @@ class KohaAPI():
     )
     (soup, alerts, messages) = self._receive_html(r)
 
-    statuses = {
-      'needs_confirmation': soup.select('#circ_needsconfirmation.ul.li'),
-    }
+    statuses = {}
     alerts = [a for a in alerts if not self.checkout_has_status(a.prettify(), statuses)]
     messages = [a for a in messages if not self.checkout_has_status(a.prettify(), statuses)]
 
@@ -287,6 +285,13 @@ class KohaAPI():
     if match:
       statuses['not_checked_out'] = 1
       return 'not_checked_out'
+
+    m_needsconfirmation = re.compile('circ_needsconfirmation', re.S | re.M | re.I)
+    match = m_needsconfirmation.search(message)
+    if match:
+      statuses['needs_confirmation'] = 1
+      statuses['status'] = 'failed'
+      return 'needs_confirmation'
 
     return None
 

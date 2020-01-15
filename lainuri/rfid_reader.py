@@ -8,7 +8,7 @@ import time
 import _thread as thread
 import json
 
-from lainuri.event import LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent
+import lainuri.event as le
 from lainuri.RL866.message import Message
 from lainuri.RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
 from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response, IBlock_TagMemoryAccess, IBlock_TagMemoryAccess_Response
@@ -110,9 +110,9 @@ class RFID_Reader():
       self.tags_present = [tag for tag in self.tags_present if not [tag_lost for tag_lost in self.tags_lost if tag.serial_number() == tag_lost.serial_number()]]
 
       if self.tags_new:
-        lainuri.websocket_server.push_event(LERFIDTagsNew(self.tags_new, self.tags_present))
+        lainuri.websocket_server.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
       if self.tags_lost:
-        lainuri.websocket_server.push_event(LERFIDTagsLost(self.tags_lost, self.tags_present))
+        lainuri.websocket_server.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
 
       time.sleep(0.1) # TODO: This should be something like 0.1 or maybe even no sleep?
       self.tags_lost = []

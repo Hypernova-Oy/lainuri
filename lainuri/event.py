@@ -9,6 +9,7 @@ import traceback
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.test
 import lainuri.websocket_handlers.config
+import lainuri.websocket_handlers.checkout
 import lainuri.koha_api as koha_api
 
 event_id: int = 0
@@ -50,6 +51,50 @@ class LEvent():
   def throw_missing_attribute(self, attribute_name: str):
     class_name = type(self)
     raise Exception(f"{class_name}():> Missing attribute '{attribute_name}'")
+
+class LECheckOuting(LEvent):
+  event = 'check-outing'
+  default_handler = lainuri.websocket_handlers.checkout.checkout
+
+  serializable_attributes = ['barcode', 'borrowernumber']
+  barcode = ''
+  borrowernumber = 0
+
+  def __init__(self, barcode: str, borrowernumber: int, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.barcode = barcode
+    self.borrowernumber = borrowernumber
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LECheckOuted(LEvent):
+  event = 'check-outed'
+
+  serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
+  barcode = ''
+  borrowernumber = 0
+  statuses = {}
+
+  def __init__(self, barcode: str, borrowernumber: int, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.barcode = barcode
+    self.borrowernumber = borrowernumber
+    self.statuses = statuses
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LECheckOutFailed(LEvent):
+  event = 'check-out-failed'
+
+  serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
+  barcode = ''
+  borrowernumber = 0
+  statuses = {}
+
+  def __init__(self, barcode: str, borrowernumber: int, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.barcode = barcode
+    self.borrowernumber = borrowernumber
+    self.statuses = statuses
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
 
 class LERingtonePlay(LEvent):
   event = 'ringtone-play'

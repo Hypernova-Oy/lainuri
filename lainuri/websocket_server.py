@@ -56,6 +56,7 @@ def set_state(new_state: str):
   state = new_state
 
 def push_event(event: lainuri.event.LEvent):
+  global events
   log.info(f"New event '{event.__dict__}'")
   events.append(event)
 
