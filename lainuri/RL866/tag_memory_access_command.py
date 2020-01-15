@@ -4,9 +4,9 @@ log = logging.getLogger(__name__)
 
 from typing import Callable
 
-import helpers
-from RL866.message import Message
-from RL866.tag import Tag
+import lainuri.helpers as helpers
+from lainuri.RL866.message import Message
+from lainuri.RL866.tag import Tag
 
 EXPECTED_NO_BYTES = 0
 EXPECTED_MULTIPLE_BYTES = 255

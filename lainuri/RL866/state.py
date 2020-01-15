@@ -2,7 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
-import helpers
+import lainuri.helpers
 
 
 transmission_sequence_number = 0
@@ -34,7 +34,7 @@ TAG_MIFARE_S70 = 3
 TAG_DESFIRE_EV1 = 4
 TAG_NTAG21X = 5
 
-air_protocol_type_table = helpers._two_way_link_dict({
+air_protocol_type_table = lainuri.helpers._two_way_link_dict({
   0: 'Unknown',
   1: 'ISO15693',               # supported
   2: 'ISO14443A',              # supported
@@ -53,7 +53,7 @@ air_protocol_type_table = helpers._two_way_link_dict({
 #Appendix A.Supported tag types
 supported_tag_types = {
   #1.ISO15693 tag types:
-  AIR_PROTO_ISO15693: helpers._two_way_link_dict({
+  AIR_PROTO_ISO15693: lainuri.helpers._two_way_link_dict({
     1:  'NXP ICODE SLI',
     2:  'TI HFI PLUS',
     3:  'ST M24LRXX',
@@ -67,7 +67,7 @@ supported_tag_types = {
   }),
 
   #2.ISO14443a tag types:
-  AIR_PROTO_ISO14443A: helpers._two_way_link_dict({
+  AIR_PROTO_ISO14443A: lainuri.helpers._two_way_link_dict({
     1: 'Mifare Ultralight',
     2: 'MIFARE S50',
     3: 'MIFARE S70',

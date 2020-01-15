@@ -2,9 +2,9 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
-from lainuri.event import LEvent
+#from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
-def ringtone_play(event: LEvent):
+def ringtone_play(event):
   get_config('devices.ringtone-player.enabled')
   if get_config('devices.ringtone-player.enabled'):
     import lainuri.rtttl_player # Device might be disabled so lazy load this on demand

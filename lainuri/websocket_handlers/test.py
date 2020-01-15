@@ -4,12 +4,12 @@ log = logging.getLogger(__name__)
 
 import time
 
-from lainuri.event import LEvent, LERFIDTagsNew, LERFIDTagsPresent, LEBarcodeRead
 import lainuri.websocket_server
+import lainuri.event
 from lainuri.RL866.tag import Tag
 
-def mock_devices(event: LEvent):
-  lainuri.websocket_server.push_event(LERFIDTagsPresent([
+def mock_devices(event):
+  lainuri.websocket_server.push_event(lainuri.event.LERFIDTagsPresent([
     Tag(serial_number='0xe00401003f3827a7'),
     Tag(serial_number='0xe00401003f382624'),
     Tag(serial_number='0xe00401003f3855FF'),
@@ -17,11 +17,11 @@ def mock_devices(event: LEvent):
 
   time.sleep(1)
 
-  lainuri.websocket_server.push_event(LEBarcodeRead('167A0170177'))
+  lainuri.websocket_server.push_event(lainuri.event.LEBarcodeRead('167A0170177'))
 
   time.sleep(1)
 
-  lainuri.websocket_server.push_event(LERFIDTagsNew([
+  lainuri.websocket_server.push_event(lainuri.event.LERFIDTagsNew([
     Tag(serial_number='0xe00401003fFFFFFF'),
   ],[
     Tag(serial_number='0xe00401003fFFFFFF'),

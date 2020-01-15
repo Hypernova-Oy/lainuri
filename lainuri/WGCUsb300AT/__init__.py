@@ -98,6 +98,10 @@ class BarcodeReader():
       if (rv):
         barcode = rv[0:-1].decode('latin1') # Pop the last character, as it it the barcode termination character
         log.info(f"Received barcode='{barcode}' bytes='{rv}'")
-        lainuri.websocket_server.push_event(LEBarcodeRead(barcode))
+
+        if (lainuri.websocket_server.state == 'user-logging-in'):
+          lainuri.websocket_server.login_user(barcode)
+        else:
+          lainuri.websocket_server.push_event(LEBarcodeRead(barcode))
 
     log.info(f"Terminating WGC300 thread")

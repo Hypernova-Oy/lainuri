@@ -4,6 +4,8 @@ log = logging.getLogger(__name__)
 # Save HTTP responses to a scrape-log so we can later inspect what went wrong in the brittle screen scraping components.
 log_scrape = logging.getLogger('lainuri.scraping')
 
+from lainuri.exceptions import InvalidPassword, InvalidUser, NoResults
+
 from bs4 import BeautifulSoup
 import bs4
 import functools
@@ -24,20 +26,22 @@ class KohaAPI():
 
   sessionid = ''
   koha_baseurl = ''
-  todo_event_id = 'checkout-koha-123'
+  current_event_id = ''
+  current_request_url = ''
+  reauthenticate_tries = 0
 
   def __init__(self):
     self.koha_baseurl = get_config('koha.baseurl')
     self.http = PoolManager()
 
   def _scrape_log_header(self, r: HTTPResponse):
-    return f"event_id='{self.todo_event_id}' status='{r.status} url='{r.geturl()}"
+    return f"event_id='{self.current_event_id}' status='{r.status} url='{r.geturl() or self.current_request_url}"
 
   def _receive_json(self, r: HTTPResponse):
     data = r.data.decode('utf-8')
     log_scrape.info(self._scrape_log_header(r) + "\n" + data)
     payload = json.loads(data)
-    self._maybe_not_logged_in(payload)
+    self._maybe_not_logged_in(r, payload)
     self._maybe_missing_permission(payload)
     return payload
 
@@ -50,33 +54,33 @@ class KohaAPI():
 
       alerts = soup.select('.dialog.alert')
       # Filter away hidden alerts
-      alerts = [m for m in alerts if m.attrs.get('style') and not re.match(r'(?i:display:\s*none)', m.attrs.get('style'))]
+      alerts = [m for m in alerts if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
       messages = soup.select('.dialog.message')
       # Filter away hidden messages
-      messages = [m for m in messages if m.attrs.get('style') and not re.match(r'(?i:display:\s*none)', m.attrs.get('style'))]
+      messages = [m for m in messages if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
     except Exception as e:
-      log_scrape.info(f"event_id='{self.todo_event_id}'\n" + data)
-      log.error(f"Failed to parse HTML for event_id='{self.todo_event_id}': {traceback.format_exc()}")
+      log_scrape.info(f"event_id='{self.current_event_id}'\n" + data)
+      log.error(f"Failed to parse HTML for event_id='{self.current_event_id}': {traceback.format_exc()}")
       raise e
 
-    self._maybe_not_logged_in(soup)
+    self._maybe_not_logged_in(r, soup)
     return (soup, alerts, messages)
 
-  def _maybe_not_logged_in(self, payload):
-    reauthenticate = 0
-    if isinstance(payload, dict) and payload.get('error'):
-      if payload.get('error') == 'Not authenticated':
-        reauthenticate = 1
-    elif isinstance(payload, BeautifulSoup) and payload.get('error'):
+  def _maybe_not_logged_in(self, r, payload):
+    if isinstance(payload, dict) and payload.get('error', None):
+      if r.status == 401:
+        self.reauthenticate_tries += 1
+    elif isinstance(payload, BeautifulSoup):
       login_error = payload.select("#login_error")
       if login_error:
-        reauthenticate = 1
-    if reauthenticate:
+        self.reauthenticate_tries += 1
+
+    if self.reauthenticate_tries == 1:
       if not self.authenticate():
         raise Exception(f"Lainuri device was not authenticated to Koha and failed to automatically reauthenticate.")
 
   def _maybe_missing_permission(self, payload):
-    if isinstance(payload, dict) and payload.get('error'):
+    if isinstance(payload, dict) and payload.get('error', None):
       if payload.get('required_permissions'):
         raise Exception(f"Lainuri device is missing permission '{payload.get('required_permissions')}'. Lainuri needs these permissions to access Koha: '{self.required_permissions}'")
 
@@ -84,7 +88,7 @@ class KohaAPI():
     if l and len(l) > 1:
       raise Exception(f"Got more than one result! " + error_msg)
     if not l or len(l) == 0:
-      raise Exception(f"Got no results! " + error_msg)
+      raise NoResults(error_msg)
     return l[0]
 
   def authenticated(self):
@@ -102,42 +106,81 @@ class KohaAPI():
       return 0
 
   def authenticate(self):
-    r = self.http.request(
+    r = self._auth_post(userid=get_config('koha.userid'), password=get_config('koha.password'))
+    payload = self._receive_json(r)
+    error = payload.get('error', None)
+    if error:
+      if 'Login failed' in error: raise InvalidUser(get_config('koha.userid'))
+      else: raise Exception(f"Unknown error '{error}'")
+    self.sessionid = payload['sessionid']
+    self.reauthenticate_tries = 0
+    return payload
+
+  def authenticate_user(self, cardnumber, userid=None, password=None) -> dict:
+    if password == None:
+      borrower = self.get_borrower(cardnumber=cardnumber)
+      if borrower:
+        return borrower
+      else:
+        raise InvalidUser(cardnumber)
+
+  def _auth_post(self, password, userid=None, cardnumber=None):
+    if not userid or cardnumber:
+      raise Exception("Mandatory parameter 'userid' or 'cardnumber' is missing!")
+    fields = {
+      'password': get_config('koha.password'),
+    }
+    if userid: fields['userid'] = userid
+    if cardnumber: fields['cardnumber'] = cardnumber
+
+    return self.http.request(
       'POST',
       self.koha_baseurl + '/api/v1/auth/session',
-      fields = {
-        'userid': get_config('koha.userid'),
-        'password': get_config('koha.password'),
-      },
+      fields = fields,
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
     )
-    payload = self._receive_json(r)
-    self.sessionid = payload['sessionid']
-    return payload
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_borrower(self, cardnumber):
-    r = self.http.request(
+    r = self.http.request_encode_url(
       'GET',
-      self.koha_baseurl + f'/api/v1/patrons?cardnumber={cardnumber}',
+      self.koha_baseurl + f'/api/v1/patrons',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
+      fields = {
+        'cardnumber': cardnumber,
+      },
     )
-    return self._expected_one_list_element(self._receive_json(r), f"cardnumber='{cardnumber}'")
+    self.current_request_url = self.koha_baseurl + f'/api/v1/patrons'
+    payload = self._receive_json(r)
+    if isinstance(payload, dict) and payload.get('error', None):
+      error = payload.get('error', None)
+      if error:
+        raise Exception(f"Unknown error '{error}'")
+    return self._expected_one_list_element(payload, f"cardnumber='{cardnumber}'")
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_item(self, barcode):
-    r = self.http.request(
+    r = self.http.request_encode_url(
       'GET',
-      self.koha_baseurl + f'/api/v1/items?barcode={barcode}',
+      self.koha_baseurl + f'/api/v1/items',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
+      fields = {
+        'barcode': barcode,
+      },
     )
-    return self._expected_one_list_element(self._receive_json(r), f"barcode='{barcode}'")
+    self.current_request_url = self.koha_baseurl + f'/api/v1/items'
+    payload = self._receive_json(r)
+    if isinstance(payload, dict) and payload.get('error', None):
+      error = payload.get('error', None)
+      if error:
+        raise Exception(f"Unknown error '{error}'")
+    return self._expected_one_list_element(payload, f"barcode='{barcode}'")
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_record(self, biblionumber):
@@ -148,9 +191,18 @@ class KohaAPI():
         'Cookie': f'CGISESSID={self.sessionid}',
       },
     )
-    return self._receive_json(r)
+    payload = self._receive_json(r)
+    error = payload.get('error', None)
+    if error:
+      if r.status == 404:
+        raise NoResults(biblionumber)
+      raise Exception(f"Unknown error '{error}'")
+    return payload
 
-  def checkin(self, barcode):
+  def checkin(self, barcode) -> dict:
+    """
+    Returns dict['status'] == 'failed' on error
+    """
     r = self.http.request(
       'POST',
       self.koha_baseurl + '/cgi-bin/koha/circ/returns.pl',
@@ -163,11 +215,38 @@ class KohaAPI():
     )
 
     (soup, alerts, messages) = self._receive_html(r)
-    if (alerts or messages):
-      raise Exception(f"Checkin failed: alerts='{alerts // []}' messages='{messages // []}'")
-    return soup
 
-  def checkout(self, barcode, borrowernumber):
+    statuses = {}
+    alerts = [a for a in alerts if not self.checkin_has_status(a.prettify(), statuses)]
+    messages = [a for a in messages if not self.checkin_has_status(a.prettify(), statuses)]
+
+    if (alerts or messages):
+      statuses['unhandled'] = [*(alerts or []), *(messages or [])]
+      statuses['status'] = 'failed'
+    if statuses.get('status', None) != 'failed':
+      statuses['status'] = 'success'
+    log.info(f"Checkin barcode='{barcode}' with statuses='{statuses}'")
+    return statuses
+
+  def checkin_has_status(self, message, statuses):
+    m_not_checked_out = re.compile('Not checked out', re.S | re.M | re.I)
+    match = m_not_checked_out.search(message)
+    if match:
+      statuses['not_checked_out'] = 1
+      return 'not_checked_out'
+
+    m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+)\n', re.S | re.M | re.I)
+    match = m_return_to_another_branch.search(message)
+    if match:
+      statuses['return_to_another_branch'] = match.group('branchname')
+      return 'return_to_another_branch'
+
+    return None
+
+  def checkout(self, barcode, borrowernumber) -> dict:
+    """
+    Returns dict['status'] == 'failed' on error
+    """
     r = self.http.request(
       'POST',
       self.koha_baseurl + '/cgi-bin/koha/circ/circulation.pl',
@@ -184,10 +263,30 @@ class KohaAPI():
       },
     )
     (soup, alerts, messages) = self._receive_html(r)
-    needs_confirmation = soup.select('#circ_needsconfirmation.ul.li')
-    if (alerts or messages or needs_confirmation):
-      raise Exception(f"Checkin failed: alerts='{alerts // []}' messages='{messages // []}' needs_confirmation='{needs_confirmation}'")
-    return soup
+
+    statuses = {
+      'needs_confirmation': soup.select('#circ_needsconfirmation.ul.li'),
+    }
+    alerts = [a for a in alerts if not self.checkout_has_status(a.prettify(), statuses)]
+    messages = [a for a in messages if not self.checkout_has_status(a.prettify(), statuses)]
+
+    if (alerts or messages):
+      statuses['unhandled'] = [*(alerts or []), *(messages or [])]
+      statuses['status'] = 'failed'
+    if statuses.get('status', None) != 'failed':
+      statuses['status'] = 'success'
+    log.info(f"Checkout barcode='{barcode}' borrowernumber='{borrowernumber}' with statuses='{statuses}'")
+    return statuses
+
+  def checkout_has_status(self, message, statuses):
+    m_not_checked_out = re.compile('Not checked out', re.S | re.M | re.I)
+    match = m_not_checked_out.search(message)
+    if match:
+      statuses['not_checked_out'] = 1
+      return 'not_checked_out'
+
+    return None
+
 
   def receipt(self, borrowernumber) -> str:
     prnt = 'qslip'

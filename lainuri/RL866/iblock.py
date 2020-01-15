@@ -2,11 +2,11 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
-import helpers
-from RL866.tag_memory_access_command import TagMemoryAccessCommand
-from RL866.message import Message, Request, Response, parseMessage, parseIBlockResponseINF
-from RL866.tag import Tag
-import RL866.state
+import lainuri.helpers as helpers
+from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
+from lainuri.RL866.message import Message, Request, Response, parseMessage, parseIBlockResponseINF
+from lainuri.RL866.tag import Tag
+import lainuri.RL866.state as state
 
 
 class IBlock(Message):
@@ -14,17 +14,17 @@ class IBlock(Message):
     if not self.PCB:
       PCB = 0x00
       #PCB = PCB | (1<<5) # Chaining bit is set
-      if RL866.state.transmission_sequence_number == 0:
+      if state.transmission_sequence_number == 0:
         PCB = PCB & ~(1<<6)
-      elif RL866.state.transmission_sequence_number == 1:
+      elif state.transmission_sequence_number == 1:
         PCB = PCB |  (1<<6)
       else:
-        raise Exception(f"transmission_sequence_number '{RL866.state.transmission_sequence_number}' must be 1 or 0!")
+        raise Exception(f"transmission_sequence_number '{state.transmission_sequence_number}' must be 1 or 0!")
       self.PCB = bytes([PCB])
 
     super().__init__(RID=RID, INF=INF)
 
-    if isinstance(self, Request): RL866.state.increment_transmission_sequence_number()
+    if isinstance(self, Request): state.increment_transmission_sequence_number()
 
 class IBlock_ReadSystemConfigurationBlock(IBlock, Request):
   """
@@ -38,7 +38,7 @@ class IBlock_ReadSystemConfigurationBlock(IBlock, Request):
     self.field2 = self.field2_number_of_CFG_blocks_to_read(read_blocks)
     self.INF = self.CMD + self.field1 + self.field2
 
-    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+    super().__init__(RID=state.RID_request, INF=self.INF)
 
   def field1_CFG_block_address(self, address, read_ROM):
     """
@@ -115,7 +115,7 @@ class IBlock_TagInventory(IBlock, Request):
       self.INF += field4
       self.field4 = field4
 
-    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+    super().__init__(RID=state.RID_request, INF=self.INF)
 
   def field2_query_multiple_antenna(self, query_multiple_antenna) -> bytearray:
     """
@@ -162,7 +162,7 @@ class IBlock_TagInventory(IBlock, Request):
     field3 = bytearray()
     field3.append(len(parameters))
     for p in parameters:
-      field3.append( RL866.state.getAirProtocolCode(p) )
+      field3.append( state.getAirProtocolCode(p) )
       field3.append( p.antenna_interface // 0 ) # Which antenna interface the antenna is applied to 0 means it applies to all antenna interfaces
       field3.append(  ) # Parameter length
       field3.append(  ) # 6.3. Air protocol inventory parameter
@@ -331,7 +331,7 @@ class IBlock_TagInventory_Response(IBlock, Response):
       if tag.air_protocol_type_id_present:
         tag.field43 = helpers.shift_byte(self.PARM, i)
         tag.air_protocol_type_id(tag.field43[0])
-        log.debug(f"air protocol '{RL866.state.air_protocol_type_table[tag.air_protocol_type_id()]}' detected")
+        log.debug(f"air protocol '{state.air_protocol_type_table[tag.air_protocol_type_id()]}' detected")
 
       tag.field44 = None
       if tag.tag_type_id_present:
@@ -423,14 +423,14 @@ class IBlock_TagConnect(IBlock, Request):
     self.INF += self.field4
     self.INF += self.field5
 
-    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+    super().__init__(RID=state.RID_request, INF=self.INF)
 
   def field5_connect_parameter(self, tag: Tag) -> bytearray:
     """
     6.4.Tag connection parameter
     """
     field5 = bytearray()
-    if tag.air_protocol_type_id() == RL866.state.AIR_PROTO_ISO15693:
+    if tag.air_protocol_type_id() == state.AIR_PROTO_ISO15693:
       """
       6.4.1. ISO15693
         Field1 Address mode
@@ -447,7 +447,7 @@ class IBlock_TagConnect(IBlock, Request):
       field5 += tag.field46[0:8]
 
     else:
-      raise Exception(f"Unsupported air_protocol '{RL866.state.air_protocol_type_table[tag.air_protocol_type_id()]}'. Using tag '{tag.__dict__}'")
+      raise Exception(f"Unsupported air_protocol '{state.air_protocol_type_table[tag.air_protocol_type_id()]}'. Using tag '{tag.__dict__}'")
 
     return field5
 
@@ -488,7 +488,7 @@ class IBlock_TagDisconnect(IBlock, Request):
     if None == self.field1: raise Exception(f"Trying to disconnect a tag that has not been connected to? Tag '{tag.__dict__}'")
     self.INF += self.field1
 
-    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+    super().__init__(RID=state.RID_request, INF=self.INF)
 
 
 class IBlock_TagDisconnect_Response(IBlock, Response):
@@ -546,7 +546,7 @@ class IBlock_TagMemoryAccess(IBlock, Request):
     self.field3 = self.field3_tag_access_operation(mac_command)
     self.INF += self.field3
 
-    super().__init__(RID=RL866.state.RID_request, INF=self.INF)
+    super().__init__(RID=state.RID_request, INF=self.INF)
 
   def field3_tag_access_operation(self, mac_command: TagMemoryAccessCommand):
     """
@@ -625,7 +625,7 @@ class IBlock_TagMemoryAccess_Response(IBlock, Response):
 
     if self.access_status != 1:
       self.error_code = helpers.word_to_int(self.field14)
-      error = RL866.state.error_codes.get(self.error_code)
+      error = state.error_codes.get(self.error_code)
       if not error: raise Exception(f"Given message '{self}' has status error '{hex(self.error_code)}' but there is no matching error code?")
       raise Exception(f"Given message '{self}' has status error '{error}'")
 

@@ -4,11 +4,21 @@ log = logging.getLogger(__name__)
 
 from simple_websocket_server import WebSocket
 import json
+import traceback
 
-import lainuri.websocket_server
+import lainuri.websocket_handlers.ringtone
+import lainuri.websocket_handlers.test
+import lainuri.websocket_handlers.config
+
+event_id: int = 0
+def get_event_id(event_name: str) -> str:
+  global event_id
+  event_id += 1
+  return event_name + '-' + str(event_id)
 
 class LEvent():
   serializable_attributes = [] # Must be overloaded
+  default_handler = None
 
   def __init__(self, event: str = None, message: dict = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.event = event
@@ -16,16 +26,7 @@ class LEvent():
     self.client = client
     self.recipient = recipient
     self.event_id = event_id
-    if not(self.event_id) and self.event: self.event_id = lainuri.websocket_server.get_event_id(self.event)
-
-  def from_ws(self, client: WebSocket):
-    payload = json.loads(client.data)
-    self.message = payload['message']
-    self.event = payload['event']
-    self.client = client
-    self.event_id = payload['event_id']
-    if not self.event_id: raise Exception(f"Event '{self.event}' is missing event_id!")
-    return self
+    if not(self.event_id) and self.event: self.event_id = get_event_id(self.event)
 
   def serialize_ws(self):
     if not self.message:
@@ -49,6 +50,32 @@ class LEvent():
     class_name = type(self)
     raise Exception(f"{class_name}():> Missing attribute '{attribute_name}'")
 
+class LERingtonePlay(LEvent):
+  event = 'ringtone-play'
+  default_handler = lainuri.websocket_handlers.ringtone.ringtone_play
+
+  serializable_attributes = ['ringtone_type', 'ringtone']
+  ringtone_type = ''
+  ringtone = ''
+
+  def __init__(self, ringtone_type: str = None, ringtone: str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.ringtone_type = ringtone_type
+    self.ringtone = ringtone
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+
+class LERingtonePlayed(LEvent):
+  event = 'ringtone-played'
+
+  serializable_attributes = ['ringtone_type', 'ringtone']
+  ringtone_type = ''
+  ringtone = ''
+
+  def __init__(self, ringtone_type: str = None, ringtone: str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.ringtone_type = ringtone_type
+    self.ringtone = ringtone
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
 
 class LEBarcodeRead(LEvent):
   event = 'barcode-read'
@@ -59,6 +86,21 @@ class LEBarcodeRead(LEvent):
   def __init__(self, barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode = barcode
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEConfigWrite(LEvent):
+  event = 'config-write'
+  default_handler = lainuri.websocket_handlers.config.write_config
+
+  serializable_attributes = ['variable', 'new_value']
+  variable = ''
+  new_value = ''
+
+  def __init__(self, variable: str, new_value: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.variable = variable
+    self.new_value = new_value
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LERFIDTagsLost(LEvent):
@@ -106,3 +148,89 @@ class LERFIDTagsPresent(LEvent):
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
+
+class LEUserLoggingIn(LEvent):
+  event = 'user-logging-in'
+
+  serializable_attributes = ['username', 'password']
+  username = ''
+  password = ''
+
+  lifecycle_map_event_to_hooks = {
+    'LEUserLoggedIn': 'onsuccess',
+    'LEException': 'onerror',
+  }
+
+  def __init__(self, username: str = None, password:str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.password = password
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    #self.validate_params()
+
+class LEUserLoggedIn(LEvent):
+  event = 'user-logged-in'
+
+  serializable_attributes = ['firstname', 'surname', 'cardnumber']
+  firstname = ''
+  surname = ''
+  cardnumber = ''
+
+  lifecycle_map_event_to_hooks = {
+    'LEUserLoggedIn': 'onsuccess',
+    'LEException': 'onerror',
+  }
+
+  def __init__(self, firstname: str, surname: str, cardnumber: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.firstname = firstname
+    self.surname = surname
+    self.cardnumber = cardnumber
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEUserLoginAbort(LEvent):
+  event = 'user-login-abort'
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+
+class LERegisterClient(LEvent):
+  event = 'register-client'
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+
+class LEDeregisterClient(LEvent):
+  event = 'deregister-client'
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+class LETestMockDevices(LEvent):
+  event = 'test-mock-devices'
+  default_handler = lainuri.websocket_handlers.test.mock_devices
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+
+class LEException(LEvent):
+  event = 'exception'
+
+  serializable_attributes = ['exception']
+  exception = ''
+  e = Exception()
+
+  def __init__(self, e, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    if isinstance(e, Exception):
+      self.e = e
+      self.exception = traceback.format_exc()
+    else:
+      self.exception = e
+
+    message = {
+      'exception': self.exception,
+    }
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEUserLoginFailed(LEException):
+  event = 'user-login-failed'

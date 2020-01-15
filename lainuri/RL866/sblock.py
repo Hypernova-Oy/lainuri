@@ -2,8 +2,8 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
-from RL866.message import Message, parseMessage
-import RL866.state
+from lainuri.RL866.message import Message, parseMessage
+import lainuri.RL866.state
 
 
 class SBlock(Message):
@@ -12,7 +12,7 @@ class SBlock(Message):
 
 class SBlock_RESYNC(SBlock):
   def __init__(self):
-    super().__init__(RID=RL866.state.RID_request, PCB=bytes([int('11000000',2)]))
+    super().__init__(RID=lainuri.RL866.state.RID_request, PCB=bytes([int('11000000',2)]))
 
 class SBlock_RESYNC_Response(SBlock):
     def __init__(self, resp_bytes: bytearray):

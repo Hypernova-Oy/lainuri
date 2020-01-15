@@ -14,9 +14,31 @@
  * @copyright Hypernova Oy
  */
 
-import * as events from './events'
+import * as events from './lainuri_events'
+let eventname_to_eventclass = {};
+Object.keys(events).map(key => {
+    let eventname = events[key].event;
+    eventname_to_eventclass[eventname] = events[key];
+    console.log(events[key]);
+});
 
-Object.keys(events).map(key => alert(key));
+function ParseEventFromWebsocketMessage(raw_data, sender = undefined, recipient = undefined) {
+  let data = JSON.parse(raw_data);
+  let message = data.message;
+  let event = data.event;
+  let event_class = eventname_to_eventclass[event];
+  if (! event_class) {throw new Error(`Event '${event}' doesn't map to a event class`)}
+    let event_id = data.event_id;
+  if (! event_id) { throw new Error(`Event '${raw_data}' is missing event_id!`) }
+
+  let instance_data = [sender, recipient, event_id];
+  let parameters = event_class.serializable_attributes.reduce((reducer, key, i) => {reducer.push(message[key]); return reducer;}, []);
+  let instance = new event_class(...parameters, ...instance_data);
+
+  // Inject the raw data payload for debugging purposes
+  if (raw_data) { instance.raw_data = raw_data }
+  return instance;
+}
 
 class Lainuri {
 
@@ -24,25 +46,25 @@ class Lainuri {
    * Keep track of event lifecycles here.
    * This is needed to trigger lifecycle hooks on pending events.
    */
-  events: Map<string, events.LEvent> = <Map<string, events.LEvent>>{};
+  events = {};
 
-  base_url: string;
-  ws: WebSocket;
-  config: any;
-  listeners: Map<Function, Function> = new Map();
+  base_url;
+  ws;
+  config;
+  listeners = new Map();
 
-  constructor(base_url: string = 'ws://localhost:53153') {
+  constructor(base_url = 'ws://localhost:53153') {
     this.base_url = base_url;
 
     // The connected websocket immediately responds with configuration and inventory status
     // So we need to define the listeners in advance
-    this.attach_event_listener(events.LEConfigGetpublic_Response, (event: events.LEConfigGetpublic_Response) => {
+    this.attach_event_listener(events.LEConfigGetpublic_Response, (event) => {
       this.config = event.config;
       console.log(`Received new configurations():> '${event.config}'`, event);
     });
   }
 
-  open_websocket_connection(): WebSocket {
+  open_websocket_connection() {
     this.ws = new WebSocket(this.base_url);
     this.ws.onopen = (event) => {
       try {
@@ -64,27 +86,27 @@ class Lainuri {
     this.ws.onmessage = (event) => {
       try {
         console.log("Lainuri - ws.onmessage()", event);
-        this.dispatch_event(events.LEvent.CreateClassInstance(event.data, 'server', 'client'));
+        this.dispatch_event(ParseEventFromWebsocketMessage(event.data, 'server', 'client'));
       }
       catch(e) {
         this.dispatch_event(new events.LEException(e, 'client', 'server'));
       }
     }
-    this.ws.onerror = (event: any) => {
+    this.ws.onerror = (event) => {
       console.error(event);
       this.dispatch_event(new events.LEException(new Error(event.data), 'client', 'server'))
     }
     return this.ws;
   }
 
-  attach_event_listener(event: any, event_handler: Function): this {
+  attach_event_listener(event, event_handler) {
     console.log(`Registering new event listener for event '${event.event}'`);
     if (! this.listeners[event.event]) { this.listeners[event.event] = [] }
     this.listeners[event.event].push(event_handler);
     return this;
   }
 
-  dispatch_event(event: events.LEvent): void {
+  dispatch_event(event) {
     let dispatched_times = 0
 
 /*    if (this.events[event.event_id]) {
@@ -113,7 +135,9 @@ class Lainuri {
       //event.lifecycle_reached('ondispatched');
     }
     if (! dispatched_times) {
-      throw new Error(`Dispatching event '${event.event}', but no event handler registered?`);
+      console.log(`Receiving event '${event.event_id}', but no event handler registered?`);
     }
   }
 }
+
+export {Lainuri}

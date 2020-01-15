@@ -5,16 +5,16 @@ log = logging.getLogger(__name__)
 import json
 
 import lainuri.websocket_server
-from lainuri.event import LEvent
+import lainuri.event
 
 def get_public_configs(event=None):
-  lainuri.websocket_server.push_event(LEvent(
+  lainuri.websocket_server.push_event(lainuri.event.LEvent(
     'config-getpublic-response',
     {'config': lainuri.config.get_public_configs()},
   ))
 
 def write_config(event):
-  lainuri.websocket_server.push_event(LEvent(
+  lainuri.websocket_server.push_event(lainuri.event.LEvent(
     'config-write-response',
     lainuri.config.write_config(event.message['variable'], event.message['new_value']),
   ))
