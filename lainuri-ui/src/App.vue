@@ -1,5 +1,66 @@
 <template>
-  <div id="app">
+  <v-app>
+    <v-app-bar
+      app
+      color="primary"
+      dark
+    >
+      <div class="d-flex align-center">
+        <v-img
+          alt="Vuetify Logo"
+          class="shrink mr-2"
+          contain
+          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
+          transition="scale-transition"
+          width="40"
+        />
+
+        <v-img
+          alt="Vuetify Name"
+          class="shrink mt-1 hidden-sm-and-down"
+          contain
+          min-width="100"
+          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
+          width="100"
+        />
+      </div>
+
+      <v-spacer></v-spacer>
+
+      <v-btn
+        href="https://github.com/vuetifyjs/vuetify/releases/latest"
+        target="_blank"
+        text
+      >
+        <span class="mr-2">Latest Release</span>
+        <v-icon>mdi-open-in-new</v-icon>
+      </v-btn>
+    </v-app-bar>
+
+    <v-content>
+      <HelloWorld/>
+    </v-content>
+    <v-bottom-navigation
+      :value="activeBtn"
+      color="deep-purple accent-4"
+    >
+      <v-btn>
+        <span>Recents</span>
+        <v-icon>mdi-history</v-icon>
+      </v-btn>
+  
+      <v-btn>
+        <span>Favorites</span>
+        <v-icon>mdi-heart</v-icon>
+      </v-btn>
+  
+      <v-btn>
+        <span>Nearby</span>
+        <v-icon>mdi-map-marker</v-icon>
+      </v-btn>
+    </v-bottom-navigation>
+  </v-app>
+<!--
     <img alt="Vue logo" src="./assets/logo.png">
     <ul id="container_item_carousel">
       <ItemCard v-for="tag in rfid_tags_present" v-bind:key="tag.barcode" :item_bib="tag"/>
@@ -18,23 +79,25 @@
         <md-bottom-bar-item id="bottom-bar-configure-view" @click="bottom_bar_view='config'" md-label="Configure" md-icon="widgets"></md-bottom-bar-item>
       </md-bottom-bar>
     </div>
-  </div>
+-->
 </template>
 
 <script>
-import CheckIn from './components/CheckIn.vue'
+import HelloWorld from './components/HelloWorld';
+/*import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
-import ItemCard from './components/ItemCard.vue'
+import ItemCard from './components/ItemCard.vue'*/
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
 import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from './lainuri_events'
 
 
 export default {
-  name: 'app',
+  name: 'App',
   components: {
-    CheckIn,
+/*    CheckIn,
     CheckOut,
-    ItemCard,
+    ItemCard,*/
+    HelloWorld,
   },
   created: function () {
     this.$data.barcode_read = 'HASDHASHDAHSD';
@@ -45,6 +108,7 @@ export default {
   },
   data: function () {
     return {
+      activeBtn: 1,
       name: 'Vue.js',
       app_mode: 'mode_main_menu',
       user: {},
