@@ -75,9 +75,11 @@ class KohaAPI():
       if login_error:
         self.reauthenticate_tries += 1
 
-    if self.reauthenticate_tries == 1:
+    if self.reauthenticate_tries == 2:
       if not self.authenticate():
+        self.reauthenticate_tries = 0
         raise Exception(f"Lainuri device was not authenticated to Koha and failed to automatically reauthenticate.")
+      self.reauthenticate_tries = 0
 
   def _maybe_missing_permission(self, payload):
     if isinstance(payload, dict) and payload.get('error', None):
@@ -106,6 +108,7 @@ class KohaAPI():
       return 0
 
   def authenticate(self):
+    self.reauthenticate_tries += 1
     r = self._auth_post(userid=get_config('koha.userid'), password=get_config('koha.password'))
     payload = self._receive_json(r)
     error = payload.get('error', None)
@@ -312,10 +315,12 @@ class MARCRecord():
   candidate_author_fields = {'100': ['a'], '110': ['a']}
   candidate_title_fields  = {'245': ['a'], '240': ['a']}
   candidate_book_cover_url_fields  = {'856': ['u']}
+  candidate_edition_fields = {'250': ['a']}
 
   _author = ''
   _title = ''
   _book_cover_url = ''
+  _edition = ''
 
   def __init__(self, record_xml):
     if isinstance(record_xml, str):
@@ -330,7 +335,7 @@ class MARCRecord():
       if field:
         for sf in field.children:
           if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_author_fields[field_code]:
-            self._author = sf
+            self._author = sf.get_text()
             return self._author
 
   def title(self):
@@ -340,7 +345,7 @@ class MARCRecord():
       if field:
         for sf in field.children:
           if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_title_fields[field_code]:
-            self._title = sf
+            self._title = sf.get_text()
             return self._title
 
   def book_cover_url(self):
@@ -350,8 +355,46 @@ class MARCRecord():
       if field:
         for sf in field.children:
           if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_book_cover_url_fields[field_code]:
-            self._book_cover_url = sf
+            self._book_cover_url = sf.get_text()
             return self._book_cover_url
+
+  def edition(self):
+    if self._edition: return self._edition
+    for field_code in self.candidate_edition_fields:
+      field = self.soup.select_one(f'datafield[tag="{field_code}"]')
+      if field:
+        for sf in field.children:
+          if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_edition_fields[field_code]:
+            self._author = sf.get_text()
+            return self._author
+
+
+@functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
+def get_fleshed_item_record(barcode):
+  exception = None
+  try:
+    item = koha_api.get_item(barcode)
+    payload = koha_api.get_record(item['biblionumber'])
+    record = MARCRecord(payload)
+
+    return {
+      'author': record.author(),
+      'title': record.title(),
+      'book_cover_url': record.book_cover_url(),
+      'edition': record.edition(),
+      'barcode': barcode,
+    }
+  except Exception as e:
+    exception = {
+      'type': str(type(e)),
+      'message': str(e),
+      'trace': traceback.format_exc(),
+    }
+
+  return {
+    'barcode': barcode,
+    'exception': exception,
+  }
 
 
 # TODO: Thread safety for KohaAPI()

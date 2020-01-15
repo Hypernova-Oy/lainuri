@@ -62,8 +62,10 @@ def push_event(event: lainuri.event.LEvent):
   # Messages originating from the Lainuri UI
   if event.client:
     if event.default_handler: event.default_handler()
-    elif event.event in ['user-logging-in', 'user-login-aborted']:
+    elif event.event == 'user-logging-in':
       set_state('user-logging-in')
+    elif event.event == 'user-login-abort':
+      set_state('get_items')
     elif event.event == 'config-getpublic':
       lainuri.websocket_handlers.config.get_public_configs(event)
     elif event.event == 'register-client':

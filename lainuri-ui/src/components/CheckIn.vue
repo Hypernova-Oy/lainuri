@@ -1,17 +1,13 @@
 <template>
-  <div class="checkout_component">
+  <div class="checkin_container">
     <md-card class="md-accent" md-with-hover>
       <md-ripple>
         <md-card-header v-if="! user.cardnumber">
-          <div class="md-title">Please read the library card</div>
+          <div class="md-title">checking in</div>
         </md-card-header>
-        <md-card-content v-if="user.cardnumber">
-          Welcome {{user.firstname}}!
-        </md-card-content>
         <md-card-actions>
           <md-button>Help!</md-button>
           <md-button v-on:click="abort_user_login" v-if="!user.cardnumber" class="md-raised md-accent md-display-4">Return</md-button>
-          <md-button v-on:click="abort_user_login" v-if="user.cardnumber" class="md-raised md-primary md-display-4">Logout</md-button>
         </md-card-actions>
       </md-ripple>
     </md-card>

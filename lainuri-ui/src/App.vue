@@ -2,66 +2,57 @@
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png">
     <ul id="container_item_carousel">
-      <md-card v-for="tag in rfid_tags_present" v-bind:key="tag.barcode" md-with-hover class="md-primary">
-        <md-ripple>
-          <md-card-media>
-            <div class="md-title">
-              <img class="cover_image" :src="tag.image_url" alt="Cover image"/>
-            </div>
-          </md-card-media>
-          <md-card-header>
-            <md-card-header-text>
-              <div class="md-title  md-caption">{{tag.title}}</div>
-              <div class="md-subhead">{{tag.author}}</div>
-            </md-card-header-text>
-          </md-card-header>
-        </md-ripple>
-      </md-card>
+      <ItemCard v-for="tag in rfid_tags_present" v-bind:key="tag.barcode" :item_bib="tag"/>
     </ul>
     <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login"/>
-    <md-button id="checkout_mode_button" class="md-raised md-primary md-display-4" v-on:click="enter_checkout_mode">LAINAA</md-button>
-    <md-button id="checkin_mode_button" class="md-raised md-accent md-display-4" v-on:click="enter_checkin_mode">PALAUTA</md-button>
-    <md-button class="md-raised">{{barcode_read}}<br/>{{rfid_tags_present}}</md-button>
+    <CheckIn  v-if="app_mode === 'mode_checkin'"  v-on:abort_user_login="abort_user_login"/>
+    <md-button v-if="app_mode === 'mode_main_menu'" id="checkout_mode_button" class="md-raised md-primary md-display-4" v-on:click="enter_checkout_mode">LAINAA</md-button>
+    <md-button v-if="app_mode === 'mode_main_menu'" id="checkin_mode_button" class="md-raised md-accent md-display-4" v-on:click="enter_checkin_mode">PALAUTA</md-button>
+
+    <div class="bottom-bar-viewport">
+      <md-content v-if="bottom_bar_view == 'debug'">{{barcode_read}}<br/>{{rfid_tags_present}}</md-content>
+      <md-content v-if="bottom_bar_view == 'config'">Koti<br/>Sivu</md-content>
+      <md-bottom-bar class="md-accent" md-type="shift">
+        <md-bottom-bar-item id="bottom-bar-debug-view" @click="bottom_bar_view='debug'" md-label="Debug" md-icon="developer_board"></md-bottom-bar-item>
+        <md-bottom-bar-item id="bottom-bar-hide-view" @click="bottom_bar_view=undefined" md-label="Hide" md-icon="remove"></md-bottom-bar-item>
+        <md-bottom-bar-item id="bottom-bar-configure-view" @click="bottom_bar_view='config'" md-label="Configure" md-icon="widgets"></md-bottom-bar-item>
+      </md-bottom-bar>
+    </div>
   </div>
 </template>
 
 <script>
+import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
+import ItemCard from './components/ItemCard.vue'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
+import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from './lainuri_events'
+
 
 export default {
   name: 'app',
   components: {
+    CheckIn,
     CheckOut,
+    ItemCard,
   },
   created: function () {
     this.$data.barcode_read = 'HASDHASHDAHSD';
 
     lainuri_set_vue(this);
     start_ws();
+
   },
   data: function () {
     return {
       name: 'Vue.js',
       app_mode: 'mode_main_menu',
       user: {},
-      barcode_read: 'no bccc',
-      rfid_tags_present: [{
-        barcode: '167N00000001',
-        image_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-      },{
-        barcode: '167N11111111',
-        image_url: 'https://synergydental.org.uk/wp-content/uploads/2019/06/Synergy-Favicon-90x90.png',
-        title: 'Books for Dummies',
-        author: 'Olli-Antti Kivilahti',
-      },{
-        barcode: '167222222222',
-        image_url: 'https://papasfishandchips.com/wp-content/uploads/2018/03/FAVICON1-1.png',
-        title: 'Fa ces for Dummies',
-        author: 'Olli-Antti Kivilahti',
-      }],
+      barcode_read: '',
+      rfid_tags_present: [],
+      bottom_bar_view: undefined,
+      bottom_bar_view_debug: false,
+      bottom_bar_view_config: false,
     }
   },
   // define methods under the `methods` object
@@ -80,7 +71,12 @@ export default {
     abort_user_login: function () {
       this.app_mode = 'mode_main_menu';
       abort_user_login();
-    }
+    },
+    bottom_bar_view_toggle: function (event) {
+      console.log(`bottom_bar_view_toggle event='${event}'`, event)
+      this.bottom_bar_view_debug = false;
+      this.bottom_bar_view_config = false;
+    },
   }
 }
 </script>
@@ -97,12 +93,12 @@ export default {
 
 #checkout_mode_button {
   width: 49%;
-  height: 200px;
+  height: 400px;
 }
 
 #checkin_mode_button {
   width: 49%;
-  height: 200px;
+  height: 400px;
 }
 
 .md-card {
@@ -110,6 +106,18 @@ export default {
   margin: 4px;
   display: inline-block;
   vertical-align: top;
+}
+
+.bottom-bar-viewport {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border: 1px solid rgba(#000, .26);
+  background: rgba(#000, .06);
+}
+.md-bottom-bar {
+  position: relative;
+  bottom: 0px;
 }
 
 </style>

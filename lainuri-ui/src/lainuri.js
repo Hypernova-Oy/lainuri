@@ -46,16 +46,18 @@ function start_ws () {
   });
   lainuri_ws.attach_event_listener(LERFIDTagsLost, function(event) {
     console.log(`Event '${LERFIDTagsLost.name}' triggered. New RFID tags:`, event.tags_lost, event.tags_present);
+    vue.$data['rfid_tags_present'] = event.tags_present;
   });
   lainuri_ws.attach_event_listener(LERFIDTagsPresent, function(event) {
     console.log(`Event '${LERFIDTagsPresent.name}' triggered. Present RFID tags:`, event.tags_present);
+    vue.$data['rfid_tags_present'] = event.tags_present;
   });
   lainuri_ws.attach_event_listener(LEServerDisconnected, function(event) {
     console.log(`Event '${LEServerDisconnected.name}' triggered.`);
   });
   lainuri_ws.attach_event_listener(LEServerConnected, function(event) {
     console.log(`Event '${LEServerConnected.name}' triggered.`);
-
+/*
     lainuri_ws.dispatch_event(
       //new LERingtonePlay('success', undefined, 'client', 'server')
       new LERingtonePlay(undefined, 'ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5', 'client', 'server')
@@ -66,6 +68,7 @@ function start_ws () {
     lainuri_ws.dispatch_event(
       new LETestMockDevices()
     );
+*/
   });
   lainuri_ws.attach_event_listener(LEUserLoggedIn, function(event) {
     console.log(`Event '${LEUserLoggedIn.name}' received.`);

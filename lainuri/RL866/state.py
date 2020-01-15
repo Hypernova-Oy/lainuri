@@ -9,7 +9,7 @@ transmission_sequence_number = 0
 def increment_transmission_sequence_number():
   global transmission_sequence_number
   transmission_sequence_number ^= 1
-  log.info(f"incremented to '{transmission_sequence_number}'")
+  log.debug(f"incremented to '{transmission_sequence_number}'")
 
 RID_request = b'\xFF'
 

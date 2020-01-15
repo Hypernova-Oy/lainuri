@@ -9,6 +9,7 @@ import traceback
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.test
 import lainuri.websocket_handlers.config
+import lainuri.koha_api as koha_api
 
 event_id: int = 0
 def get_event_id(event_name: str) -> str:
@@ -113,11 +114,10 @@ class LERFIDTagsLost(LEvent):
     self.tags_present = tags_present
     self.tags_lost = tags_lost
     message = {
-      'tags_lost': [tag.serial_number() for tag in self.tags_lost],
-      'tags_present': [tag.serial_number() for tag in self.tags_present],
+      'tags_lost': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_lost],
+      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
-    self.validate_params()
 
 class LERFIDTagsNew(LEvent):
   event = 'rfid-tags-new'
@@ -129,8 +129,8 @@ class LERFIDTagsNew(LEvent):
     self.tags_present = tags_present
     self.tags_new = tags_new
     message = {
-      'tags_new': [tag.serial_number() for tag in self.tags_new],
-      'tags_present': [tag.serial_number() for tag in self.tags_present],
+      'tags_new': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_new],
+      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
@@ -144,7 +144,7 @@ class LERFIDTagsPresent(LEvent):
   def __init__(self, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.tags_present = tags_present
     message = {
-      'tags_present': [tag.serial_number() for tag in tags_present],
+      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()

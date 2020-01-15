@@ -347,7 +347,8 @@ class IBlock_TagInventory_Response(IBlock, Response):
       tag.field46 = None
       if tag.tag_serial_number_present:
         tag.field46 = helpers.shift_bytes(self.PARM, i, tag.length_of_serial_number)
-        tag.serial_number(hex(helpers.lower_byte_fo_to_int(tag.field46[0:8])))
+        #tag.serial_number(hex(helpers.lower_byte_fo_to_int(tag.field46[0:8])))
+        tag.serial_number('{:16x}'.format(helpers.lower_byte_fo_to_int(tag.field46[0:8])))
         log.debug(f"Received serial number '{tag.serial_number}'")
 
       tag.field47 = None

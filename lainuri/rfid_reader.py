@@ -1,6 +1,7 @@
 from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
+log.setLevel('INFO')
 
 import serial
 import time
@@ -42,17 +43,18 @@ class RFID_Reader():
     return ser
 
   def write(self, msg: Message):
-    log.info(f"WRITE--> {type(msg)}")
+    log.debug(f"WRITE--> {type(msg)}")
     data = msg.pack()
-    for b in data: print(hex(b), ' ', end='')
-    print()
+    if log.level == 'DEBUG':
+      for b in data: print(hex(b), ' ', end='')
+      print()
     rv = self.serial.write(data)
-    log.info(f"-->WRITE {type(msg)}")
+    log.debug(f"-->WRITE {type(msg)}")
     return rv
 
   def read(self, msg_class: type):
     timeout = 5
-    log.info(f"READ WAITING--> {msg_class}")
+    log.debug(f"READ WAITING--> {msg_class}")
     slept = 0
     while(self.serial.in_waiting == 0):
       time.sleep(0.1)
@@ -62,14 +64,15 @@ class RFID_Reader():
 
     rv_a = bytearray()
     while self.serial.in_waiting:
-      log.info(f"READ--> {msg_class}")
+      log.debug(f"READ--> {msg_class}")
       #rv = ser.read(255)
       rv = self.serial.readline()
       rv_a += rv
       time.sleep(0.1)
-    for b in rv_a: print(hex(b), ' ', end='')
-    print()
-    log.info(f"-->READ {msg_class}")
+    if log.level == 'DEBUG':
+      for b in rv_a: print(hex(b), ' ', end='')
+      print()
+    log.debug(f"-->READ {msg_class}")
     return rv_a
 
   def start_polling_rfid_tags(self):
@@ -111,7 +114,7 @@ class RFID_Reader():
       if self.tags_lost:
         lainuri.websocket_server.push_event(LERFIDTagsLost(self.tags_lost, self.tags_present))
 
-      time.sleep(120) # TODO: This should be something like 0.1 or maybe even no sleep?
+      time.sleep(0.1) # TODO: This should be something like 0.1 or maybe even no sleep?
       self.tags_lost = []
       self.tags_new  = []
 
