@@ -38,33 +38,23 @@
     </v-app-bar>
 
     <v-content>
-      <HelloWorld/>
+      <Main/>
     </v-content>
-    <v-bottom-navigation
-      :value="activeBtn"
-      color="deep-purple accent-4"
-    >
-      <v-btn>
-        <span>Recents</span>
-        <v-icon>mdi-history</v-icon>
-      </v-btn>
-  
-      <v-btn>
-        <span>Favorites</span>
-        <v-icon>mdi-heart</v-icon>
-      </v-btn>
-  
-      <v-btn>
-        <span>Nearby</span>
-        <v-icon>mdi-map-marker</v-icon>
-      </v-btn>
-    </v-bottom-navigation>
+
+    <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login"/>
+    <CheckIn  v-if="app_mode === 'mode_checkin'"  v-on:abort_user_login="abort_user_login"/>
+
+    <div class="text-center">
+      <v-btn v-if="app_mode === 'mode_main_menu'" id="checkout_mode_button" hover   color="secondary" dark v-on:click="enter_checkout_mode">LAINAA</v-btn>
+      <v-btn v-if="app_mode === 'mode_main_menu'" id="checkin_mode_button" hover   color="primary" dark v-on:click="enter_checkin_mode">PALAUTA</v-btn>
+    </div>
+
+
+    <BottomMenu/>
   </v-app>
 <!--
     <img alt="Vue logo" src="./assets/logo.png">
-    <ul id="container_item_carousel">
-      <ItemCard v-for="tag in rfid_tags_present" v-bind:key="tag.barcode" :item_bib="tag"/>
-    </ul>
+
     <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login"/>
     <CheckIn  v-if="app_mode === 'mode_checkin'"  v-on:abort_user_login="abort_user_login"/>
     <md-button v-if="app_mode === 'mode_main_menu'" id="checkout_mode_button" class="md-raised md-primary md-display-4" v-on:click="enter_checkout_mode">LAINAA</md-button>
@@ -83,10 +73,11 @@
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
-/*import CheckIn from './components/CheckIn.vue'
+import BottomMenu from './components/BottomMenu.vue'
+import Main from './components/Main';
+import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
-import ItemCard from './components/ItemCard.vue'*/
+
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
 import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from './lainuri_events'
 
@@ -94,10 +85,10 @@ import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} fr
 export default {
   name: 'App',
   components: {
-/*    CheckIn,
+    CheckIn,
     CheckOut,
-    ItemCard,*/
-    HelloWorld,
+    Main,
+    BottomMenu,
   },
   created: function () {
     this.$data.barcode_read = 'HASDHASHDAHSD';
@@ -135,11 +126,6 @@ export default {
     abort_user_login: function () {
       this.app_mode = 'mode_main_menu';
       abort_user_login();
-    },
-    bottom_bar_view_toggle: function (event) {
-      console.log(`bottom_bar_view_toggle event='${event}'`, event)
-      this.bottom_bar_view_debug = false;
-      this.bottom_bar_view_config = false;
     },
   }
 }

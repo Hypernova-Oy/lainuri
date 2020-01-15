@@ -1,21 +1,27 @@
 <template>
-  <div class="checkout_component">
-    <md-card class="md-accent" md-with-hover>
-      <md-ripple>
-        <md-card-header v-if="! user.cardnumber">
-          <div class="md-title">Please read the library card</div>
-        </md-card-header>
-        <md-card-content v-if="user.cardnumber">
-          Welcome {{user.firstname}}!
-        </md-card-content>
-        <md-card-actions>
-          <md-button>Help!</md-button>
-          <md-button v-on:click="abort_user_login" v-if="!user.cardnumber" class="md-raised md-accent md-display-4">Return</md-button>
-          <md-button v-on:click="abort_user_login" v-if="user.cardnumber" class="md-raised md-primary md-display-4">Logout</md-button>
-        </md-card-actions>
-      </md-ripple>
-    </md-card>
-  </div>
+  <v-container centered>
+    <v-card ripple raised>
+      <v-card-title v-if="! user.cardnumber">Please read the library card</v-card-title>
+      <v-card-title v-if="user.cardnumber">Welcome {{user.firstname}}!</v-card-title>
+
+      <v-card-actions>
+        <v-spacer></v-spacer>
+
+        <v-btn text v-on:click="abort_user_login" v-if="!user.cardnumber" large color="secondary">
+          Return
+        </v-btn>
+
+        <v-btn text v-on:click="abort_user_login" v-if="user.cardnumber" large color="primary">
+          Logout
+        </v-btn>
+
+        <v-btn text>
+          Help
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+
+  </v-container>
 </template>
 
 <script>
@@ -58,18 +64,5 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
+
 </style>
