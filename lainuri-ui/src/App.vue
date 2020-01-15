@@ -41,7 +41,7 @@
       <Main/>
     </v-content>
 
-    <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login"/>
+    <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login" :user="user"/>
     <CheckIn  v-if="app_mode === 'mode_checkin'"  v-on:abort_user_login="abort_user_login"/>
 
     <div class="text-center">
@@ -79,9 +79,18 @@ import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
 
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
-import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from './lainuri_events'
+import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LECheckOuting, LECheckOuted, LECheckOutFailed} from './lainuri_events'
 
+function find_tag_by_key (tags, key, value) {
+  for (tag in tags) {
+    if (tag[key] === value) {
+      return tag
+    }
+  }
+  throw new Error(`Couldn't find a tag with '${key}'='${value}'`);
+}
 
+let preseed = 1;
 export default {
   name: 'App',
   components: {
@@ -91,7 +100,26 @@ export default {
     BottomMenu,
   },
   created: function () {
-    this.$data.barcode_read = 'HASDHASHDAHSD';
+    lainuri_ws.attach_event_listener(LEUserLoggedIn, (event) => {
+      console.log(`Received event '${LEUserLoggedIn.name}'`);
+      this.$data.user = event;
+    });
+    lainuri_ws.attach_event_listener(LECheckOuted, (event) => {
+      console.log(`Received event '${LECheckOuted.name}' for barcode='${event.barcode}'`);
+      tag = find_tag_by_key(this.$data.rfid_tags_present, 'barcode', event.barcode)
+      tag.checked_out = event.statuses
+    });
+    lainuri_ws.attach_event_listener(LECheckOutFailed, (event) => {
+      console.log(`Received event '${LECheckOutFailed.name}' for barcode='${event.barcode}'`);
+      tag = find_tag_by_key(this.$data.rfid_tags_present, 'barcode', event.barcode)
+      tag.checked_out = event.statuses
+    });
+
+    if (preseed) {
+      lainuri_ws.dispatch_event(
+        new LEUserLoggedIn('Olli-Antti', 'Kivilahti', '167A01010101', 'server', 'client', 'user-logged-in-tzzzt')
+      );
+    }
 
     lainuri_set_vue(this);
     start_ws();
@@ -125,7 +153,21 @@ export default {
     },
     abort_user_login: function () {
       this.app_mode = 'mode_main_menu';
+      this.$data.user = {}
       abort_user_login();
+    },
+    checkout_item: function () {
+      console.log("Checking out any available item");
+      let not_checked_out_item;
+      for (item_bib in this.$data.rfid_tags_present) {
+        if (! item_bib.checked_out) {
+          console.log(`Checking out any available item='${item_bib.barcode}'`);
+          not_checked_out_item = item_bib;
+          item_bib.checked_out = {status: 'pending'}
+          break;
+        }
+      }
+      lainuri.ws.dispatch_event(new LECheckOuting(item_bib.barcode, this.$data.user.borrowernumber, 'client', 'server'));
     },
   }
 }

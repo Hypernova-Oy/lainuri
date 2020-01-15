@@ -86,6 +86,56 @@ class LEvent {
   }
 }
 
+class LECheckOuting extends LEvent {
+  static event = 'check-outing';
+
+  static serializable_attributes = ['barcode', 'borrowernumber'];
+  barcode;
+  borrowernumber;
+
+  constructor(barcode, borrowernumber, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.barcode = barcode;
+    this.borrowernumber = borrowernumber;
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
+class LECheckOuted extends LEvent {
+  static event = 'check-outed';
+
+  static serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
+  barcode
+  borrowernumber
+  statuses
+
+  constructor(barcode, borrowernumber, statuses, sender, recipient, event_id = undefined) {
+    this.barcode = barcode
+    this.borrowernumber = borrowernumber
+    this.statuses = statuses
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
+class LECheckOutFailed extends LEvent {
+  static event = 'check-out-failed';
+
+  static serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
+  barcode
+  borrowernumber
+  statuses
+
+  constructor(barcode, borrowernumber, statuses, sender, recipient, event_id = undefined) {
+    this.barcode = barcode
+    this.borrowernumber = borrowernumber
+    this.statuses = statuses
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
 class LEBarcodeRead extends LEvent {
   static event = 'barcode-read';
 
@@ -316,5 +366,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  LEvent, LEException, LEBarcodeRead, LECheckOuting, LECheckOuted, LECheckOutFailed, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
 }

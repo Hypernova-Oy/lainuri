@@ -29,30 +29,14 @@ import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_
 import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from '../lainuri_events'
 
 
-let emited = 0
 export default {
   name: 'CheckOut',
-  data: function () {
-    return {
-      user: Object,
-    }
-  },
-  created: function () {
-    lainuri_ws.attach_event_listener(LEUserLoggedIn, (event) => {
-      console.log(`Received event '${LEUserLoggedIn.name}'`);
-      this.$data.user = event;
-    });
-
-    if (emited) {
-    lainuri_ws.dispatch_event(
-      new LEUserLoggedIn('Olli-Antti', 'Kivilahti', '167A01010101', 'server', 'client', 'user-logged-in-tzzzt')
-    );
-    }
+  props: {
+    user: Object,
   },
   methods: {
     abort_user_login: function () {
       console.log("abort_user_login in CheckOut")
-      this.$data.user = undefined
       this.$emit('abort_user_login');
     },
     start_checking_out: function () {
