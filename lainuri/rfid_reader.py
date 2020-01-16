@@ -1,7 +1,7 @@
 from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
-log.setLevel('INFO')
+
 
 import serial
 import time
@@ -20,7 +20,9 @@ import lainuri.websocket_server
 rfid_readers = []
 
 class RFID_Reader():
+
   def __init__(self):
+    self.lock = thread.allocate_lock()
     rfid_readers.append(self)
     self.tags_present: Tag = []
     self.tags_lost: Tag = []
@@ -30,6 +32,9 @@ class RFID_Reader():
     log.info("Connecting serial():> RESYNC")
     self.write(SBlock_RESYNC())
     SBlock_RESYNC_Response(self.read(SBlock_RESYNC_Response))
+
+  def access_lock(self) -> thread.LockType:
+    return self.lock
 
   def connect_serial(self) -> serial.Serial:
     log.info("Connecting serial")
@@ -45,7 +50,7 @@ class RFID_Reader():
   def write(self, msg: Message):
     log.debug(f"WRITE--> {type(msg)}")
     data = msg.pack()
-    if log.level == 'DEBUG':
+    if log.getEffectiveLevel() == logging.DEBUG:
       for b in data: print(hex(b), ' ', end='')
       print()
     rv = self.serial.write(data)
@@ -69,22 +74,22 @@ class RFID_Reader():
       rv = self.serial.readline()
       rv_a += rv
       time.sleep(0.1)
-    if log.level == 'DEBUG':
+    if log.getEffectiveLevel() == logging.DEBUG:
       for b in rv_a: print(hex(b), ' ', end='')
       print()
     log.debug(f"-->READ {msg_class}")
     return rv_a
 
-  def start_polling_rfid_tags(self):
-    thread.start_new_thread(self._rfid_poll, ())
+  def start_polling_rfid_tags(self, interval: float = None):
+    thread.start_new_thread(self._rfid_poll, (interval, interval))
 
-  def _rfid_poll(self):
+  def _rfid_poll(self, interval: float = None, interval2: float = None):
     log.info("RFID polling starting")
-    self
 
     while(1):
-      self.write(IBlock_TagInventory())
-      resp = IBlock_TagInventory_Response(self.read(IBlock_TagInventory_Response))
+      with self.access_lock():
+        self.write(IBlock_TagInventory())
+        resp = IBlock_TagInventory_Response(self.read(IBlock_TagInventory_Response))
 
       for new_tag in resp.tags:
 
@@ -114,7 +119,7 @@ class RFID_Reader():
       if self.tags_lost:
         lainuri.websocket_server.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
 
-      time.sleep(0.1) # TODO: This should be something like 0.1 or maybe even no sleep?
+      time.sleep(interval or 0.1) # TODO: This should be something like 0.1 or maybe even no sleep?
       self.tags_lost = []
       self.tags_new  = []
 

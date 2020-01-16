@@ -34,5 +34,5 @@ loggers:
     handlers: [console_complex]
     propagate: no
   root:
-    level: DEBUG
+    level: ERROR
     handlers: [console]

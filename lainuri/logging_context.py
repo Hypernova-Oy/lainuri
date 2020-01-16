@@ -30,7 +30,7 @@ try:
     )
     config = yaml.safe_load(text)
     logging.config.dictConfig(config)
-    coloredlogs.install()
+    coloredlogs.install(logging.DEBUG)
 except Exception as e:
   print(f"Failed to configure the logger from '{path_to_log_config_file}', defaulting to extra verbose\n{traceback.format_exc()}")
   logging.basicConfig(level='DEBUG')

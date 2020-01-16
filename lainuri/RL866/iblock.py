@@ -366,6 +366,8 @@ class IBlock_TagInventory_Response(IBlock, Response):
       if tag.embedded_command_present:
         raise Exception("TODO: embedded_command_present, but no support implemented. Triggered by tag '{j}' in message {self.__dict__}")
 
+      tag.validate()
+
     return self.tags
 
 class IBlock_TagConnect(IBlock, Request):

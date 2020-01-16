@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+import lainuri.RL866.state
 
 class Tag():
 
@@ -48,3 +49,7 @@ class Tag():
 
   def get_connection_handle(self) -> bytes:
     return self._connected_handle
+
+  def validate(self):
+    if not lainuri.RL866.state.supported_tag_types[self.air_protocol_type_id()][self.tag_type_id()]:
+      raise Exception(f"Tag serial_number='{self.serial_number()}', air_protocol_type_id='{self.air_protocol_type_id()}', tag_type_id='{self.tag_type_id()}' is not a supported tag type for the given air protocol")

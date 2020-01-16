@@ -4,7 +4,6 @@ log = logging.getLogger(__name__)
 
 import lainuri.helpers
 
-
 transmission_sequence_number = 0
 def increment_transmission_sequence_number():
   global transmission_sequence_number
@@ -81,6 +80,13 @@ def getAirProtocolCode(air_protocol_inventory_parameters) -> int:
     return air_protocol_inventory_parameters.air_interface_protocol
   else:
     return air_protocol_type_table[ air_protocol_inventory_parameters.air_interface_protocol ]
+
+
+def get_gate_security_block_address(tag):
+  if not hasattr(tag, 'block_size'):
+    raise Exception(f"Tag serial_number='{tag.serial_number()}' is missing block_size. Tag needs to be connected to first, and GetSystemParameters invoked.")
+  if tag.tag_type_id():
+    return 4 * tag.block_size
 
 
 error_codes = {

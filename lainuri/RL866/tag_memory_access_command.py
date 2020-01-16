@@ -47,7 +47,7 @@ class TagMemoryAccessCommand():
     return self
 
   def ISO15693_ReadSingleBlock(self, read_security_status=1, start_block_address=0):
-    log.info(f"TagMemoryAccessCommand ISO15693_ReadSingleBlock chosen")
+    log.info(f"TagMemoryAccessCommand ISO15693_ReadSingleBlock chosen. read_security_status='{read_security_status}', start_block_address='{start_block_address}'")
     """
     Field 1.Whether to read security status of data block:
       Data type :BYTE;
@@ -62,7 +62,7 @@ class TagMemoryAccessCommand():
     return self
 
   def ISO15693_WriteSingleBlock(self, block_address: int, block_data: bytes):
-    log.info(f"TagMemoryAccessCommand ISO15693_WriteSingleBlock chosen")
+    log.info(f"TagMemoryAccessCommand ISO15693_WriteSingleBlock chosen. block_address='{block_address}', block_data='{block_data}'")
     """
     Field 1.Block address:
       Data type: WORD
@@ -94,6 +94,32 @@ class TagMemoryAccessCommand():
                      helpers.int_to_word(start_block_address) + \
                      helpers.int_to_word(number_of_blocks_to_read)
     self.response_parser = self.ISO15693_ReadMultipleBlocks_ParseResponse
+    return self
+
+  def ISO15693_WriteMultipleBlocks(self, tag: Tag, start_block_address: int, number_of_blocks_to_write: int, blocks_data_bytes: bytes):
+    log.info(f"TagMemoryAccessCommand ISO15693_WriteMultipleBlocks chosen. tag='{tag.serial_number()}', start_block_address='{start_block_address}', number_of_blocks_to_write='{number_of_blocks_to_write}', blocks_data_bytes='{blocks_data_bytes}'")
+    """
+    Field 1.Start block address:
+      Data type: WORD
+    Field 2.Number of blocks to write:
+      Data type: WORD
+    Field 3.Block data to write
+      Data type: BYTE[n]
+      n=Number of blocks * block size
+    """
+    if not tag.block_size: raise Exception(f"Tag.block_size not set for serial_number='{tag.serial_number()}'")
+    block_size = tag.block_size
+    expected_data_size = block_size * number_of_blocks_to_write
+
+    if len(blocks_data_bytes) != expected_data_size:
+      raise Exception(f"Writing multiple blocks to tag='{tag.serial_number()}' failed. Written bytes do not align with expected block size. number_of_blocks_to_write='{number_of_blocks_to_write}', expected bytes count='{expected_data_size}', tag block size='{block_size}', data to write='{blocks_data_bytes}'")
+
+    self.command = helpers.int_to_word(0x0004)
+    self.parameter = helpers.int_to_word(start_block_address) + \
+                     helpers.int_to_word(number_of_blocks_to_write) + \
+                     blocks_data_bytes + \
+                     b'\x00' # For some reason the message needs to end in \x00, which doesn't look like it is documented.
+    self.response_parser = self._no_response_parser
     return self
 
   def ISO15693_GetTagSystemInformation(self):
@@ -182,9 +208,10 @@ class TagMemoryAccessCommand():
     self.number_blocks_read = helpers.word_to_int(self.field1)
 
     if hasattr(tag, 'block_size'):
-      self.field2 = message.field14[2:tag.block_size*self.number_blocks_read]
+      self.field2 = message.field14[2:tag.block_size*self.number_blocks_read+2]
     else:
       self.field2 = message.field14[2:]
+    self.data_of_blocks_read = self.field2
 
   def _no_response_parser(self, message: Message, tag: Tag):
     if len(message.field14) != 0: raise Exception(f"Expected 0 bytes from response, but got bytes '{message.field14}'. Using command '{self.__dict__}'")

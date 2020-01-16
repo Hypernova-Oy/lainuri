@@ -4,6 +4,7 @@ import context
 from lainuri.config import get_config
 
 import time
+import pytest_subtests
 
 import lainuri.websocket_server
 import lainuri.event as le
@@ -16,6 +17,7 @@ import lainuri.rfid_reader as rfid
 def test_checkout(subtests):
   tag = None
   borrower = None
+  event = None
 
   assert get_config('devices.rfid-reader.enabled') == True
 
@@ -35,9 +37,11 @@ def test_checkout(subtests):
     }
 
   with subtests.test("When the tag is checked out"):
-    #import pdb; pdb.set_trace()
     event = le.LECheckOuting(tag.serial_number(), borrower['borrowernumber'])
     lainuri.websocket_handlers.checkout.checkout(event)
+
+  with subtests.test("And the gate security alarm is disabled"):
+    lainuri.websocket_handlers.checkout.set_tag_gate_alarm_off(event)
 
   with subtests.test("Then a LECheckOuted-event is dispatched"):
     event = lainuri.websocket_server.events[-1]

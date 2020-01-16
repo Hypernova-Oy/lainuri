@@ -2,12 +2,12 @@
 
 import context
 
-from RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response, IBlock_TagMemoryAccess, IBlock_TagMemoryAccess_Response
-import RL866.state
-from RL866.tag_memory_access_command import TagMemoryAccessCommand
+from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response, IBlock_TagMemoryAccess, IBlock_TagMemoryAccess_Response
+import lainuri.RL866.state as state
+from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 
 def test_IBlock_ReadSystemConfigurationBlock():
-  RL866.state.transmission_sequence_number = 0
+  state.transmission_sequence_number = 0
   req = IBlock_ReadSystemConfigurationBlock(read_ROM=0, read_blocks=1)
   assert req.sof() == b'\xFA'
   assert req.len() == b'\x08'
@@ -37,7 +37,7 @@ def test_IBlock_ReadSystemConfigurationBlock():
 
 tag = None
 def test_IBlock_TagInventory():
-  RL866.state.transmission_sequence_number = 1
+  state.transmission_sequence_number = 1
   req = IBlock_TagInventory()
   assert req.sof() == b'\xFA'
   assert req.len() == b'\x07'
@@ -54,7 +54,7 @@ def test_IBlock_TagInventory():
   tag = res.tags[0]
 
 def test_IBlock_TagConnect():
-  RL866.state.transmission_sequence_number = 1
+  state.transmission_sequence_number = 1
   req = IBlock_TagConnect(tag)
   assert req.sof() == b'\xFA'
   assert req.len() == b'\x13'
@@ -69,7 +69,7 @@ def test_IBlock_TagConnect():
   assert res.pack() == msg_response
 
 def test_IBlock_TagMemoryAccess__ISO15693_GetTagSystemInformation():
-  RL866.state.transmission_sequence_number = 1
+  state.transmission_sequence_number = 1
   mac = TagMemoryAccessCommand().ISO15693_GetTagSystemInformation()
   req = IBlock_TagMemoryAccess(tag, mac)
   assert req.inf()  == b'\x34\x01\x02\x0a\x00'
@@ -79,8 +79,28 @@ def test_IBlock_TagMemoryAccess__ISO15693_GetTagSystemInformation():
   res = IBlock_TagMemoryAccess_Response(msg_response, tag, mac)
   assert res.pack() == msg_response
 
+def test_IBlock_TagMemoryAccess__ISO15693_WriteMultipleBlocks():
+  state.transmission_sequence_number = 1
+  mac = TagMemoryAccessCommand().ISO15693_WriteMultipleBlocks(
+    tag=tag,
+    start_block_address=12,
+    number_of_blocks_to_write=1,
+    blocks_data_bytes=b'\x36\x37\x38',
+  )
+  req = IBlock_TagMemoryAccess(tag, mac)
+  assert req.pack() == b'\xfa\x12\xff\x40\x34\x01\x0a\x04\x00\x0c\x00\x01\x00\x36\x37\x38\x00\xa2\xdd'
+
+  mac = TagMemoryAccessCommand().ISO15693_ReadMultipleBlocks(
+    read_security_status=0,
+    start_block_address=12,
+    number_of_blocks_to_read=1
+  )
+  msg_response = b'\xfa\x12\x01\x00\x34\x00\x00\x09\x03\x00\x01\x01\x00\x36\x37\x38\x00\x57\x29'
+  res = IBlock_TagMemoryAccess_Response(msg_response, tag, mac)
+  assert res.pack() == msg_response
+
 def test_IBlock_TagDisconnect():
-  RL866.state.transmission_sequence_number = 0
+  state.transmission_sequence_number = 0
   req = IBlock_TagDisconnect(tag)
   assert req.sof() == b'\xFA'
   assert req.len() == b'\x07'
