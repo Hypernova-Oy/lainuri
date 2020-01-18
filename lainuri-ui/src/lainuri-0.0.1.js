@@ -19,7 +19,6 @@ let eventname_to_eventclass = {};
 Object.keys(events).map(key => {
     let eventname = events[key].event;
     eventname_to_eventclass[eventname] = events[key];
-    console.log(events[key]);
 });
 
 function ParseEventFromWebsocketMessage(raw_data, sender = undefined, recipient = undefined) {

@@ -11,7 +11,6 @@ if (test) {
 else {
 
   Vue.config.productionTip = false
-  Vue.config.devtools = process.env.NODE_ENV === 'development'
 
   let vue = new Vue({
     vuetify,

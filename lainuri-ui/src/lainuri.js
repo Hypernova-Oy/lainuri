@@ -70,30 +70,6 @@ function start_ws () {
     );
 */
   });
-  lainuri_ws.attach_event_listener(LEUserLoggedIn, function(event) {
-    console.log(`Event '${LEUserLoggedIn.name}' received.`);
-    vue.$data.user.firstname = event.firstname
-    vue.$data.user.surname = event.surname
-    vue.$data.user.cardnumber = event.cardnumber
-    vue.$data.user.password = event.password
-  });
-  lainuri_ws.attach_event_listener(LEUserLoginFailed, function(event) {
-    console.log(`Event '${LEUserLoginFailed.name}' received.`);
-    vue.$data.user.firstname = undefined;
-    vue.$data.user.surname = undefined;
-    vue.$data.user.cardnumber = undefined;
-    vue.$data.user.password = undefined;
-    vue.$data.app_mode = 'mode_main_menu';
-  });
-  lainuri_ws.attach_event_listener(LEUserLoginAbort, function(event) {
-    console.log(`Event '${LEUserLoginAbort.name}' received.`);
-    vue.$data.user.firstname = undefined;
-    vue.$data.user.surname = undefined;
-    vue.$data.user.cardnumber = undefined;
-    vue.$data.user.password = undefined;
-    vue.$data.app_mode = 'mode_main_menu';
-  });
-
 
   lainuri_ws.open_websocket_connection();
 }
@@ -123,6 +99,5 @@ function abort_user_login() {
 
 function lainuri_set_vue(vue_instance) {
   vue = vue_instance;
-  vue.$data['barcode_read'] = 'ggggggggggggggggg';
 }
 export {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login}

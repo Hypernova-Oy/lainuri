@@ -4,91 +4,88 @@
       app
       color="primary"
       dark
+      :height="app_mode !== 'mode_main_menu' ? 64 : 400"
     >
-      <div class="d-flex align-center">
+      <div class="align-center">
         <v-img
-          alt="Vuetify Logo"
-          class="shrink mr-2"
-          contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
-          transition="scale-transition"
-          width="40"
-        />
+          alt="Logo"
+          src="/xamk.png"
+          width="150"
 
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
         />
       </div>
 
       <v-spacer></v-spacer>
 
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
+
+      <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkout'"
+        id="checkout_mode_button"
+        :width="app_mode === 'mode_checkout' ? 800 : 400"
+        hover   color="secondary" dark v-on:click="enter_checkout_mode">LAINAA</v-btn>
+      <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkin'"
+        id="checkin_mode_button"
+        :width="app_mode === 'mode_checkin' ? 800 : 400"
+        :color="app_mode === 'mode_checkin' ? 'secondary' : 'primary'"
+        hover dark v-on:click="enter_checkin_mode">PALAUTA</v-btn>
+
+      <v-spacer></v-spacer>
+
+
     </v-app-bar>
-
-    <v-content>
-      <Main/>
-    </v-content>
-
-    <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login" :user="user"/>
-    <CheckIn  v-if="app_mode === 'mode_checkin'"  v-on:abort_user_login="abort_user_login"/>
-
-    <div class="text-center">
-      <v-btn v-if="app_mode === 'mode_main_menu'" id="checkout_mode_button" hover   color="secondary" dark v-on:click="enter_checkout_mode">LAINAA</v-btn>
-      <v-btn v-if="app_mode === 'mode_main_menu'" id="checkin_mode_button" hover   color="primary" dark v-on:click="enter_checkin_mode">PALAUTA</v-btn>
+    <div id="app-bar-spacer-helper"
+      v-if="app_mode === 'mode_main_menu'"
+      style="height: 336px;"
+    >
     </div>
 
+    <v-container fluid max-height="800">
+      <MainMenuView v-if="app_mode === 'mode_main_menu'"
+        :rfid_tags_present="rfid_tags_present"
+      />
+      <CheckOut v-if="app_mode === 'mode_checkout'"
+        :rfid_tags_present="rfid_tags_present"
+        :user="user"
+        v-on:abort_user_login="abort_user_login"
+      />
+      <CheckIn v-if="app_mode === 'mode_checkin'"
+        :rfid_tags_present="rfid_tags_present"
+        v-on:stop_checking_in="stop_checking_in"
+      />
+    </v-container>
 
-    <BottomMenu/>
+    <v-footer
+      app
+      color="blue-grey"
+      class="white--text"
+    >
+      <BottomMenu/>
+      <span>Vuetify</span>
+      <v-spacer></v-spacer>
+      <span>&copy; 2019</span>
+    </v-footer>
   </v-app>
-<!--
-    <img alt="Vue logo" src="./assets/logo.png">
-
-    <CheckOut v-if="app_mode === 'mode_checkout'" v-on:abort_user_login="abort_user_login"/>
-    <CheckIn  v-if="app_mode === 'mode_checkin'"  v-on:abort_user_login="abort_user_login"/>
-    <md-button v-if="app_mode === 'mode_main_menu'" id="checkout_mode_button" class="md-raised md-primary md-display-4" v-on:click="enter_checkout_mode">LAINAA</md-button>
-    <md-button v-if="app_mode === 'mode_main_menu'" id="checkin_mode_button" class="md-raised md-accent md-display-4" v-on:click="enter_checkin_mode">PALAUTA</md-button>
-
-    <div class="bottom-bar-viewport">
-      <md-content v-if="bottom_bar_view == 'debug'">{{barcode_read}}<br/>{{rfid_tags_present}}</md-content>
-      <md-content v-if="bottom_bar_view == 'config'">Koti<br/>Sivu</md-content>
-      <md-bottom-bar class="md-accent" md-type="shift">
-        <md-bottom-bar-item id="bottom-bar-debug-view" @click="bottom_bar_view='debug'" md-label="Debug" md-icon="developer_board"></md-bottom-bar-item>
-        <md-bottom-bar-item id="bottom-bar-hide-view" @click="bottom_bar_view=undefined" md-label="Hide" md-icon="remove"></md-bottom-bar-item>
-        <md-bottom-bar-item id="bottom-bar-configure-view" @click="bottom_bar_view='config'" md-label="Configure" md-icon="widgets"></md-bottom-bar-item>
-      </md-bottom-bar>
-    </div>
--->
 </template>
 
 <script>
 import BottomMenu from './components/BottomMenu.vue'
-import Main from './components/Main';
+import ItemCard from './components/ItemCard'
 import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
+import MainMenuView from './components/MainMenuView.vue'
 
+import {find_tag_by_key} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
 import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LECheckOuting, LECheckOuted, LECheckOutFailed} from './lainuri_events'
+import { LEServerConnected } from './lainuri_events';
 
-function find_tag_by_key (tags, key, value) {
-  for (tag in tags) {
-    if (tag[key] === value) {
-      return tag
-    }
-  }
-  throw new Error(`Couldn't find a tag with '${key}'='${value}'`);
-}
+let shared = {
+          item_barcode: '167N00000111',
+          book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
+          title: 'Dummies for Grenades',
+          author: 'Olli-Antti Kivilahti',
+          checkout_status: 'success',
+        };
+
 
 let preseed = 1;
 export default {
@@ -96,43 +93,82 @@ export default {
   components: {
     CheckIn,
     CheckOut,
-    Main,
     BottomMenu,
+    MainMenuView,
   },
   created: function () {
+    lainuri_ws.attach_event_listener(LEUserLoginFailed, function(event) {
+      console.log(`Event '${LEUserLoginFailed.name}' received.`);
+      this.$data.user = {}
+      this.$data.app_mode = 'mode_main_menu';
+    });
+    lainuri_ws.attach_event_listener(LEUserLoginAbort, function(event) {
+      console.log(`Event '${LEUserLoginAbort.name}' received.`);
+      this.$data.user = {}
+      this.$data.app_mode = 'mode_main_menu';
+    });
     lainuri_ws.attach_event_listener(LEUserLoggedIn, (event) => {
       console.log(`Received event '${LEUserLoggedIn.name}'`);
       this.$data.user = event;
+      this.$data.app_mode = 'mode_checkout';
+      this.start_checking_out();
     });
     lainuri_ws.attach_event_listener(LECheckOuted, (event) => {
-      console.log(`Received event '${LECheckOuted.name}' for barcode='${event.barcode}'`);
-      tag = find_tag_by_key(this.$data.rfid_tags_present, 'barcode', event.barcode)
-      tag.checked_out = event.statuses
+      console.log(`Received event '${LECheckOuted.name}' for barcode='${event.item_barcode}'`);
+      let tag = find_tag_by_key(this.$data.rfid_tags_present, 'item_barcode', event.item_barcode)
+      tag.checked_out_statuses = event.statuses
+      tag.checkout_status = event.statuses.status
     });
     lainuri_ws.attach_event_listener(LECheckOutFailed, (event) => {
-      console.log(`Received event '${LECheckOutFailed.name}' for barcode='${event.barcode}'`);
-      tag = find_tag_by_key(this.$data.rfid_tags_present, 'barcode', event.barcode)
-      tag.checked_out = event.statuses
+      console.log(`Received event '${LECheckOutFailed.name}' for barcode='${event.item_barcode}'`);
+      let tag = find_tag_by_key(this.$data.rfid_tags_present, 'item_barcode', event.item_barcode)
+      tag.checked_out_statuses = event.statuses
+      tag.checkout_status = event.statuses.status
     });
 
     if (preseed) {
-      lainuri_ws.dispatch_event(
-        new LEUserLoggedIn('Olli-Antti', 'Kivilahti', '167A01010101', 'server', 'client', 'user-logged-in-tzzzt')
-      );
+      lainuri_ws.attach_event_listener(LEServerConnected, (event) => {
+        console.log(`PRESEEDING!! Received '${LEServerConnected.name}'`);
+        window.setTimeout(() => lainuri_ws.dispatch_event(
+          new LEUserLoggedIn('Olli-Antti', 'Kivilahti', '167A01010101', 'server', 'client', 'user-logged-in-tzzzt')
+        ), 2000);
+      });
     }
 
     lainuri_set_vue(this);
-    start_ws();
-
   },
+
+  mounted: function () {
+    console.log("App.vue - mounted()");
+    start_ws();
+  },
+
   data: function () {
     return {
       activeBtn: 1,
       name: 'Vue.js',
       app_mode: 'mode_main_menu',
-      user: {},
+      user: {user_barcode: '167A01010101'},
       barcode_read: '',
-      rfid_tags_present: [],
+      rfid_tags_present: [
+        {
+          item_barcode: '167N00000001',
+          book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
+          title: 'Grenades for Dummies',
+          author: 'Olli-Antti Kivilahti',
+        },{
+          item_barcode: '167N11111111',
+          book_cover_url: 'https://synergydental.org.uk/wp-content/uploads/2019/06/Synergy-Favicon-90x90.png',
+          title: 'Books for Dummies',
+          author: 'Olli-Antti Kivilahti',
+        },{
+          item_barcode: '167222222222',
+          book_cover_url: 'https://papasfishandchips.com/wp-content/uploads/2018/03/FAVICON1-1.png',
+          title: 'Fa ces for Dummies',
+          author: 'Olli-Antti Kivilahti',
+        },
+        shared,
+      ],
       bottom_bar_view: undefined,
       bottom_bar_view_debug: false,
       bottom_bar_view_config: false,
@@ -151,29 +187,37 @@ export default {
       console.log("Entering 'mode_checkin'");
       this.barcode_read = '4321';
     },
-    abort_user_login: function () {
+    enter_main_menu: function () {
       this.app_mode = 'mode_main_menu';
-      this.$data.user = {}
+      this.items_checked_out_successfully = [];
+      this.items_checked_out_failed = [];
+      this.$data.user = {};
+    },
+    abort_user_login: function () {
+      this.enter_main_menu();
       abort_user_login();
     },
-    checkout_item: function () {
-      console.log("Checking out any available item");
-      let not_checked_out_item;
-      for (item_bib in this.$data.rfid_tags_present) {
-        if (! item_bib.checked_out) {
-          console.log(`Checking out any available item='${item_bib.barcode}'`);
-          not_checked_out_item = item_bib;
-          item_bib.checked_out = {status: 'pending'}
-          break;
-        }
-      }
-      lainuri.ws.dispatch_event(new LECheckOuting(item_bib.barcode, this.$data.user.borrowernumber, 'client', 'server'));
+    stop_checking_out: function () {
+      this.enter_main_menu();
+    },
+    stop_checking_in: function () {
+      this.enter_main_menu();
     },
   }
 }
 </script>
 
 <style>
+body {
+  height: 1920px;
+  width: 1080px;
+}
+
+.item_scrollview {
+  max-height: 1500px;
+  overflow: auto;
+}
+
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -181,24 +225,19 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+  border-color: #2c3e50;
+  border-width: 5px;
 }
 
 #checkout_mode_button {
-  width: 49%;
-  height: 400px;
+  height: 100%;
 }
 
 #checkin_mode_button {
-  width: 49%;
-  height: 400px;
+  height: 100%;
 }
 
-.md-card {
-  width: 320px;
-  margin: 4px;
-  display: inline-block;
-  vertical-align: top;
-}
+
 
 .bottom-bar-viewport {
   width: 100%;
@@ -206,10 +245,6 @@ export default {
   overflow: hidden;
   border: 1px solid rgba(#000, .26);
   background: rgba(#000, .06);
-}
-.md-bottom-bar {
-  position: relative;
-  bottom: 0px;
 }
 
 </style>

@@ -89,14 +89,14 @@ class LEvent {
 class LECheckOuting extends LEvent {
   static event = 'check-outing';
 
-  static serializable_attributes = ['barcode', 'borrowernumber'];
-  barcode;
-  borrowernumber;
+  static serializable_attributes = ['item_barcode', 'user_barcode'];
+  item_barcode;
+  user_barcode;
 
-  constructor(barcode, borrowernumber, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, user_barcode, sender, recipient, event_id = undefined) {
     super(event_id);
-    this.barcode = barcode;
-    this.borrowernumber = borrowernumber;
+    this.item_barcode = item_barcode;
+    this.user_barcode = user_barcode;
     this.construct(sender, recipient);
     this.validate_params();
   }
@@ -105,14 +105,15 @@ class LECheckOuting extends LEvent {
 class LECheckOuted extends LEvent {
   static event = 'check-outed';
 
-  static serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
-  barcode
-  borrowernumber
-  statuses
+  static serializable_attributes = ['item_barcode', 'user_barcode', 'statuses'];
+  item_barcode;
+  user_barcode;
+  statuses;
 
-  constructor(barcode, borrowernumber, statuses, sender, recipient, event_id = undefined) {
-    this.barcode = barcode
-    this.borrowernumber = borrowernumber
+  constructor(item_barcode, user_barcode, statuses, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.item_barcode = item_barcode
+    this.user_barcode = user_barcode
     this.statuses = statuses
     this.construct(sender, recipient);
     this.validate_params();
@@ -122,14 +123,15 @@ class LECheckOuted extends LEvent {
 class LECheckOutFailed extends LEvent {
   static event = 'check-out-failed';
 
-  static serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
-  barcode
-  borrowernumber
-  statuses
+  static serializable_attributes = ['item_barcode', 'user_barcode', 'statuses'];
+  item_barcode;
+  user_barcode;
+  statuses;
 
-  constructor(barcode, borrowernumber, statuses, sender, recipient, event_id = undefined) {
-    this.barcode = barcode
-    this.borrowernumber = borrowernumber
+  constructor(item_barcode, user_barcode, statuses, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.item_barcode = item_barcode
+    this.user_barcode = user_barcode
     this.statuses = statuses
     this.construct(sender, recipient);
     this.validate_params();
@@ -139,12 +141,12 @@ class LECheckOutFailed extends LEvent {
 class LEBarcodeRead extends LEvent {
   static event = 'barcode-read';
 
-  static serializable_attributes = ['barcode'];
-  barcode;
+  static serializable_attributes = ['item_barcode'];
+  item_barcode;
 
-  constructor(barcode = undefined, sender, recipient, event_id = undefined) {
+  constructor(item_barcode = undefined, sender, recipient, event_id = undefined) {
     super(event_id);
-    this.barcode = barcode;
+    this.item_barcode = item_barcode;
     this.construct(sender, recipient);
     this.validate_params();
   }
@@ -299,10 +301,10 @@ class LEUserLoggingIn extends LEvent {
 class LEUserLoggedIn extends LEvent {
   static event = 'user-logged-in';
 
-  static serializable_attributes = ['firstname', 'surname', 'cardnumber'];
+  static serializable_attributes = ['firstname', 'surname', 'user_barcode'];
   firstname;
   surname;
-  cardnumber;
+  user_barcode;
   password;
 
   lifecycle_map_event_to_hooks = {
@@ -310,11 +312,11 @@ class LEUserLoggedIn extends LEvent {
     [LEException.constructor.name]: 'onerror',
   };
 
-  constructor(firstname, surname, cardnumber, sender, recipient, event_id = undefined) {
+  constructor(firstname, surname, user_barcode, sender, recipient, event_id = undefined) {
     super(event_id);
     this.firstname = firstname;
     this.surname = surname;
-    this.cardnumber = cardnumber;
+    this.user_barcode = user_barcode;
     this.construct(sender, recipient);
     this.validate_params()
   }
