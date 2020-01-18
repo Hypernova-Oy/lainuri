@@ -15,11 +15,24 @@ import lainuri.RL866.state as rfid_state
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 
 def checkout(event):
+  # Get the borrower
+  borrower = None
+  try:
+    borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
+  except Exception:
+    lainuri.websocket_server.push_event(
+      lainuri.event.LECheckOutFailed(event.item_barcode, event.user_barcode, {
+        'status': 'failed',
+        'user_not_found': traceback.format_exc(),
+      })
+    )
+    return
+
   # Checkout to Koha
-  statuses = koha_api.checkout(event.barcode, event.borrowernumber)
+  statuses = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
   if statuses['status'] == 'failed':
     lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(event.barcode, event.borrowernumber, statuses)
+      lainuri.event.LECheckOutFailed(event.item_barcode, borrower['cardnumber'], statuses)
     )
     return
 
@@ -27,13 +40,13 @@ def checkout(event):
     set_tag_gate_alarm_off(event)
     # Send a notification to the UI
     lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOuted(event.barcode, event.borrowernumber, statuses)
+      lainuri.event.LECheckOuted(event.item_barcode, borrower['cardnumber'], statuses)
     )
   except Exception:
     statuses['status'] = 'failed'
     statuses['write_to_tag_failed'] = traceback.format_exc()
     lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(event.barcode, event.borrowernumber, statuses)
+      lainuri.event.LECheckOutFailed(event.item_barcode, borrower['cardnumber'], statuses)
     )
 
 def set_tag_gate_alarm_off(event):
@@ -43,9 +56,9 @@ def set_tag_gate_alarm_off(event):
   with rfid_reader.access_lock():
     # Find the RFID tag instance
     tags = rfid.get_current_inventory_status()
-    tag = [t for t in tags if t.serial_number() == event.barcode]
-    if not tag: raise Exception(f"Couldn't find a tag with serial_number='{event.barcode}'!")
-    if len(tag) > 1: raise Exception(f"Too many tags match serial_number='{event.barcode}'!")
+    tag = [t for t in tags if t.serial_number() == event.item_barcode]
+    if not tag: raise Exception(f"Couldn't find a tag with serial_number='{event.item_barcode}'!")
+    if len(tag) > 1: raise Exception(f"Too many tags match serial_number='{event.item_barcode}'!")
     tag = tag[0]
 
     # Connect to the tag

@@ -163,15 +163,15 @@ def start():
   server.serve_forever()
 
 
-def login_user(barcode: str):
+def login_user(user_barcode: str):
   try:
-    borrower = koha_api.get_borrower(cardnumber=barcode)
-    if koha_api.authenticate_user(cardnumber=barcode):
+    borrower = koha_api.get_borrower(user_barcode=user_barcode)
+    if koha_api.authenticate_user(user_barcode=user_barcode):
       lainuri.websocket_server.push_event(
         lainuri.event.LEUserLoggedIn(
           firstname=borrower['firstname'],
           surname=borrower['surname'],
-          cardnumber=borrower['cardnumber'],
+          user_barcode=borrower['cardnumber'],
         )
       )
     else:

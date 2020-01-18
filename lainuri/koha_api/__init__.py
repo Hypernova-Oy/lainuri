@@ -119,22 +119,22 @@ class KohaAPI():
     self.reauthenticate_tries = 0
     return payload
 
-  def authenticate_user(self, cardnumber, userid=None, password=None) -> dict:
+  def authenticate_user(self, user_barcode, userid=None, password=None) -> dict:
     if password == None:
-      borrower = self.get_borrower(cardnumber=cardnumber)
+      borrower = self.get_borrower(user_barcode=user_barcode)
       if borrower:
         return borrower
       else:
-        raise InvalidUser(cardnumber)
+        raise InvalidUser(user_barcode)
 
-  def _auth_post(self, password, userid=None, cardnumber=None):
-    if not userid or cardnumber:
-      raise Exception("Mandatory parameter 'userid' or 'cardnumber' is missing!")
+  def _auth_post(self, password, userid=None, user_barcode=None):
+    if not userid or user_barcode:
+      raise Exception("Mandatory parameter 'userid' or 'user_barcode' is missing!")
     fields = {
       'password': get_config('koha.password'),
     }
     if userid: fields['userid'] = userid
-    if cardnumber: fields['cardnumber'] = cardnumber
+    if user_barcode: fields['user_barcode'] = user_barcode
 
     return self.http.request(
       'POST',
@@ -146,7 +146,7 @@ class KohaAPI():
     )
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
-  def get_borrower(self, cardnumber):
+  def get_borrower(self, user_barcode):
     r = self.http.request_encode_url(
       'GET',
       self.koha_baseurl + f'/api/v1/patrons',
@@ -154,7 +154,7 @@ class KohaAPI():
         'Cookie': f'CGISESSID={self.sessionid}',
       },
       fields = {
-        'cardnumber': cardnumber,
+        'cardnumber': user_barcode,
       },
     )
     self.current_request_url = self.koha_baseurl + f'/api/v1/patrons'
@@ -163,7 +163,7 @@ class KohaAPI():
       error = payload.get('error', None)
       if error:
         raise Exception(f"Unknown error '{error}'")
-    return self._expected_one_list_element(payload, f"cardnumber='{cardnumber}'")
+    return self._expected_one_list_element(payload, f"user_barcode='{user_barcode}'")
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_item(self, barcode):
@@ -387,7 +387,7 @@ def get_fleshed_item_record(barcode):
       'title': record.title(),
       'book_cover_url': record.book_cover_url(),
       'edition': record.edition(),
-      'barcode': barcode,
+      'item_barcode': barcode,
     }
   except Exception as e:
     exception = {
@@ -397,7 +397,7 @@ def get_fleshed_item_record(barcode):
     }
 
   return {
-    'barcode': barcode,
+    'item_barcode': barcode,
     'exception': exception,
   }
 

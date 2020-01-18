@@ -33,11 +33,11 @@ def test_checkout(subtests):
 
   with subtests.test("And a borrower"):
     borrower = {
-      'borrowernumber': 19,
+      'cardnumber': 19,
     }
 
   with subtests.test("When the tag is checked out"):
-    event = le.LECheckOuting(tag.serial_number(), borrower['borrowernumber'])
+    event = le.LECheckOuting(tag.serial_number(), borrower['cardnumber'])
     lainuri.websocket_handlers.checkout.checkout(event)
 
   with subtests.test("And the gate security alarm is disabled"):

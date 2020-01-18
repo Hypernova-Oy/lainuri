@@ -40,7 +40,7 @@ def test_user_login():
   koha_api.current_event_id = 'auth-user-5'
   borrower = koha_api.authenticate_user('l-t-u-good')
   assert borrower['borrowernumber']
-  assert borrower['cardnumber'] == borrower['cardnumber']
+  assert borrower['cardnumber'] == 'l-t-u-good'
 
 def test_get_item():
   global borrower, item, record
@@ -65,7 +65,7 @@ def test_enrich_rfid_tag_with_marc():
   assert record.author() or record.title() or record.book_cover_url()
 
   item_bib = get_fleshed_item_record(item['barcode'])
-  assert item_bib['barcode'] == 'l-t-i-good'
+  assert item_bib['item_barcode'] == 'l-t-i-good'
   assert item_bib['edition']
   assert item_bib['title']
   assert item_bib['author']

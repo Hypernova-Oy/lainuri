@@ -56,27 +56,27 @@ class LECheckOuting(LEvent):
   event = 'check-outing'
   default_handler = lainuri.websocket_handlers.checkout.checkout
 
-  serializable_attributes = ['barcode', 'borrowernumber']
-  barcode = ''
-  borrowernumber = 0
+  serializable_attributes = ['item_barcode', 'user_barcode']
+  item_barcode = ''
+  user_barcode = 0
 
-  def __init__(self, barcode: str, borrowernumber: int, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.barcode = barcode
-    self.borrowernumber = borrowernumber
+  def __init__(self, item_barcode: str, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    self.user_barcode = user_barcode
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LECheckOuted(LEvent):
   event = 'check-outed'
 
-  serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
-  barcode = ''
-  borrowernumber = 0
+  serializable_attributes = ['item_barcode', 'user_barcode', 'statuses']
+  item_barcode = ''
+  user_barcode = 0
   statuses = {}
 
-  def __init__(self, barcode: str, borrowernumber: int, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.barcode = barcode
-    self.borrowernumber = borrowernumber
+  def __init__(self, item_barcode: str, user_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    self.user_barcode = user_barcode
     self.statuses = statuses
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
@@ -84,14 +84,14 @@ class LECheckOuted(LEvent):
 class LECheckOutFailed(LEvent):
   event = 'check-out-failed'
 
-  serializable_attributes = ['barcode', 'borrowernumber', 'statuses']
-  barcode = ''
-  borrowernumber = 0
+  serializable_attributes = ['item_barcode', 'user_barcode', 'statuses']
+  item_barcode = ''
+  user_barcode = 0
   statuses = {}
 
-  def __init__(self, barcode: str, borrowernumber: int, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.barcode = barcode
-    self.borrowernumber = borrowernumber
+  def __init__(self, item_barcode: str, user_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    self.user_barcode = user_barcode
     self.statuses = statuses
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
@@ -215,20 +215,20 @@ class LEUserLoggingIn(LEvent):
 class LEUserLoggedIn(LEvent):
   event = 'user-logged-in'
 
-  serializable_attributes = ['firstname', 'surname', 'cardnumber']
+  serializable_attributes = ['firstname', 'surname', 'user_barcode']
   firstname = ''
   surname = ''
-  cardnumber = ''
+  user_barcode = ''
 
   lifecycle_map_event_to_hooks = {
     'LEUserLoggedIn': 'onsuccess',
     'LEException': 'onerror',
   }
 
-  def __init__(self, firstname: str, surname: str, cardnumber: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, firstname: str, surname: str, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.firstname = firstname
     self.surname = surname
-    self.cardnumber = cardnumber
+    self.user_barcode = user_barcode
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
