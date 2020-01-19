@@ -5,6 +5,7 @@
       max-width="250px"
       v-bind:class="[item_bib.checkout_status]"
       class=""
+      @click="overlay = !overlay"
     >
       <v-img
         :src="item_bib.book_cover_url"
@@ -25,6 +26,14 @@
       <v-card-title v-text="item_bib.title || '...'"></v-card-title>
       <v-card-subtitle><div>{{item_bib.author || 'x'}}</div><div>{{item_bib.edition || 'x'}}</div></v-card-subtitle>
       <v-card-text v-text="item_bib.item_barcode"></v-card-text>
+
+      <v-overlay absolute :value="overlay"
+        v-if="item_bib.exception"
+      >
+        <v-card-text>
+          {{item_bib.exception}}
+        </v-card-text>
+      </v-overlay>
     </v-card>
 </template>
 
@@ -35,6 +44,9 @@ export default {
   props: {
     item_bib: Object,
   },
+  data: () => ({
+    overlay: false,
+  }),
 }
 </script>
 

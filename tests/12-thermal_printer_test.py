@@ -33,3 +33,4 @@ def test_print_koha_api():
 
   assert type(response_event) == lainuri.event.LEPrintResponse
   assert not response_event.status['exception']
+  assert response_event.status['success']

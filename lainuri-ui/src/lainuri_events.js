@@ -220,6 +220,41 @@ class LEConfigWrite extends LEvent {
     this.validate_params()
   }
 }
+class LEPrintRequest extends LEvent {
+  static event = 'print-request'
+  default_dispatch = 'server'
+
+  serializable_attributes = ['items', 'user_barcode']
+  items;
+  user_barcode;
+
+  constructor(items, user_barcode, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.items = items
+    this.user_barcode = user_barcode
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEPrintResponse extends LEvent {
+  static event = 'print-response'
+
+  serializable_attributes = ['items', 'user_barcode', 'printable_sheet', 'status']
+  items;
+  user_barcode;
+  printable_sheet;
+  status;
+
+  constructor(items, user_barcode, printable_sheet, status, sender, recipient, event_id = undefined) {
+  super(event_id);
+    this.items = items
+    this.user_barcode = user_barcode
+    this.printable_sheet = printable_sheet
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
 class LERFIDTagsNew extends LEvent {
   static event = 'rfid-tags-new';
 
@@ -368,5 +403,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LECheckOuting, LECheckOuted, LECheckOutFailed, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  LEvent, LEException, LEBarcodeRead, LECheckOuting, LECheckOuted, LECheckOutFailed, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
 }
