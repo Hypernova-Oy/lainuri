@@ -5,6 +5,7 @@
         <v-col>
           <v-card-title v-if="! user.user_barcode">LUE KIRJASTOKORTTI</v-card-title>
           <v-card-title v-if="user.user_barcode">MOI {{user.firstname}}!</v-card-title>
+          <v-card v-if="user_login_error" raised color="error">KIRJAUTUMINEN EPÄONNISTUI</v-card>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -19,7 +20,7 @@
             </v-btn>
 
             <v-btn
-              v-on:click="stop_checkin_out"
+              v-on:click="stop_checking_out"
               v-if="user.user_barcode"
               large color="secondary"
             >
@@ -135,7 +136,7 @@ import ItemCard from '../components/ItemCard.vue'
 
 import {find_tag_by_key} from '../helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
-import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LECheckOuting, LECheckOuted, LECheckOutFailed} from '../lainuri_events'
+import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LECheckOuting, LECheckOuted, LECheckOutFailed, LEBarcodeRead} from '../lainuri_events'
 
 
 export default {
@@ -144,72 +145,91 @@ export default {
     ItemCard,
   },
   props: {
-    user: Object,
     rfid_tags_present: Array,
   },
   created: function () {
     lainuri_ws.attach_event_listener(LEUserLoginFailed, function(event) {
       console.log(`Event '${LEUserLoginFailed.name}' received.`);
-      this.$data.user = {}
-      this.$data.app_mode = 'mode_main_menu';
+      this.user_login_failed(event);
     });
     lainuri_ws.attach_event_listener(LEUserLoginAbort, function(event) {
       console.log(`Event '${LEUserLoginAbort.name}' received.`);
-      this.$data.user = {}
-      this.$data.app_mode = 'mode_main_menu';
+      this.abort_user_login(event);
     });
     lainuri_ws.attach_event_listener(LEUserLoggedIn, (event) => {
       console.log(`Received event '${LEUserLoggedIn.name}'`);
-      this.$data.user = event;
-      this.$data.app_mode = 'mode_checkout';
-      this.start_checking_out();
+      this.start_checking_out(event);
     });
     lainuri_ws.attach_event_listener(LECheckOuted, (event) => {
       console.log(`Received event '${LECheckOuted.name}' for barcode='${event.item_barcode}'`);
       let tag = find_tag_by_key(this.$data.rfid_tags_present, 'item_barcode', event.item_barcode)
       tag.checked_out_statuses = event.statuses
       tag.checkout_status = event.statuses.status
+      this.items_checked_out_successfully.append(tag);
     });
     lainuri_ws.attach_event_listener(LECheckOutFailed, (event) => {
       console.log(`Received event '${LECheckOutFailed.name}' for barcode='${event.item_barcode}'`);
       let tag = find_tag_by_key(this.$data.rfid_tags_present, 'item_barcode', event.item_barcode)
       tag.checked_out_statuses = event.statuses
       tag.checkout_status = event.statuses.status
+      this.items_checked_out_failed.append(tag);
+    });
+    lainuri_ws.attach_event_listener(LEBarcodeRead, (event) => {
+      console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}'`);
+      if (this.user) {
+        this.checkout_item(event);
+      }
+      else {
+        console.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}', but no user logged in?`);
+      }
     });
   },
   methods: {
+    user_login_failed: function (error) {
+      this.$data.user = {}
+      this.$data.user_login_error = event
+    },
     abort_user_login: function () {
-      console.log("abort_user_login in CheckOut")
-      this.$emit('abort_user_login');
+      console.log("abort_user_login in CheckOut");
+      this.stop_checking_out();
     },
     stop_checking_out: function () {
       console.log("Stopped checking out");
+      this.$data.user = {};
+      this.$data.user_login_error = {};
       this.$emit('stop_checking_out');
     },
     stop_checkin_out_and_get_receipt: function () {
       console.log("Stopping checking out and getting a receipt");
-      this.stop_checking_in();
+      this.stop_checking_out();
     },
-    start_checking_out: function () {
-      console.log("Started checking out");
+    start_checking_out: function (event) {
+      console.log(`Started checking out. Items present '${this.$data.rfid_tags_present.length}'`);
 
-      this.checkout_item();
+      this.$data.user = event;
+      this.$data.user_login_error = {};
+
+      for (let i in this.rfid_tags_present) {
+        let item_bib = this.rfid_tags_present[i];
+        this.checkout_item(item_bib);
+      }
     },
-    checkout_item: function () {
-      console.log("Checking out any available item. Items present " + this.$data.rfid_tags_present.length);
-      for (let i in this.$data.rfid_tags_present) {
-        let item_bib = this.$data.rfid_tags_present[i]
-        if (! item_bib.checked_out) {
-          console.log(`Checking out any available item='${item_bib.item_barcode}'`);
-          item_bib.checked_out_statuses = {status: 'pending'}
-          item_bib.checkout_status = item_bib.checked_out_statuses.status
-          lainuri_ws.dispatch_event(new LECheckOuting(item_bib.item_barcode, this.$data.user.user_barcode, 'client', 'server'));
-          break;
-        }
+    checkout_item: function (item_bib) {
+      console.log(`Checking out item '${item_bib.item_barcode}'`);
+      if (! item_bib.checked_out) {
+        console.log(`Checking out any available item='${item_bib.item_barcode}'`);
+        item_bib.checked_out_statuses = {status: 'pending'}
+        item_bib.checkout_status = item_bib.checked_out_statuses.status
+        lainuri_ws.dispatch_event(new LECheckOuting(item_bib.item_barcode, this.$data.user.user_barcode, 'client', 'server'));
+      }
+      else {
+        console.error(`Checking out item '${item_bib.item_barcode}', but it is already checked out?`);
       }
     },
   },
   data: () => ({
+    user: Object,
+    abort_user_login: Object,
     items_checked_out_successfully: [
       {
         item_barcode: '167N00000111',

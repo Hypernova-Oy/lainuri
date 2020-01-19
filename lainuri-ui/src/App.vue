@@ -44,8 +44,7 @@
       />
       <CheckOut v-if="app_mode === 'mode_checkout'"
         :rfid_tags_present="rfid_tags_present"
-        :user="user"
-        v-on:abort_user_login="abort_user_login"
+        v-on:stop_checking_out="stop_checking_out"
       />
       <CheckIn v-if="app_mode === 'mode_checkin'"
         :rfid_tags_present="rfid_tags_present"
@@ -148,7 +147,6 @@ export default {
       activeBtn: 1,
       name: 'Vue.js',
       app_mode: 'mode_main_menu',
-      user: {user_barcode: '167A01010101'},
       barcode_read: '',
       rfid_tags_present: [
         {
@@ -191,11 +189,6 @@ export default {
       this.app_mode = 'mode_main_menu';
       this.items_checked_out_successfully = [];
       this.items_checked_out_failed = [];
-      this.$data.user = {};
-    },
-    abort_user_login: function () {
-      this.enter_main_menu();
-      abort_user_login();
     },
     stop_checking_out: function () {
       this.enter_main_menu();
