@@ -10,7 +10,7 @@ import json
 import lainuri.helpers
 from lainuri.WGCUsb300AT.commands import *
 
-from lainuri.event import LEvent, LEBarcodeRead
+import lainuri.event as le
 import lainuri.websocket_server
 
 class BarcodeReader():
@@ -102,6 +102,6 @@ class BarcodeReader():
         if (lainuri.websocket_server.state == 'user-logging-in'):
           lainuri.websocket_server.login_user(barcode)
         else:
-          lainuri.websocket_server.push_event(LEBarcodeRead(barcode))
+          lainuri.websocket_server.push_event(le.LEBarcodeRead(barcode))
 
     log.info(f"Terminating WGC300 thread")

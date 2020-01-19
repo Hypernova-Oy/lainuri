@@ -10,6 +10,7 @@ import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.test
 import lainuri.websocket_handlers.config
 import lainuri.websocket_handlers.checkout
+import lainuri.websocket_handlers.printer
 import lainuri.koha_api as koha_api
 
 event_id: int = 0
@@ -148,6 +149,35 @@ class LEConfigWrite(LEvent):
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
+
+class LEPrintRequest(LEvent):
+  event = 'print-request'
+  default_handler = lainuri.websocket_handlers.printer.print_receipt
+
+  serializable_attributes = ['items', 'user_barcode']
+  items = []
+  user_barcode = ''
+
+  def __init__(self, items: list, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.items = items
+    self.user_barcode = user_barcode
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
+class LEPrintResponse(LEvent):
+  event = 'print-response'
+
+  serializable_attributes = ['items', 'user_barcode', 'printable_sheet', 'status']
+  items = []
+  user_barcode = ''
+  printable_sheet = ''
+  status = {'success': 1, 'exception': ''}
+
+  def __init__(self, items: list, user_barcode: str, printable_sheet: str, status: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.items = items
+    self.user_barcode = user_barcode
+    self.printable_sheet = printable_sheet
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LERFIDTagsLost(LEvent):
   event = 'rfid-tags-lost'
