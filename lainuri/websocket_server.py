@@ -152,7 +152,7 @@ def start():
 
   if get_config('devices.barcode-reader.enabled'):
     barcode_reader = lainuri.WGCUsb300AT.BarcodeReader()
-    barcode_reader.start_polling_barcodes()
+    barcode_reader.start_polling_barcodes(handle_barcode_read)
   else:
     log.info("WGC300 reader is disabled by config")
 
@@ -162,6 +162,11 @@ def start():
   server = WebSocketServer('localhost', 53153, SimpleChat)
   server.serve_forever()
 
+def handle_barcode_read(barcode: str):
+  if (lainuri.websocket_server.state == 'user-logging-in'):
+    lainuri.websocket_server.login_user(barcode)
+  else:
+    lainuri.websocket_server.push_event(lainuri.event.LEBarcodeRead(barcode))
 
 def login_user(user_barcode: str):
   try:

@@ -5,6 +5,8 @@ devices:
     enabled: false
   barcode-reader:
     enabled: true
+    model: WGI3220USB
+    model: WGC300UsbAT
 
 ringtones:
   error: ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c

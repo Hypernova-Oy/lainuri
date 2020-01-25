@@ -6,102 +6,72 @@ import serial
 import time
 import _thread as thread
 import json
+import importlib
 
 import lainuri.helpers
-from lainuri.WGCUsb300AT.commands import *
+import lainuri.WGCUsb300AT.model.WGC300UsbAT as WGC300UsbAT
+import lainuri.WGCUsb300AT.model.WGI3220USB as WGI3220USB
 
-import lainuri.event as le
-import lainuri.websocket_server
 
 class BarcodeReader():
   def __init__(self):
+    self.model = get_config('devices.barcode-reader.model')
+
+    try:
+      self.config_module = importlib.import_module(f'.{self.model}', 'lainuri.WGCUsb300AT.model')
+    except ModuleNotFoundError as e:
+      raise Exception(f"Unknown barcode reader model '{self.model}'!")
+
     self.serial: serial.Serial = self.connect_serial()
     self.autoconfigure()
 
   def connect_serial(self) -> serial.Serial:
-    port = lainuri.helpers.find_dev_path('8888', '0007')
-    log.info(f"Connecting WGC300 to port='{port}'")
-    ser = serial.Serial()
-    ser.baudrate = 115200
-    ser.parity = serial.PARITY_NONE
-    ser.databits = 8
-    ser.stopbits = 1
-    ser.port = port
-    ser.timeout = 0
-    ser.open()
-    return ser
+    log.info(f"Connecting to '{self.model}'")
+    return self.config_module.connect(self)
 
   def autoconfigure(self):
-    log.info("Autoconfiguring WGC300")
-    configurations = [
-      WGC_SettingsEnter(),
-      WGC_AllBarcodes(disable_all_barcodes=1),
-      WGC_Code39Enable(),
-      WGC_Code39MinBarcodeLength(min_barcode_length=10),
-      WGC_Code39MaxBarcodeLength(max_barcode_length=12),
-      WGC_BarcodesSetSuffix(carriage_return_suffix=1), # TODO: The device actually doesn't set this new suffix, but it should set a suffix for better transport reliability.
-      WGC_SettingsExit(),
-    ]
-    for cmd in configurations:
-      self.write(cmd)
+    log.info(f"Autoconfiguring '{self.model}'")
+    self.config_module.autoconfigure(self)
 
-  def write(self, cmd: WGCCommand):
+  def write(self, cmd):
     log.info(f"WRITE--> {type(cmd)}")
     data = cmd.pack()
     for b in data: print(hex(b), ' ', end='')
     print()
     rv = self.serial.write(data)
-    log.info(f"-->WRITE {type(cmd)}")
+    log.info(f"-->WRITE {type(cmd)} '{rv}'")
     return rv
 
   def read(self):
-    timeout = 5
-    log.info(f"READ WAITING-->")
-    slept = 0
-    self.serial.timeout(0) # non-blocking mode, return immediately in any case, returning zero or more, up to the requested number of bytes
-    while(self.serial.in_waiting == 0):
-      time.sleep(0.1)
-      slept += 0.1
-      if slept > timeout:
-        raise Exception("read timeout")
-
-    rv_a = bytearray()
+    rv = b''
+    self.serial.timeout = 0 # non-blocking mode, just read whatever is in the buffer
     while self.serial.in_waiting:
-      log.info(f"READ-->")
-      #rv = ser.read(255)
-      rv = self.serial.readline()
-      rv_a += rv
-      time.sleep(0.1)
-    for b in rv_a: print(hex(b), ' ', end='')
-    print()
-    log.info(f"-->READ")
-    return rv_a
+      rv = rv + self.serial.read(255)
+    return rv
 
-  def start_polling_barcodes(self):
+  def blocking_read(self):
+    # Use the serial-system's blocking read to notify us of new bytes to read, instead of looping and polling.
+    self.serial.timeout = None # wait forever / until requested number of bytes are received
+    rv = self.serial.read(1)
+    rv = rv + self.read()
+    if (rv):
+      barcode = rv[0:-1].decode('latin1') # Pop the last character, as it it the barcode termination character
+      log.info(f"Received barcode='{barcode}' bytes='{rv}'")
+      return barcode
+
+  def start_polling_barcodes(self, handler):
     """
     Forks a thread to poll the serial connection for barcodes.
     Turns the read barcodes into push notifications.
     """
-    thread.start_new_thread(self.polling_barcodes_thread, ())
+    thread.start_new_thread(self.polling_barcodes_thread, (handler, True))
 
-  def polling_barcodes_thread(self):
+  def polling_barcodes_thread(self, handler, dummy):
     log.info("Barcodes polling starting")
 
     while(1):
-      # Use the serial-system's blocking read to notify us of new bytes to read, instead of looping and polling.
-      self.serial.timeout = None # wait forever / until requested number of bytes are received
-      rv = self.serial.read(1)
-      self.serial.timeout = 0 # non-blocking mode, just read whatever is in the buffer
-      while self.serial.in_waiting:
-        rv = rv + self.serial.read(255)
-
-      if (rv):
-        barcode = rv[0:-1].decode('latin1') # Pop the last character, as it it the barcode termination character
-        log.info(f"Received barcode='{barcode}' bytes='{rv}'")
-
-        if (lainuri.websocket_server.state == 'user-logging-in'):
-          lainuri.websocket_server.login_user(barcode)
-        else:
-          lainuri.websocket_server.push_event(le.LEBarcodeRead(barcode))
+      barcode = self.blocking_read()
+      if (barcode):
+        handler(barcode)
 
     log.info(f"Terminating WGC300 thread")

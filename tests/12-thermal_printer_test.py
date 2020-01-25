@@ -4,7 +4,7 @@ import context
 
 import lainuri.printer as lp
 
-def te_print_html():
+def test_print_html():
   html_text = """
   <h4>Hello world today</h4>
   <div>

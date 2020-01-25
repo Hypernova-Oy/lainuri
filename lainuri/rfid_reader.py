@@ -119,7 +119,7 @@ class RFID_Reader():
       if self.tags_lost:
         lainuri.websocket_server.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
 
-      time.sleep(interval or 120) # TODO: This should be something like 0.1 or maybe even no sleep?
+      time.sleep(interval or 60) # TODO: This should be something like 0.1 or maybe even no sleep?
       self.tags_lost = []
       self.tags_new  = []
 

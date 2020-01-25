@@ -1,34 +1,34 @@
-#!/usr/bin/python3
+import serial
+import time
 
-import RL866
+from lainuri.WGCUsb300AT.model.WGC_commands import *
 
-import usb.core
-import usb.util
+port = '/dev/ttyACM1'
+#ser = serial.Serial(port=port, timeout=1, databits=8)
+#print(ser.__dict__)
+#ser.close()
 
-# find our device
-dev = usb.core.find(idVendor=0xfffe, idProduct=0x0091)
+#time.sleep(1)
 
-# was it found?
-if dev is None:
-    raise ValueError('Device not found')
+ser = serial.Serial()
+ser.baudrate = 9600
+ser.parity = serial.PARITY_NONE
+ser.databits = 8
+ser.stopbits = 1
+ser.port = port
+ser.timeout = 1
+ser.open()
+print(ser.__dict__)
 
-# set the active configuration. With no arguments, the first
-# configuration will be the active one
-#dev.set_configuration()
 
-# get an endpoint instance
-cfg = dev.get_active_configuration()
-intf = cfg[(0,0)]
 
-ep = usb.util.find_descriptor(
-    intf,
-    # match the first OUT endpoint
-    custom_match = \
-    lambda e: \
-        usb.util.endpoint_direction(e.bEndpointAddress) == \
-        usb.util.ENDPOINT_OUT)
+byt = b'\x08\x04\x31\x00\x26\x4C\x54\xFF\xFD\xFE'
+print(byt)
+byt = WGC_ScanTrigger().pack()
+print(byt)
+rv = ser.write(byt)
+print(f"written '{rv}'")
 
-assert ep is not None
-
-# write the data
-ep.write('test')
+ser.write(WGC_VersionRead().pack())
+rv = ser.readline()
+print(f"read '{rv}'")

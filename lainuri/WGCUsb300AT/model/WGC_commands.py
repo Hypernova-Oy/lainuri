@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+
 class WGCCommand():
   # Shared message portions
   message_source = b'\x04'
@@ -23,7 +24,10 @@ class WGCCommand():
     message_format = ['Length', 'MessageSource', 'MessageTarget', 'Reserve', 'Opcode', 'Command', 'Beeper', 'CheckSum']
     """
     payload = self.length + self.message_source + self.message_target + self.reserve + self.opcode + self.command + self.beeper
-    return payload + self.calculate_checksum(payload)
+    checksum = self.calculate_checksum(payload)
+    rv = payload + checksum
+    log.debug(f"Length='{self.length}' MessageSource='{self.message_source}' MessageTarget='{self.message_target}' Reserve='{self.reserve}' Opcode='{self.opcode}' Command='{self.command}' Beeper='{self.beeper}' CheckSum='{checksum}'")
+    return rv
 
   def calculate_checksum(self, payload: bytes) -> bytes:
     """
@@ -43,14 +47,17 @@ class WGCCommand():
     sum = 0
     for byte in payload:
       sum += byte
+    #log.debug(f"Radix complement sum '{sum}'")
     # Complement the bits, but only pick the first 2 bytes we are interested in.
     # Add +1 per the Radix complement algorithm
     cs = (~sum & 0xFFFF) + 1
+    #log.debug(f"Radix complement first 2 bytes + 1 '{cs}'")
     # Now the dirty ugly formatting hack to split the checksum to two bytes.
     cs = bytes([
-      cs & 0xFF00 >> 8, # Shift the second byte to right, this pushes the first byte out and leaves only the second byte
-      cs & 0x00FF       # Pick the first byte by AND-masking the first 8 bits
+      (cs & 0xFF00) >> 8, # Shift the second byte to right, this pushes the first byte out and leaves only the second byte
+      cs & 0x00FF         # Pick the first byte by AND-masking the first 8 bits
     ])
+    #log.debug(f"Radix complement cs '{cs}'")
     self.checksum = cs
     return cs
 

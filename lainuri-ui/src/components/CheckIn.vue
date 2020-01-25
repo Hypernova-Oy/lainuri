@@ -112,16 +112,21 @@
             </v-container>
           </v-card>
         </v-col>
-
       </v-row>
+
+    <v-overlay :value="receipt_printing">
+      <ArrowSliding/>
+    </v-overlay>
+
   </v-container>
 </template>
 
 <script>
-import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
-import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from '../lainuri_events'
-
 import ItemCard from '../components/ItemCard.vue'
+
+import {find_tag_by_key} from '../helpers'
+import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
+import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LECheckOuting, LECheckOuted, LECheckOutFailed, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
 
 let emited = 0
 export default {
@@ -132,6 +137,40 @@ export default {
   props: {
     rfid_tags_present: Array,
   },
+  created: function () {
+    lainuri_ws.attach_event_listener(LECheckOuted, (event) => {
+      console.log(`Received event '${LECheckOuted.name}' for barcode='${event.item_barcode}'`);
+      let tag = find_tag_by_key(this.$data.rfid_tags_present, 'item_barcode', event.item_barcode)
+      tag.checked_out_statuses = event.statuses
+      tag.checkout_status = event.statuses.status
+      this.items_checked_out_successfully.append(tag);
+    });
+    lainuri_ws.attach_event_listener(LECheckOutFailed, (event) => {
+      console.log(`Received event '${LECheckOutFailed.name}' for barcode='${event.item_barcode}'`);
+      let tag = find_tag_by_key(this.$data.rfid_tags_present, 'item_barcode', event.item_barcode)
+      tag.checked_out_statuses = event.statuses
+      tag.checkout_status = event.statuses.status
+      this.items_checked_out_failed.append(tag);
+    });
+    lainuri_ws.attach_event_listener(LEBarcodeRead, (event) => {
+      console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}'`);
+      if (this.user) {
+        this.checkout_item(event);
+      }
+      else {
+        console.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}', but no user logged in?`);
+      }
+    });
+    lainuri_ws.attach_event_listener(LEBarcodeRead, (event) => {
+      console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}'`);
+      this.checkin_item(event);
+    });
+    lainuri_ws.attach_event_listener(LEPrintResponse, (event) => {
+      console.log(`Received event '${LEPrintResponse.name}'`);
+      this.$data.receipt_printing = false;
+      this.stop_checking_in();
+    });
+  },
   methods: {
     stop_checking_in: function () {
       console.log("Stopped checking in");
@@ -139,10 +178,27 @@ export default {
     },
     stop_checkin_in_and_get_receipt: function () {
       console.log("Stopping checking in and getting a receipt");
-      this.stop_checking_in();
-    }
+      this.print_receipt();
+      //this.stop_checking_out(); // The kill signal is given when the receipt printing confirmation is received from the server
+    },
+    print_receipt: function () {
+      console.log("Printing receipt");
+      this.$data.receipt_printing = true;
+      lainuri_ws.dispatch_event(
+        new LEPrintRequest(
+          this.$data.items_checked_in_successfully,
+        ),
+      );
+    },
+    checkin_item: function (item_bib) {
+      console.log(`Checking in item '${item_bib.item_barcode}'`);
+      item_bib.checked_in_statuses = {status: 'pending'}
+      item_bib.checkin_status = item_bib.checked_out_statuses.status
+      lainuri_ws.dispatch_event(new LECheckIning(item_bib.item_barcode, this.$data.user.user_barcode, 'client', 'server'));
+    },
   },
   data: () => ({
+    receipt_printing: false,
     items_checked_out_successfully: [
       {
         item_barcode: '167N00000111',
