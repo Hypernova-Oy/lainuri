@@ -16,7 +16,7 @@ from lainuri.exceptions import InvalidUser, NoResults
 
 import lainuri.websocket_handlers.config
 import lainuri.rfid_reader
-import lainuri.WGCUsb300AT
+import lainuri.barcode_reader
 
 eventname_to_eventclass = {}
 for key in lainuri.event.__dict__:
@@ -151,7 +151,7 @@ def start():
     log.info("RFID reader is disabled by config")
 
   if get_config('devices.barcode-reader.enabled'):
-    barcode_reader = lainuri.WGCUsb300AT.BarcodeReader()
+    barcode_reader = lainuri.barcode_reader.BarcodeReader()
     barcode_reader.start_polling_barcodes(handle_barcode_read)
   else:
     log.info("WGC300 reader is disabled by config")

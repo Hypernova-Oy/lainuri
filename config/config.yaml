@@ -1,6 +1,7 @@
 devices:
   rfid-reader:
     enabled: true
+    polling_interval: 1 # How often the RFID reader checks for inventory status
   ringtone-player:
     enabled: false
   barcode-reader:

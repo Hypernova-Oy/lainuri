@@ -1,7 +1,7 @@
 import serial
 import time
 
-from lainuri.WGCUsb300AT.model.WGC_commands import *
+from lainuri.barcode_reader.model.WGC_commands import *
 
 port = '/dev/ttyACM1'
 #ser = serial.Serial(port=port, timeout=1, databits=8)

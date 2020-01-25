@@ -4,8 +4,8 @@ import context
 
 import sys
 
-from lainuri.WGCUsb300AT import BarcodeReader
-from lainuri.WGCUsb300AT.model.WGC_commands import *
+from lainuri.barcode_reader import BarcodeReader
+from lainuri.barcode_reader.model.WGC_commands import *
 
 def test_barcode_reader():
   bcr = BarcodeReader()

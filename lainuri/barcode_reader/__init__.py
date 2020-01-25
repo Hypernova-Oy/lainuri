@@ -9,8 +9,8 @@ import json
 import importlib
 
 import lainuri.helpers
-import lainuri.WGCUsb300AT.model.WGC300UsbAT as WGC300UsbAT
-import lainuri.WGCUsb300AT.model.WGI3220USB as WGI3220USB
+import lainuri.barcode_reader.model.WGC300UsbAT as WGC300UsbAT
+import lainuri.barcode_reader.model.WGI3220USB as WGI3220USB
 
 
 class BarcodeReader():
@@ -18,7 +18,7 @@ class BarcodeReader():
     self.model = get_config('devices.barcode-reader.model')
 
     try:
-      self.config_module = importlib.import_module(f'.{self.model}', 'lainuri.WGCUsb300AT.model')
+      self.config_module = importlib.import_module(f'.{self.model}', 'lainuri.barcode_reader.model')
     except ModuleNotFoundError as e:
       raise Exception(f"Unknown barcode reader model '{self.model}'!")
 

@@ -6,7 +6,7 @@ import serial
 import time
 
 import lainuri.helpers
-from lainuri.WGCUsb300AT.model.WGC_commands import *
+from lainuri.barcode_reader.model.WGC_commands import *
 
 
 def connect(self):

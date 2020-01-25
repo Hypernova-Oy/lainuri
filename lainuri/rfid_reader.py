@@ -84,6 +84,7 @@ class RFID_Reader():
     thread.start_new_thread(self._rfid_poll, (interval, interval))
 
   def _rfid_poll(self, interval: float = None, interval2: float = None):
+    if not interval: interval = get_config('devices.rfid-reader.polling_interval')
     log.info("RFID polling starting")
 
     while(1):
