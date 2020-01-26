@@ -32,5 +32,7 @@ def test_print_koha_api():
   response_event = lainuri.websocket_server.events[-1]
 
   assert type(response_event) == lainuri.event.LEPrintResponse
-  assert not response_event.status['exception']
+  assert not response_event.status.get('exception', None)
   assert response_event.status['success']
+
+test_print_koha_api()

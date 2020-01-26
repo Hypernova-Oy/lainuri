@@ -7,3 +7,12 @@ export function find_tag_by_key (tags, key, value) {
   }
   throw new Error(`Couldn't find a tag with '${key}'='${value}'`);
 }
+
+export function splice_bib_item_from_array (array_to_splice, key, value) {
+  for (let i=0 ; i<array_to_splice.length ; i++) {
+    if (array_to_splice[i][key] === value) {
+      console.log(array_to_splice, key, value)
+      array_to_splice.splice(i--, 1);
+    }
+  }
+}

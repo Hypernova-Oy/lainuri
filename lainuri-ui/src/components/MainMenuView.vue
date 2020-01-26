@@ -22,7 +22,7 @@
           align="center"
           justify="center"
         >
-          <ItemCard v-if="!item.checkout_status" v-bind:key="item.item_barcode" :item_bib="item"/>
+          <ItemCard v-bind:key="item.item_barcode" :item_bib="item"/>
         </v-col>
       </v-row>
     </v-container>

@@ -144,6 +144,11 @@ class SimpleChat(WebSocket):
 
 def start():
 
+  # Other devices need data from the Koha API, so we need to make sure we have a working connection before
+  # letting device threads to fork.
+  if koha_api:
+    koha_api.authenticate()
+
   if get_config('devices.rfid-reader.enabled'):
     rfid_reader = lainuri.rfid_reader.RFID_Reader()
     rfid_reader.start_polling_rfid_tags()
@@ -155,9 +160,6 @@ def start():
     barcode_reader.start_polling_barcodes(handle_barcode_read)
   else:
     log.info("WGC300 reader is disabled by config")
-
-  if koha_api:
-    koha_api.authenticate()
 
   server = WebSocketServer('localhost', 53153, SimpleChat)
   server.serve_forever()

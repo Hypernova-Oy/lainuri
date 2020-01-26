@@ -57,7 +57,7 @@ class Lainuri {
 
     // The connected websocket immediately responds with configuration and inventory status
     // So we need to define the listeners in advance
-    this.attach_event_listener(events.LEConfigGetpublic_Response, (event) => {
+    this.attach_event_listener(events.LEConfigGetpublic_Response, this, (event) => {
       this.config = event.config;
       console.log(`Received new configurations():> '${event.config}'`, event);
     });
@@ -98,11 +98,24 @@ class Lainuri {
     return this.ws;
   }
 
-  attach_event_listener(event, event_handler) {
+  attach_event_listener(event, component, event_handler) {
     console.log(`Registering new event listener for event '${event.event}'`);
     if (! this.listeners[event.event]) { this.listeners[event.event] = [] }
-    this.listeners[event.event].push(event_handler);
+    this.listeners[event.event].push({handler: event_handler, component: component});
     return this;
+  }
+
+  flush_listeners_for_component(component, name) {
+    console.log(`Flushing events for component '${name}'`)
+    Object.keys(this.listeners).forEach((event_type) => {
+      let event_listeners = this.listeners[event_type];
+      for (let i=0 ; i<event_listeners.length ; i++) {
+        if (event_listeners[i].component === component) {
+          console.log(`Flushing event '${event_type}'`)
+          event_listeners.splice(i--, 1);
+        }
+      }
+    });
   }
 
   dispatch_event(event) {
@@ -120,7 +133,8 @@ class Lainuri {
     if (this.listeners[event.event]) {
       this.listeners[event.event].forEach(listener => {
         dispatched_times++;
-        listener(event);
+        console.log(`dispatch_event():> Receiving '${event.event}'`)
+        listener.handler.call(listener.component, event);
       });
     }
     if (event.recipient === 'server' || event.default_dispatch === 'server') {

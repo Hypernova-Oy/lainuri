@@ -18,8 +18,6 @@ class LEvent {
   /**
    * Overload. These attributes are sent as a part of the websocket message
    */
-  static serializable_attributes = [];
-
   lifecycle_hooks = ['ondispatched', 'onsuccess', 'onerror'];
   lifecycle_hook_impls = {};
   lifecycle_map_event_to_hooks = []
@@ -138,6 +136,52 @@ class LECheckOutFailed extends LEvent {
   }
 }
 
+class LECheckIn extends LEvent {
+  static event = 'check-in';
+
+  static serializable_attributes = ['item_barcode'];
+  item_barcode;
+
+  constructor(item_barcode, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.item_barcode = item_barcode;
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
+class LECheckInComplete extends LEvent {
+  static event = 'check-in-complete';
+
+  static serializable_attributes = ['item_barcode', 'statuses'];
+  item_barcode;
+  statuses;
+
+  constructor(item_barcode, statuses, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.item_barcode = item_barcode
+    this.statuses = statuses
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
+class LECheckInFailed extends LEvent {
+  static event = 'check-in-failed';
+
+  static serializable_attributes = ['item_barcode', 'statuses'];
+  item_barcode;
+  statuses;
+
+  constructor(item_barcode, statuses, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.item_barcode = item_barcode
+    this.statuses = statuses
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
 class LEBarcodeRead extends LEvent {
   static event = 'barcode-read';
 
@@ -224,7 +268,7 @@ class LEPrintRequest extends LEvent {
   static event = 'print-request'
   default_dispatch = 'server'
 
-  serializable_attributes = ['items', 'user_barcode']
+  static serializable_attributes = ['items', 'user_barcode']
   items;
   user_barcode;
 
@@ -239,7 +283,7 @@ class LEPrintRequest extends LEvent {
 class LEPrintResponse extends LEvent {
   static event = 'print-response'
 
-  serializable_attributes = ['items', 'user_barcode', 'printable_sheet', 'status']
+  static serializable_attributes = ['items', 'user_barcode', 'printable_sheet', 'status']
   items;
   user_barcode;
   printable_sheet;
@@ -360,6 +404,8 @@ class LEUserLoginAbort extends LEvent {
   static event = 'user-login-abort';
   default_dispatch = 'server';
 
+  static serializable_attributes = [];
+
   constructor(sender, recipient, event_id = undefined) {
     super(event_id);
     this.construct(sender, recipient);
@@ -403,5 +449,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LECheckOuting, LECheckOuted, LECheckOutFailed, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckInFailed, LECheckOuting, LECheckOuted, LECheckOutFailed, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
 }

@@ -108,6 +108,7 @@ class KohaAPI():
       return 0
 
   def authenticate(self):
+    log.info(f"Authenticating. Reauth '{self.reauthenticate_tries}'")
     self.reauthenticate_tries += 1
     r = self._auth_post(userid=get_config('koha.userid'), password=get_config('koha.password'))
     payload = self._receive_json(r)
@@ -120,6 +121,7 @@ class KohaAPI():
     return payload
 
   def authenticate_user(self, user_barcode, userid=None, password=None) -> dict:
+    log.info(f"Auth user '{user_barcode or userid}'.")
     if password == None:
       borrower = self.get_borrower(user_barcode=user_barcode)
       if borrower:
@@ -147,6 +149,7 @@ class KohaAPI():
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_borrower(self, user_barcode):
+    log.info(f"Get borrower: user_barcode='{user_barcode}'")
     r = self.http.request_encode_url(
       'GET',
       self.koha_baseurl + f'/api/v1/patrons',
@@ -167,6 +170,7 @@ class KohaAPI():
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_item(self, barcode):
+    log.info(f"Get item: barcode='{barcode}'")
     r = self.http.request_encode_url(
       'GET',
       self.koha_baseurl + f'/api/v1/items',
@@ -187,6 +191,7 @@ class KohaAPI():
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_record(self, biblionumber):
+    log.info(f"Get record: biblionumber='{biblionumber}'")
     r = self.http.request(
       'GET',
       self.koha_baseurl + f'/api/v1/records/{biblionumber}',
@@ -206,6 +211,7 @@ class KohaAPI():
     """
     Returns dict['status'] == 'failed' on error
     """
+    log.info(f"Checkin: barcode='{barcode}'")
     r = self.http.request(
       'POST',
       self.koha_baseurl + '/cgi-bin/koha/circ/returns.pl',
@@ -250,6 +256,7 @@ class KohaAPI():
     """
     Returns dict['status'] == 'failed' on error
     """
+    log.info(f"Checkout: barcode='{barcode}' borrowernumber='{borrowernumber}'")
     r = self.http.request(
       'POST',
       self.koha_baseurl + '/cgi-bin/koha/circ/circulation.pl',
@@ -276,7 +283,7 @@ class KohaAPI():
       statuses['status'] = 'failed'
     if statuses.get('status', None) != 'failed':
       statuses['status'] = 'success'
-    log.info(f"Checkout barcode='{barcode}' borrowernumber='{borrowernumber}' with statuses='{statuses}'")
+    log.info(f"Checkout complete: barcode='{barcode}' borrowernumber='{borrowernumber}' with statuses='{statuses}'")
     return statuses
 
   def checkout_has_status(self, message, statuses):
@@ -297,6 +304,7 @@ class KohaAPI():
 
 
   def receipt(self, borrowernumber) -> str:
+    log.info(f"Receipt: borrowernumber='{borrowernumber}'")
     prnt = 'qslip'
     r = self.http.request(
       'GET',
@@ -312,7 +320,7 @@ class KohaAPI():
     if not receipt:
       raise Exception("Fetching the checkout receipt failed: CSS selector '#receipt' didn't match.")
     if receipt: receipt = receipt[0]
-    receipt_text = receipt.get_text()
+    receipt_text = receipt.prettify()
     return receipt_text
 
 
@@ -376,6 +384,7 @@ class MARCRecord():
 
 @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
 def get_fleshed_item_record(barcode):
+  log.info(f"Get fleshed item record: barcode='{barcode}'")
   exception = None
   try:
     item = koha_api.get_item(barcode)

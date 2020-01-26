@@ -15,7 +15,7 @@ function run_test_suite() {
   let vue;
   const lainuri_ws = new Lainuri('ws://localhost:53153');
 
-  lainuri_ws.attach_event_listener(LEException, function(event) {
+  lainuri_ws.attach_event_listener(LEException, this, function(event) {
     console.log(`Event '${LEException.name}' received!`, event, event.exception);
 
     if (events[event.event_id]) {
@@ -26,7 +26,7 @@ function run_test_suite() {
       }
     }
   });
-  lainuri_ws.attach_event_listener(LEServerConnected, function(event) {
+  lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
     console.log(`Event '${LEServerConnected.name}' triggered.`);
 
     let suite = 0;

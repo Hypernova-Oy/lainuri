@@ -42,3 +42,8 @@ def autoconfigure(self):
   self.write(WGC_VersionRead())
   version = self.read()
   log.info(f"Autoconfigured WGC300UsbAT version '{version}'\n{self.serial.__dict__}")
+
+def is_connected(self):
+  if not self.serial.is_open:
+    log.error(f"Barcode reader serial connection lost! Reconnecting.")
+    self.serial = connect(self)

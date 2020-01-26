@@ -33,6 +33,9 @@ class BarcodeReader():
     log.info(f"Autoconfiguring '{self.model}'")
     self.config_module.autoconfigure(self)
 
+  def is_connected(self):
+    self.config_module.is_connected(self)
+
   def write(self, cmd):
     log.info(f"WRITE--> {type(cmd)}")
     data = cmd.pack()
@@ -43,6 +46,7 @@ class BarcodeReader():
     return rv
 
   def read(self):
+    self.is_connected() # The serial connection can break during a long-running process, so reconnect if needed
     rv = b''
     self.serial.timeout = 0 # non-blocking mode, just read whatever is in the buffer
     while self.serial.in_waiting:

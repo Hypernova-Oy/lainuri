@@ -46,7 +46,7 @@ class LEvent():
 
   def validate_params(self):
     for attribute_name in self.serializable_attributes:
-      if not(getattr(self, attribute_name) or getattr(self, attribute_name) == 0):
+      if not(hasattr(self, attribute_name)):
         self.throw_missing_attribute(attribute_name)
 
   def throw_missing_attribute(self, attribute_name: str):
@@ -93,6 +93,43 @@ class LECheckOutFailed(LEvent):
   def __init__(self, item_barcode: str, user_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
     self.user_barcode = user_barcode
+    self.statuses = statuses
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LECheckIn(LEvent):
+  event = 'check-in'
+
+  serializable_attributes = ['item_barcode']
+  item_barcode = ''
+
+  def __init__(self, item_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LECheckInComplete(LEvent):
+  event = 'check-in-complete'
+
+  serializable_attributes = ['item_barcode', 'statuses']
+  item_barcode = ''
+  statuses = {}
+
+  def __init__(self, item_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    self.statuses = statuses
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LECheckInFailed(LEvent):
+  event = 'check-in-failed'
+
+  serializable_attributes = ['item_barcode', 'statuses']
+  item_barcode = ''
+  statuses = {}
+
+  def __init__(self, item_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
     self.statuses = statuses
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()

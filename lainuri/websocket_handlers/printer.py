@@ -14,7 +14,7 @@ def print_receipt(event):
   try:
     borrower = koha_api.get_borrower(event.user_barcode)
     printable_sheet = koha_api.receipt(borrower['borrowernumber'])
-    process = lainuri.printer.print_html(printable_sheet)
+    lainuri.printer.print_html(printable_sheet)
     lainuri.websocket_server.push_event(
       le.LEPrintResponse(event.items, event.user_barcode, printable_sheet, {
         'success': 'ok'
