@@ -4,8 +4,7 @@
       <v-row>
         <v-col>
           <v-card-title v-if="! is_user_logged_in">LUE KIRJASTOKORTTI</v-card-title>
-          <v-card-title v-if="is_user_logged_in">MOI {{user.firstname}} ({{user.user_barcode}})!</v-card-title>
-          <v-card v-if="user_login_error" raised color="error">KIRJAUTUMINEN EPÄONNISTUI</v-card>
+          <v-card-title v-if="is_user_logged_in">MOI {{user.firstname}}!</v-card-title>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -39,10 +38,11 @@
     </v-card>
 
     <v-row dense>
-      <v-col v-if="items_checked_out_successfully" cols="4">
+      <v-col v-if="items_checked_out_successfully.length"
+        :cols="column_width"
+      >
         <v-card
-          v-if="items_checked_out_successfully.length"
-          min-width="345"
+          min-width="300"
           class="mx-auto"
         >
           <v-app-bar
@@ -68,10 +68,11 @@
         </v-card>
       </v-col>
 
-      <v-col cols="4">
+      <v-col v-if="rfid_tags_present.reduce((red, bib) => red === true || !(bib.checkout_status) || bib.checkout_status === 'pending', false)"
+        :cols="column_width"
+      >
         <v-card
-          v-if="rfid_tags_present.length"
-          min-width="345"
+          min-width="300"
           class="mx-auto"
         >
           <v-app-bar
@@ -97,10 +98,11 @@
         </v-card>
       </v-col>
 
-      <v-col cols="4">
+      <v-col v-if="items_checked_out_failed.length"
+        :cols="column_width"
+      >
         <v-card
-          v-if="items_checked_out_failed.length"
-          min-width="345"
+          min-width="300"
           class="mx-auto"
         >
           <v-app-bar
@@ -138,7 +140,7 @@
 import ItemCard from '../components/ItemCard.vue'
 import ArrowSliding from '../components/ArrowSliding.vue'
 
-import {find_tag_by_key} from '../helpers'
+import {find_tag_by_key, splice_bib_item_from_array} from '../helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
 import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LERFIDTagsNew, LECheckOuting, LECheckOuted, LECheckOutFailed, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
 
@@ -171,6 +173,11 @@ export default {
     lainuri_ws.attach_event_listener(LECheckOuted, this, function(event) {
       console.log(`Received event '${LECheckOuted.name}' for barcode='${event.item_barcode}'`);
       let tag = find_tag_by_key(this.rfid_tags_present, 'item_barcode', event.item_barcode)
+      if (!tag) {
+        tag = find_tag_by_key(this.barcodes_read, 'item_barcode', event.item_barcode)
+        splice_bib_item_from_array(this.barcodes_read, 'item_barcode', event.item_barcode);
+      }
+      if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
       tag.checked_out_statuses = event.statuses
       tag.checkout_status = event.statuses.status
       this.items_checked_out_successfully.unshift(tag);
@@ -178,18 +185,24 @@ export default {
     lainuri_ws.attach_event_listener(LECheckOutFailed, this, function(event) {
       console.log(`Received event '${LECheckOutFailed.name}' for barcode='${event.item_barcode}'`);
       let tag = find_tag_by_key(this.rfid_tags_present, 'item_barcode', event.item_barcode)
+      if (!tag) {
+        tag = find_tag_by_key(this.barcodes_read, 'item_barcode', event.item_barcode)
+        splice_bib_item_from_array(this.barcodes_read, 'item_barcode', event.item_barcode);
+      }
+      if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
       tag.checked_out_statuses = event.statuses
       if (! tag.checked_out_statuses) tag.checked_out_statuses = event.exception
       tag.checkout_status = event.statuses.status
       this.items_checked_out_failed.unshift(tag);
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-      console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}'`);
-      if (this.user) {
-        this.checkout_item(event);
+      console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
+      if (this.user.user_barcode) {
+        this.barcodes_read.push(event.tag)
+        this.checkout_item(event.tag);
       }
       else {
-        console.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.item_barcode}', but no user logged in?`);
+        console.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}', but no user logged in?`);
       }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
@@ -220,16 +233,30 @@ export default {
     is_user_logged_in: function () {
       return (this.$data.user.user_barcode) ? true : false;
     },
+    column_width: function () {
+      let visible_columns = 0;
+      if (this.items_checked_out_failed.length) {
+        visible_columns++;
+        console.log(`column_width():> this.items_checked_out_failed visible`)
+      }
+      if (this.items_checked_out_successfully.length) {
+        visible_columns++;
+        console.log(`column_width():> this.items_checked_out_successfully visible`)
+      }
+      if (this.rfid_tags_present.reduce((red, bib) => red === true || !(bib.checkout_status) || bib.checkout_status === 'pending', false)) {
+        visible_columns++;
+        console.log(`column_width():> this.rfid_tags_present visible`)
+      }
+      return (12 / visible_columns);
+    }
   },
   methods: {
     user_login_failed: function (error) {
       this.$data.user = {};
-      this.$data.user_login_error = event;
       this.$emit('exception', event)
     },
     user_login_success: function (event) {
       this.$data.user = event;
-      this.$data.user_login_error = null;
       this.start_checking_out(event);
     },
     abort_user_login: function () {
@@ -240,7 +267,6 @@ export default {
     stop_checking_out: function () {
       console.log("Stopped checking out");
       this.$data.user = {};
-      this.$data.user_login_error = null;
       this.$emit('stop_checking_out');
     },
     stop_checkin_out_and_get_receipt: function () {
@@ -282,10 +308,11 @@ export default {
   data: () => ({
     receipt_printing: false,
     user: Object,
-    user_login_error: null,
-    items_checked_out_successfully: [],
+    barcodes_read: [],
     items_checked_out_failed: [],
-/*      {
+    items_checked_out_successfully: [],
+    /*items_checked_out_successfully: [
+      {
         item_barcode: '167N00000123',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Dummies for Grenades',
@@ -339,7 +366,7 @@ export default {
         title: 'Dummies for Grenades',
         author: 'Olli-Antti Kivilahti',
         checkout_status: 'error',
-      },*/
+      },],*/
   }),
 }
 </script>

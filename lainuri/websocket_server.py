@@ -10,6 +10,7 @@ import threading
 import time
 import traceback
 
+import lainuri.helpers
 import lainuri.event
 from lainuri.koha_api import koha_api
 from lainuri.exceptions import InvalidUser, NoResults
@@ -114,7 +115,7 @@ class SimpleChat(WebSocket):
         push_event(event)
       except Exception as e:
         log.exception(e)
-        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=event.event_id))
+        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
 
@@ -126,7 +127,7 @@ class SimpleChat(WebSocket):
         push_event(event)
       except Exception as e:
         log.exception(e)
-        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=event.event_id))
+        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
 
@@ -138,7 +139,7 @@ class SimpleChat(WebSocket):
         push_event(event)
       except Exception as e:
         log.exception(e)
-        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=event.event_id))
+        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
 

@@ -172,7 +172,9 @@ export default {
     });
   },
   beforeDestroy: function () {
-    lainuri_ws.flush_listeners_for_component(this, this.$name);
+    lainuri_ws.flush_listeners_for_component(this, this.$options.name);
+    this.items_checked_in_failed = []
+    this.items_checked_in_successfully = []
   },
   methods: {
     stop_checking_in: function () {
@@ -202,7 +204,7 @@ export default {
   },
   data: () => ({
     receipt_printing: false,
-    items_checked_out_successfully: [
+    items_checked_in_successfully: [
       {
         item_barcode: '167N00000111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
@@ -211,7 +213,7 @@ export default {
         checkout_status: 'success',
       },
     ],
-    items_checked_out_failed: [
+    items_checked_in_failed: [
       {
         item_barcode: '167N00000001',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',

@@ -24,7 +24,6 @@
         :width="app_mode === 'mode_checkout' ? 800 : 400"
         hover   color="secondary" dark
         v-on:click="enter_checkout_mode"
-        v-on:exception="show_exception"
       >LAINAA</v-btn>
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkin'"
         id="checkin_mode_button"
@@ -32,7 +31,6 @@
         :color="app_mode === 'mode_checkin' ? 'secondary' : 'primary'"
         hover dark
         v-on:click="enter_checkin_mode"
-        v-on:exception="show_exception"
       >PALAUTA</v-btn>
 
       <v-spacer></v-spacer>
@@ -48,14 +46,17 @@
       <Exception v-if="exception" :except_str="exception" v-on:exception_close="exception = null"/>
       <MainMenuView v-if="app_mode === 'mode_main_menu'"
         :rfid_tags_present="rfid_tags_present"
+        v-on:exception="show_exception"
       />
       <CheckOut v-if="app_mode === 'mode_checkout'"
         :rfid_tags_present="rfid_tags_present"
         v-on:stop_checking_out="stop_checking_out"
+        v-on:exception="show_exception"
       />
       <CheckIn v-if="app_mode === 'mode_checkin'"
         :rfid_tags_present="rfid_tags_present"
         v-on:stop_checking_in="stop_checking_in"
+        v-on:exception="show_exception"
       />
     </v-container>
 
@@ -108,7 +109,6 @@ export default {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' triggered. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
       event.tags_new.forEach((item_bib) => {
-        //item_bib.checkout_status = 'new'
         this.rfid_tags_present.push(item_bib);
       });
     });
@@ -120,12 +120,9 @@ export default {
     });
     lainuri_ws.attach_event_listener(LERFIDTagsPresent, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LERFIDTagsPresent.name}' triggered. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
-      event.tags_present.forEach((item_bib) => {
-        //item_bib.checkout_status = 'present'
-      });
       this.rfid_tags_present = event.tags_present;
     });
-    if (preseed) {
+    if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
         console.log(`PRESEEDING!! Received '${LEServerConnected.name}'`);
         window.setTimeout(() => lainuri_ws.dispatch_event(
@@ -189,7 +186,7 @@ export default {
       this.app_mode = 'mode_main_menu';
       this.rfid_tags_present.forEach(bib_item => {
         bib_item.checked_out_statuses = null
-        bib_item.checkout_status = 'present'
+        bib_item.checkout_status = null
       });
     },
     stop_checking_out: function () {

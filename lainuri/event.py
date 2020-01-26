@@ -164,11 +164,13 @@ class LERingtonePlayed(LEvent):
 class LEBarcodeRead(LEvent):
   event = 'barcode-read'
 
-  serializable_attributes = ['barcode']
+  serializable_attributes = ['barcode', 'tag']
   barcode = ''
+  tag = {}
 
   def __init__(self, barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode = barcode
+    self.tag = koha_api.get_fleshed_item_record(barcode)
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 

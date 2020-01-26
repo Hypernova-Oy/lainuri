@@ -185,12 +185,14 @@ class LECheckInFailed extends LEvent {
 class LEBarcodeRead extends LEvent {
   static event = 'barcode-read';
 
-  static serializable_attributes = ['item_barcode'];
-  item_barcode;
+  static serializable_attributes = ['barcode', 'tag'];
+  barcode;
+  tag;
 
-  constructor(item_barcode = undefined, sender, recipient, event_id = undefined) {
+  constructor(barcode, tag, sender, recipient, event_id = undefined) {
     super(event_id);
-    this.item_barcode = item_barcode;
+    this.barcode = barcode;
+    this.tag = tag;
     this.construct(sender, recipient);
     this.validate_params();
   }
