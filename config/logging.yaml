@@ -29,8 +29,12 @@ loggers:
     level: DEBUG
     handlers: [scraper]
     propagate: no
-  RL866.state:
-    level: DEBUG
+  lainuri.rfid_reader:
+    level: INFO
+    handlers: [console_complex]
+    propagate: no
+  lainuri.RL866:
+    level: INFO
     handlers: [console_complex]
     propagate: no
   root:
