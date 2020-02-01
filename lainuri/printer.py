@@ -9,6 +9,10 @@ import subprocess
 
 def print_html(html_text: str):
   log.debug(f"print_html text='{html_text}'")
+  if get_config('devices.thermal-printer.enabled') != True:
+    log.info(f"Thermal printer disabled by configuration")
+    return 1
+
   weasy_html = HTML(string=html_text)
 
   pages = 100

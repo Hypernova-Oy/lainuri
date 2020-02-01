@@ -9,7 +9,7 @@ devices:
     model: WGI3220USB # Allowed models are found in package lainuri.
     model: WGC300UsbAT
   thermal-printer:
-    enabled:  true
+    enabled:  false
     font-size: 12px
 
 ringtones:

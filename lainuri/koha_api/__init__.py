@@ -324,6 +324,24 @@ class KohaAPI():
     return receipt_text
 
 
+  def availability(self, borrowernumber, itemnumber):
+    log.info(f"Availability: borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'")
+    r = self.http.request(
+      'GET',
+      self.koha_baseurl + f'/api/v1/availability/item/checkout?itemnumber={itemnumber}&borrowernumber={borrowernumber}',
+      headers = {
+        'Cookie': f'CGISESSID={self.sessionid}',
+      },
+    )
+    payload = self._receive_json(r)
+    if isinstance(payload, dict) and payload.get('error', None):
+      error = payload.get('error', None)
+      if error:
+        raise Exception(f"Unknown error '{error}'")
+    availability = self._expected_one_list_element(payload, f"Availability: borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'")
+    return availability['availability']
+
+
 class MARCRecord():
   candidate_author_fields = {'100': ['a'], '110': ['a']}
   candidate_title_fields  = {'245': ['a'], '240': ['a']}

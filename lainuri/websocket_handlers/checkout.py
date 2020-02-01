@@ -28,6 +28,28 @@ def checkout(event):
     )
     return
 
+  # Get the itemnumber
+  item = None
+  try:
+    item = koha_api.get_item(event.item_barcode)
+  except Exception:
+    lainuri.websocket_server.push_event(
+      lainuri.event.LECheckOutFailed(event.item_barcode, event.user_barcode, {
+        'status': 'failed',
+        'item_not_found': traceback.format_exc(),
+      })
+    )
+    return
+
+  # Get curated availability from the REST API. This doesn't say if the item could be checked out from this specific branch
+  # but it is way better at communicating the small details.
+  availability = koha_api.availability(itemnumber=item['itemnumber'], borrowernumber=borrower['borrowernumber'])
+  if availability['available'] != True:
+    availability['status'] = 'failed'
+    lainuri.websocket_server.push_event(
+      lainuri.event.LECheckOutFailed(item['barcode'], borrower['cardnumber'], availability)
+    )
+
   # Checkout to Koha
   statuses = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
   if statuses['status'] == 'failed':
