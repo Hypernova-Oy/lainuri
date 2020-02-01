@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+from jinja2 import Template
 from datetime import datetime
 import os
 from weasyprint import HTML, CSS
@@ -54,3 +55,15 @@ def print_html(html_text: str):
     log.info(f"Thermal printer is disabled from configuration.")
 
   return 1
+
+def get_sheet_check_in(items: list) -> str:
+  template = open(
+    os.environ.get('LAINURI_CONF_DIR')+'/templates/check_in.j2',
+    'r',
+  ).read()
+  tm = Template(template)
+
+  return tm.render(
+    items=items,
+    today=datetime.today().strftime(get_config('dateformat'))
+  )

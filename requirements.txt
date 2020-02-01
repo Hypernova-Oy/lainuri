@@ -3,3 +3,4 @@ urllib3
 lxml
 colorlog
 WeasyPrint
+jinja2

@@ -270,12 +270,14 @@ class LEPrintRequest extends LEvent {
   static event = 'print-request'
   default_dispatch = 'server'
 
-  static serializable_attributes = ['items', 'user_barcode']
+  static serializable_attributes = ['receipt_type', 'items', 'user_barcode']
+  receipt_type;
   items;
   user_barcode;
 
-  constructor(items, user_barcode, sender, recipient, event_id = undefined) {
+  constructor(receipt_type, items, user_barcode, sender, recipient, event_id = undefined) {
     super(event_id);
+    this.receipt_type = receipt_type;
     this.items = items
     this.user_barcode = user_barcode
     this.construct(sender, recipient);
@@ -285,14 +287,16 @@ class LEPrintRequest extends LEvent {
 class LEPrintResponse extends LEvent {
   static event = 'print-response'
 
-  static serializable_attributes = ['items', 'user_barcode', 'printable_sheet', 'status']
+  static serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'status']
+  receipt_type;
   items;
   user_barcode;
   printable_sheet;
   status;
 
-  constructor(items, user_barcode, printable_sheet, status, sender, recipient, event_id = undefined) {
-  super(event_id);
+  constructor(receipt_type, items, user_barcode, printable_sheet, status, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.receipt_type = receipt_type
     this.items = items
     this.user_barcode = user_barcode
     this.printable_sheet = printable_sheet

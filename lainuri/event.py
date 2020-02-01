@@ -10,6 +10,7 @@ import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.test
 import lainuri.websocket_handlers.config
 import lainuri.websocket_handlers.checkout
+import lainuri.websocket_handlers.checkin
 import lainuri.websocket_handlers.printer
 import lainuri.koha_api as koha_api
 
@@ -99,6 +100,7 @@ class LECheckOutFailed(LEvent):
 
 class LECheckIn(LEvent):
   event = 'check-in'
+  default_handler = lainuri.websocket_handlers.checkin.checkin
 
   serializable_attributes = ['item_barcode']
   item_barcode = ''
@@ -193,11 +195,13 @@ class LEPrintRequest(LEvent):
   event = 'print-request'
   default_handler = lainuri.websocket_handlers.printer.print_receipt
 
-  serializable_attributes = ['items', 'user_barcode']
+  serializable_attributes = ['receipt_type', 'items', 'user_barcode']
+  receipt_type = ''
   items = []
   user_barcode = ''
 
-  def __init__(self, items: list, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, receipt_type: str, items: list, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.receipt_type = receipt_type
     self.items = items
     self.user_barcode = user_barcode
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
@@ -205,13 +209,15 @@ class LEPrintRequest(LEvent):
 class LEPrintResponse(LEvent):
   event = 'print-response'
 
-  serializable_attributes = ['items', 'user_barcode', 'printable_sheet', 'status']
+  serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'status']
+  receipt_type = ''
   items = []
   user_barcode = ''
   printable_sheet = ''
   status = {'success': 1, 'exception': ''}
 
-  def __init__(self, items: list, user_barcode: str, printable_sheet: str, status: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, receipt_type: str, items: list, user_barcode: str, printable_sheet: str, status: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.receipt_type = receipt_type
     self.items = items
     self.user_barcode = user_barcode
     self.printable_sheet = printable_sheet

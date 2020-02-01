@@ -130,6 +130,7 @@
     </v-row>
 
     <v-overlay :value="receipt_printing">
+      OTA KUITTI
       <ArrowSliding/>
     </v-overlay>
 
@@ -228,6 +229,7 @@ export default {
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
     this.items_checked_out_failed = []
     this.items_checked_out_successfully = []
+    this.barcodes_read = []
   },
   computed: {
     is_user_logged_in: function () {
@@ -299,6 +301,7 @@ export default {
       this.$data.receipt_printing = true;
       lainuri_ws.dispatch_event(
         new LEPrintRequest(
+          'check-out',
           this.$data.items_checked_out_successfully,
           this.$data.user.user_barcode,
         ),

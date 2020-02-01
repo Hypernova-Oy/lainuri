@@ -22,3 +22,6 @@ koha:
   password: correct_credentials_password-!
   branchcode: 'TIEKI'
   api_memoize_cache_size: 8
+
+# https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+dateformat: "%d.%m.%Y"
