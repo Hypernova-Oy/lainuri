@@ -5,6 +5,6 @@ requirements:
 serve:
 	sudo PYTHONPATH='.' python3 -m lainuri
 
-tail_scrape:
+tailscrape:
 	tail -f logs/scraper.log
 
