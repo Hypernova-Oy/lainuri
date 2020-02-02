@@ -11,9 +11,9 @@ import lainuri.websocket_server
 import lainuri.printer
 
 def print_receipt(event):
-  if event['receipt_type'] == 'check-out':
+  if event.receipt_type == 'check-out':
     return print_check_out_receipt(event)
-  elif event['receipt_type'] == 'check-in':
+  elif event.receipt_type == 'check-in':
     return print_check_in_receipt(event)
 
 def print_check_out_receipt(event):
@@ -47,7 +47,7 @@ def print_check_out_receipt(event):
 
 def print_check_in_receipt(event):
   try:
-    printable_sheet = lainuri.printer.get_sheet_check_in(event)
+    printable_sheet = lainuri.printer.get_sheet_check_in(event.items)
     lainuri.printer.print_html(printable_sheet)
     lainuri.websocket_server.push_event(
       le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, {
