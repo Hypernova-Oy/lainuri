@@ -1,0 +1,6 @@
+*
+!.gitignore
+!.gpg$
+!makefile
+!README.md
+!documents.tar.gz.gpg
