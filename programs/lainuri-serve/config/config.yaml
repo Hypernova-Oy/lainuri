@@ -1,0 +1,27 @@
+devices:
+  rfid-reader:
+    enabled: true
+    polling_interval: 1 # How often the RFID reader checks for inventory status
+  ringtone-player:
+    enabled: false
+  barcode-reader:
+    enabled: true
+    model: WGI3220USB # Allowed models are found in package lainuri.
+    model: WGC300UsbAT
+  thermal-printer:
+    enabled:  false
+    font-size: 12px
+
+ringtones:
+  error: ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c
+  success: ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5
+
+koha:
+  baseurl: https://demo1.intra.koha-helsinki-2.hypernova.fi
+  userid: l-t-dev-good
+  password: correct_credentials_password-!
+  branchcode: 'TIEKI'
+  api_memoize_cache_size: 8
+
+# https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
+dateformat: "%d.%m.%Y"

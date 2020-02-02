@@ -1,6 +1,0 @@
-beautifulsoup4
-urllib3
-lxml
-colorlog
-WeasyPrint
-jinja2

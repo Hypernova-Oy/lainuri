@@ -1,9 +1,0 @@
-<body id="circ_printslip">
-  <h4>Tänään palautetut {% today %}</h4>
-  <ul id="items_list">
-  {% for item in items %}
-    <li>{% item.title %}, {% item.author %} : {% item.item_barcode %}</li>
-  {% endfor %}
-  </ul>
-  <h4>xamk.fi</h4>
-</body>

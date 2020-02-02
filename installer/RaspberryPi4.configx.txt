@@ -1,0 +1,33 @@
+Raspberry Pi 4 configurations
+
+Append to:
+
+/etc/xdg/lxsession/LXDE-pi/autostart
+
+this:
+
+# ANSIBLE-MANAGED
+# As the display is rotated, force the touch screen to rotate with the screen
+# see:
+#   xinput --list
+# for the device name
+DISPLAY=:0 xinput --set-prop 'ILITEK ILITEK-TP' 'Coordinate Transformation Matrix' 0 1 0 -1 0 1 0 0 1
+# EOF ANSIBLE-MANAGED
+
+
+
+
+sudo apt install xinput-calibrator
+sudo apt-get install matchbox-keyboard
+
+
+
+
+
+PSU:
+AC->DC Alibaba
+
+https://www.mouser.fi/ProductDetail/CUI/PYBE20-Q24-S5?qs=sGAEpiMZZMvGsmoEFRKS8Koqt8Pjkl39tJ7txkmFOC8JBfMsX%2FLz%2FQ%3D%3D
+
+USB-C DIY charger cable. GND+5V
+
