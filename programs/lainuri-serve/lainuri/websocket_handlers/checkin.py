@@ -11,14 +11,14 @@ import lainuri.websocket_server
 import lainuri.event
 
 def checkin(event):
-  # Checkout to Koha
-  statuses = koha_api.checkin(event.item_barcode)
-  if statuses['status'] == 'failed':
+  try:
+    (status, states) = koha_api.checkin(event.item_barcode)
     lainuri.websocket_server.push_event(
-      lainuri.event.LECheckInFailed(event.item_barcode, statuses)
+      lainuri.event.LECheckInComplete(event.item_barcode, status, states)
     )
-    return
-
-  lainuri.websocket_server.push_event(
-    lainuri.event.LECheckInComplete(event.item_barcode, statuses)
-  )
+  except Exception:
+    lainuri.websocket_server.push_event(
+      lainuri.event.LECheckInComplete(event.item_barcode, 'failed', {
+        'exception': traceback.format_exc(),
+      })
+    )

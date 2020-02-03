@@ -83,16 +83,15 @@ import MainMenuView from './components/MainMenuView.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
-import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LECheckOuting, LECheckOuted, LECheckOutFailed} from './lainuri_events'
-import { LEServerConnected } from './lainuri_events';
+import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEUserLoggedIn} from './lainuri_events'
 
 let shared = {
-          item_barcode: '167N00000111',
-          book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-          title: 'Dummies for Grenades',
-          author: 'Olli-Antti Kivilahti',
-          checkout_status: 'success',
-        };
+  item_barcode: '167N00000111',
+  book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
+  title: 'Dummies for Grenades',
+  author: 'Olli-Antti Kivilahti',
+  status: 'success',
+};
 
 
 let preseed = 1;
@@ -153,7 +152,7 @@ export default {
           book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
           title: 'Grenades for Dummies',
           author: 'Olli-Antti Kivilahti',
-          checkout_status: 'pending',
+          status: 'pending',
         },{
           item_barcode: '167N11111111',
           book_cover_url: 'https://synergydental.org.uk/wp-content/uploads/2019/06/Synergy-Favicon-90x90.png',
@@ -185,8 +184,8 @@ export default {
     enter_main_menu: function () {
       this.app_mode = 'mode_main_menu';
       this.rfid_tags_present.forEach(bib_item => {
-        bib_item.checked_out_statuses = null
-        bib_item.checkout_status = null
+        bib_item.states = null
+        bib_item.status = null
       });
     },
     stop_checking_out: function () {

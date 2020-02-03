@@ -3,9 +3,9 @@
       ripple
       raised
       v-bind:class="{
-        error: item_bib.checkout_status === 'failed',
-        success: item_bib.checkout_status === 'success',
-        pending: item_bib.checkout_status === 'pending',
+        error: item_bib.status === 'failed',
+        success: item_bib.status === 'success',
+        pending: item_bib.status === 'pending',
       }"
       class="itemcard"
       @click="overlay = !overlay"
@@ -18,7 +18,7 @@
         gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
       >
         <v-progress-circular
-          v-if="item_bib.checkout_status === 'pending'"
+          v-if="item_bib.status === 'pending'"
           class="progress"
           size="150"
           width="25"
@@ -32,10 +32,10 @@
         <v-card-text v-text="item_bib.item_barcode"></v-card-text>
       </span>
       <v-overlay absolute :value="overlay"
-        v-if="item_bib.checked_out_statuses"
+        v-if="item_bib.states"
       >
         <v-card-text>
-          {{item_bib.checked_out_statuses}}
+          {{item_bib.states}}
         </v-card-text>
       </v-overlay>
     </v-card>

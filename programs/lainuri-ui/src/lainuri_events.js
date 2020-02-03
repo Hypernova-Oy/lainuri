@@ -84,8 +84,8 @@ class LEvent {
   }
 }
 
-class LECheckOuting extends LEvent {
-  static event = 'check-outing';
+class LECheckOut extends LEvent {
+  static event = 'check-out';
 
   static serializable_attributes = ['item_barcode', 'user_barcode'];
   item_barcode;
@@ -100,37 +100,21 @@ class LECheckOuting extends LEvent {
   }
 }
 
-class LECheckOuted extends LEvent {
-  static event = 'check-outed';
+class LECheckOutComplete extends LEvent {
+  static event = 'check-out-complete';
 
-  static serializable_attributes = ['item_barcode', 'user_barcode', 'statuses'];
+  static serializable_attributes = ['item_barcode', 'user_barcode', 'status', 'states'];
   item_barcode;
   user_barcode;
-  statuses;
+  states;
+  status;
 
-  constructor(item_barcode, user_barcode, statuses, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, user_barcode, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode
     this.user_barcode = user_barcode
-    this.statuses = statuses
-    this.construct(sender, recipient);
-    this.validate_params();
-  }
-}
-
-class LECheckOutFailed extends LEvent {
-  static event = 'check-out-failed';
-
-  static serializable_attributes = ['item_barcode', 'user_barcode', 'statuses'];
-  item_barcode;
-  user_barcode;
-  statuses;
-
-  constructor(item_barcode, user_barcode, statuses, sender, recipient, event_id = undefined) {
-    super(event_id);
-    this.item_barcode = item_barcode
-    this.user_barcode = user_barcode
-    this.statuses = statuses
+    this.states = states
+    this.status = status
     this.construct(sender, recipient);
     this.validate_params();
   }
@@ -153,30 +137,16 @@ class LECheckIn extends LEvent {
 class LECheckInComplete extends LEvent {
   static event = 'check-in-complete';
 
-  static serializable_attributes = ['item_barcode', 'statuses'];
+  static serializable_attributes = ['item_barcode', 'status', 'status', 'states'];
   item_barcode;
-  statuses;
+  states;
+  status;
 
-  constructor(item_barcode, statuses, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode
-    this.statuses = statuses
-    this.construct(sender, recipient);
-    this.validate_params();
-  }
-}
-
-class LECheckInFailed extends LEvent {
-  static event = 'check-in-failed';
-
-  static serializable_attributes = ['item_barcode', 'statuses'];
-  item_barcode;
-  statuses;
-
-  constructor(item_barcode, statuses, sender, recipient, event_id = undefined) {
-    super(event_id);
-    this.item_barcode = item_barcode
-    this.statuses = statuses
+    this.states = states
+    this.status = status
     this.construct(sender, recipient);
     this.validate_params();
   }
@@ -455,5 +425,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckInFailed, LECheckOuting, LECheckOuted, LECheckOutFailed, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
 }

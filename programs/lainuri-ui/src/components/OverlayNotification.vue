@@ -1,25 +1,22 @@
 <template>
-    <v-card
-      ripple
-      raised
-      v-bind:class="{
-        error: note.status === 'failed' || note.status === 'error',
-      }"
-      @click="$emit('close_notification')"
-    >
-      <span class="content">
-        <v-card-title v-text="note.title || '...'"></v-card-title>
-      </span>
-        <ItemCard :item_bib="note.item_bib"/>
-      <v-img
-        v-if="note.image"
-        :src="note.image"
-        contain
-        height="100%"
-        class="white--text align-end"
-        gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
-      />
-    </v-card>
+  <v-card
+    ripple
+    raised
+    v-bind:class="{
+      error: item_bib.status === 'failed' || item_bib.status === 'error',
+    }"
+    @click="$emit('close_notification')"
+  >
+    <h1>LAITA HYLLYYN OIKEALLA</h1>
+    {{item_bib.item_barcode}}
+    <ItemCard :item_bib="item_bib"/>
+    <v-img
+      src="place_to_bin_right.png"
+      contain
+      class="white--text align-end"
+      gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
+    />
+  </v-card>
 </template>
 
 <script>
@@ -31,7 +28,7 @@ export default {
     ItemCard,
   },
   props: {
-    note: Object,
+    item_bib: Object,
   },
   data: () => ({
   }),

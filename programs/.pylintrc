@@ -1,0 +1,5 @@
+[MASTER]
+init-hook='import sys; sys.path.append("./lainuri-serve")'
+indent-string='  '
+indent-after-paren=2
+disable=wrong-import-position

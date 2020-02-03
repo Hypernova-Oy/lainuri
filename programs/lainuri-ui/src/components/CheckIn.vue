@@ -56,7 +56,7 @@
         </v-card>
       </v-col>
 
-      <v-col v-if="rfid_tags_present.reduce((red, bib) => red === true || !(bib.checkout_status) || bib.checkout_status === 'pending', false)"
+      <v-col v-if="rfid_tags_present.reduce((red, bib) => red === true || !(bib.status) || bib.status === 'pending', false)"
         :cols="column_width"
       >
         <v-card
@@ -79,7 +79,7 @@
                 align="center"
                 justify="center"
               >
-                <ItemCard v-if="!item.checkout_status || (item.checkout_status !== 'failed' && item.checkout_status !== 'success')" v-bind:key="item.item_barcode" :item_bib="item"/>
+                <ItemCard v-if="!item.status || (item.status !== 'failed' && item.status !== 'success')" v-bind:key="item.item_barcode" :item_bib="item"/>
               </v-col>
             </v-row>
           </v-container>
@@ -117,14 +117,12 @@
       </v-col>
     </v-row>
 
-    <v-overlay :value="receipt_printing">
-      <ArrowSliding/>
-    </v-overlay>
-
+    <PrintNotification :receipt_printing="receipt_printing"
+      v-on:close_notification="print_receipt_complete"
+    />
     <v-overlay :value="overlay_notifications.length">
-      OTA KUITTI
       <OverlayNotification
-        :note="overlay_notifications[overlay_notifications.length-1]"
+        :item_bib="overlay_notifications[0]"
         v-on:close_notification="close_notification"
       />
     </v-overlay>
@@ -133,21 +131,21 @@
 </template>
 
 <script>
-import ArrowSliding from '../components/ArrowSliding.vue'
 import ItemCard from '../components/ItemCard.vue'
 import OverlayNotification from '../components/OverlayNotification.vue'
+import PrintNotification from '../components/PrintNotification.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from '../helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws} from '../lainuri'
-import {LERFIDTagsNew, LECheckIn, LECheckInComplete, LECheckInFailed, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
+import {LERFIDTagsNew, LECheckIn, LECheckInComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
 
 let emited = 0
 export default {
   name: 'CheckIn',
   components: {
-    ArrowSliding,
     ItemCard,
     OverlayNotification,
+    PrintNotification,
   },
   props: {
     rfid_tags_present: Array,
@@ -161,22 +159,19 @@ export default {
         splice_bib_item_from_array(this.barcodes_read, 'item_barcode', event.item_barcode);
       }
       if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
-      tag.checked_in_statuses = event.statuses
-      tag.checkout_status = event.statuses.status
-      this.items_checked_in_successfully.unshift(tag);
-    });
-    lainuri_ws.attach_event_listener(LECheckInFailed, this, function(event) {
-      console.log(`Received event '${LECheckInFailed.name}' for barcode='${event.item_barcode}'`);
-      let tag = find_tag_by_key(this.rfid_tags_present, 'item_barcode', event.item_barcode)
-      if (!tag) {
-        tag = find_tag_by_key(this.barcodes_read, 'item_barcode', event.item_barcode)
-        splice_bib_item_from_array(this.barcodes_read, 'item_barcode', event.item_barcode);
+      tag.states = event.states
+      tag.status = event.status
+
+      if (event.status === 'success') {
+        this.items_checked_in_successfully.unshift(tag);
       }
-      if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
-      tag.checked_in_statuses = event.statuses
-      if (! tag.checked_in_statuses) tag.checked_in_statuses = event.exception
-      tag.checkout_status = event.statuses.status
-      this.items_checked_in_failed.unshift(tag);
+      else {
+        this.items_checked_in_failed.unshift(tag);
+      }
+
+      if (Object.keys(event.states).length) {
+        this.overlay_notifications.push(tag);
+      }
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
       console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
@@ -200,9 +195,8 @@ export default {
     });
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
       console.log(`Received event '${LEPrintResponse.name}'`);
-      this.$data.receipt_printing = false;
-      this.$emit('exception', event.status.exception);
-      this.stop_checking_in();
+      if (this.receipt_printing) {this.print_receipt_complete(event);}
+      else {console.error(`Received event '${LEPrintResponse.name}' but not printing a receipt. User race condition maybe?`)}
     });
   },
   mounted: function () {
@@ -225,7 +219,7 @@ export default {
         visible_columns++;
         console.log(`column_width():> this.items_checked_in_successfully visible`)
       }
-      if (this.rfid_tags_present.reduce((red, bib) => red === true || !(bib.checkout_status) || bib.checkout_status === 'pending', false)) {
+      if (this.rfid_tags_present.reduce((red, bib) => red === true || !(bib.status) || bib.status === 'pending', false)) {
         visible_columns++;
         console.log(`column_width():> this.rfid_tags_present visible`)
       }
@@ -253,8 +247,8 @@ export default {
     check_in_item: function (item_bib, delay) {
       console.log(`Checking out item '${item_bib.item_barcode}'`);
       if (! item_bib.checked_in) {
-        item_bib.checked_in_statuses = {status: 'pending'}
-        item_bib.checkout_status = 'pending'
+        item_bib.states = {status: 'pending'}
+        item_bib.status = 'pending'
         //window.setTimeout(() =>
           lainuri_ws.dispatch_event(new LECheckIn(item_bib.item_barcode, 'client', 'server'))
         //, delay);
@@ -274,84 +268,95 @@ export default {
         ),
       );
     },
+    print_receipt_complete: function (event) {
+      this.$data.receipt_printing = false;
+      if (event) {
+        this.$emit('exception', event.status.exception);
+      }
+      this.stop_checking_in();
+    },
     close_notification: function () {
       console.log("Closing notification");
-      this.$data.overlay_notifications.pop();
+      this.$data.overlay_notifications.shift();
     },
   },
   data: () => ({
     receipt_printing: false,
     barcodes_read: [],
     overlay_notifications: [
-      {image: 'place_to_bin_right.png', title: 'Laita pyllyyn', item_bib:
-            {
+/*      {
         item_barcode: '167N00770111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Grenades for Dummies',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'success',
-      },},
-      {image: 'place_to_bin_left.png', status: 'error', title: 'Laita hyllyyn', item_bib:
-            {
+        status: 'error',
+        states: {
+          no_item: '167N00770111',
+        },
+      },
+      {
         item_barcode: '167N00770111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Grenades for Dummies',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'success',
-      },},
+        status: 'success',
+        states: {
+          not_checked_out: '1',
+        },
+      },*/
     ],
     items_checked_in_successfully: [
-      {
+/*      {
         item_barcode: '167N00770111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Dummies for Grenades',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'success',
-      },
+        status: 'success',
+      },*/
     ],
     items_checked_in_failed: [
-      {
+/*      {
         item_barcode: '167N00660001',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Grenades for Dummies',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'error',
+        status: 'error',
       },
       {
         item_barcode: '167N00550111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Dummies for Grenades',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'error',
+        status: 'error',
       },
       {
         item_barcode: '167N00440001',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Grenades for Dummies',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'error',
+        status: 'error',
       },
       {
         item_barcode: '167N00110111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Dummies for Grenades',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'error',
+        status: 'error',
       },
       {
         item_barcode: '167N00220001',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Grenades for Dummies',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'error',
+        status: 'error',
       },
       {
         item_barcode: '167N00330111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
         title: 'Dummies for Grenades',
         author: 'Olli-Antti Kivilahti',
-        checkout_status: 'error',
-      },
+        status: 'error',
+      },*/
     ],
   }),
 }

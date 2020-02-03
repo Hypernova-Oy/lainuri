@@ -225,29 +225,29 @@ class KohaAPI():
 
     (soup, alerts, messages) = self._receive_html(r)
 
-    statuses = {}
-    alerts = [a for a in alerts if not self.checkin_has_status(a.prettify(), statuses)]
-    messages = [a for a in messages if not self.checkin_has_status(a.prettify(), statuses)]
+    states = {}
+    alerts = [a for a in alerts if not self.checkin_has_status(a.prettify(), states)]
+    messages = [a for a in messages if not self.checkin_has_status(a.prettify(), states)]
 
     if (alerts or messages):
-      statuses['unhandled'] = [*(alerts or []), *(messages or [])]
-      statuses['status'] = 'failed'
-    if statuses.get('status', None) != 'failed':
-      statuses['status'] = 'success'
-    log.info(f"Checkin barcode='{barcode}' with statuses='{statuses}'")
-    return statuses
+      states['unhandled'] = [*(alerts or []), *(messages or [])]
+      states['status'] = 'failed'
+    if states.get('status', None) != 'failed':
+      states['status'] = 'success'
+    log.info(f"Checkin barcode='{barcode}' with states='{states}'")
+    return (states.pop('status'), states)
 
-  def checkin_has_status(self, message, statuses):
+  def checkin_has_status(self, message, states):
     m_not_checked_out = re.compile('Not checked out', re.S | re.M | re.I)
     match = m_not_checked_out.search(message)
     if match:
-      statuses['not_checked_out'] = 1
+      states['not_checked_out'] = 1
       return 'not_checked_out'
 
-    m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+)\n', re.S | re.M | re.I)
+    m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+?)\n', re.S | re.M | re.I)
     match = m_return_to_another_branch.search(message)
     if match:
-      statuses['return_to_another_branch'] = match.group('branchname')
+      states['return_to_another_branch'] = match.group('branchname')
       return 'return_to_another_branch'
 
     return None
@@ -274,30 +274,30 @@ class KohaAPI():
     )
     (soup, alerts, messages) = self._receive_html(r)
 
-    statuses = {}
-    alerts = [a for a in alerts if not self.checkout_has_status(a.prettify(), statuses)]
-    messages = [a for a in messages if not self.checkout_has_status(a.prettify(), statuses)]
+    states = {}
+    alerts = [a for a in alerts if not self.checkout_has_status(a.prettify(), states)]
+    messages = [a for a in messages if not self.checkout_has_status(a.prettify(), states)]
 
     if (alerts or messages):
-      statuses['unhandled'] = [*(alerts or []), *(messages or [])]
-      statuses['status'] = 'failed'
-    if statuses.get('status', None) != 'failed':
-      statuses['status'] = 'success'
-    log.info(f"Checkout complete: barcode='{barcode}' borrowernumber='{borrowernumber}' with statuses='{statuses}'")
-    return statuses
+      states['unhandled'] = [*(alerts or []), *(messages or [])]
+      states['status'] = 'failed'
+    if states.get('status', None) != 'failed':
+      states['status'] = 'success'
+    log.info(f"Checkout complete: barcode='{barcode}' borrowernumber='{borrowernumber}' with states='{states}'")
+    return (states.pop('status'), states)
 
-  def checkout_has_status(self, message, statuses):
+  def checkout_has_status(self, message, states):
     m_not_checked_out = re.compile('Not checked out', re.S | re.M | re.I)
     match = m_not_checked_out.search(message)
     if match:
-      statuses['not_checked_out'] = 1
+      states['not_checked_out'] = 1
       return 'not_checked_out'
 
     m_needsconfirmation = re.compile('circ_needsconfirmation', re.S | re.M | re.I)
     match = m_needsconfirmation.search(message)
     if match:
-      statuses['needs_confirmation'] = 1
-      statuses['status'] = 'failed'
+      states['needs_confirmation'] = 1
+      states['status'] = 'failed'
       return 'needs_confirmation'
 
     return None

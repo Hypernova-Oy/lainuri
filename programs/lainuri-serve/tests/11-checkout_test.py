@@ -37,15 +37,15 @@ def test_checkout(subtests):
     }
 
   with subtests.test("When the tag is checked out"):
-    event = le.LECheckOuting(tag.serial_number(), borrower['cardnumber'])
+    event = le.LECheckOut(tag.serial_number(), borrower['cardnumber'])
     lainuri.websocket_handlers.checkout.checkout(event)
 
   with subtests.test("And the gate security alarm is disabled"):
     lainuri.websocket_handlers.checkout.set_tag_gate_alarm_off(event)
 
-  with subtests.test("Then a LECheckOuted-event is dispatched"):
+  with subtests.test("Then a LECheckOutComplete-event is dispatched"):
     event = lainuri.websocket_server.events[-1]
-    assert type(event) == le.LECheckOuted
+    assert type(event) == le.LECheckOutComplete
 
-  with subtests.test("And the LECheckOuted-event has the expected contents"):
+  with subtests.test("And the LECheckOutComplete-event has the expected contents"):
     assert 1 == 1

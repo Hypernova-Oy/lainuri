@@ -54,8 +54,8 @@ class LEvent():
     class_name = type(self)
     raise Exception(f"{class_name}():> Missing attribute '{attribute_name}'")
 
-class LECheckOuting(LEvent):
-  event = 'check-outing'
+class LECheckOut(LEvent):
+  event = 'check-out'
   default_handler = lainuri.websocket_handlers.checkout.checkout
 
   serializable_attributes = ['item_barcode', 'user_barcode']
@@ -68,33 +68,20 @@ class LECheckOuting(LEvent):
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
-class LECheckOuted(LEvent):
-  event = 'check-outed'
+class LECheckOutComplete(LEvent):
+  event = 'check-out-complete'
 
-  serializable_attributes = ['item_barcode', 'user_barcode', 'statuses']
+  serializable_attributes = ['item_barcode', 'user_barcode', 'status', 'states']
   item_barcode = ''
   user_barcode = 0
-  statuses = {}
+  states = {}
+  status = ''
 
-  def __init__(self, item_barcode: str, user_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, user_barcode: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
     self.user_barcode = user_barcode
-    self.statuses = statuses
-    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
-    self.validate_params()
-
-class LECheckOutFailed(LEvent):
-  event = 'check-out-failed'
-
-  serializable_attributes = ['item_barcode', 'user_barcode', 'statuses']
-  item_barcode = ''
-  user_barcode = 0
-  statuses = {}
-
-  def __init__(self, item_barcode: str, user_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.item_barcode = item_barcode
-    self.user_barcode = user_barcode
-    self.statuses = statuses
+    self.status = status
+    self.states = states
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
@@ -113,26 +100,15 @@ class LECheckIn(LEvent):
 class LECheckInComplete(LEvent):
   event = 'check-in-complete'
 
-  serializable_attributes = ['item_barcode', 'statuses']
+  serializable_attributes = ['item_barcode', 'status', 'states']
   item_barcode = ''
-  statuses = {}
+  states = {}
+  status = ''
 
-  def __init__(self, item_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
-    self.statuses = statuses
-    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
-    self.validate_params()
-
-class LECheckInFailed(LEvent):
-  event = 'check-in-failed'
-
-  serializable_attributes = ['item_barcode', 'statuses']
-  item_barcode = ''
-  statuses = {}
-
-  def __init__(self, item_barcode: str, statuses: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.item_barcode = item_barcode
-    self.statuses = statuses
+    self.states = states
+    self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 

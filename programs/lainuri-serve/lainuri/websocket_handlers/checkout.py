@@ -15,60 +15,63 @@ import lainuri.RL866.state as rfid_state
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 
 def checkout(event):
-  # Get the borrower
-  borrower = None
   try:
-    borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
+    # Get the borrower
+    borrower = None
+    try:
+      borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
+    except Exception:
+      lainuri.websocket_server.push_event(
+        lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, 'failed', {
+          'user_not_found': traceback.format_exc(),
+        })
+      )
+      return
+
+    # Get the itemnumber
+    item = None
+    try:
+      item = koha_api.get_item(event.item_barcode)
+    except Exception:
+      lainuri.websocket_server.push_event(
+        lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, 'failed', {
+          'item_not_found': traceback.format_exc(),
+        })
+      )
+      return
+
+    # Get curated availability from the REST API. This doesn't say if the item could be checked out from this specific branch
+    # but it is way better at communicating the small details.
+    availability = koha_api.availability(itemnumber=item['itemnumber'], borrowernumber=borrower['borrowernumber'])
+    if availability['available'] != True:
+      lainuri.websocket_server.push_event(
+        lainuri.event.LECheckOutComplete(item['barcode'], borrower['cardnumber'], 'failed', availability)
+      )
+
+    # Checkout to Koha
+    (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
+    if status == 'failed':
+      lainuri.websocket_server.push_event(
+        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'failed', states)
+      )
+      return
+
+    try:
+      set_tag_gate_alarm_off(event)
+      # Send a notification to the UI
+      lainuri.websocket_server.push_event(
+        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'success', states)
+      )
+    except Exception:
+      states['write_to_tag_failed'] = traceback.format_exc()
+      lainuri.websocket_server.push_event(
+        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'failed', states)
+      )
   except Exception:
     lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(event.item_barcode, event.user_barcode, {
-        'status': 'failed',
-        'user_not_found': traceback.format_exc(),
+      lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'failed', {
+        'exception': traceback.format_exc(),
       })
-    )
-    return
-
-  # Get the itemnumber
-  item = None
-  try:
-    item = koha_api.get_item(event.item_barcode)
-  except Exception:
-    lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(event.item_barcode, event.user_barcode, {
-        'status': 'failed',
-        'item_not_found': traceback.format_exc(),
-      })
-    )
-    return
-
-  # Get curated availability from the REST API. This doesn't say if the item could be checked out from this specific branch
-  # but it is way better at communicating the small details.
-  availability = koha_api.availability(itemnumber=item['itemnumber'], borrowernumber=borrower['borrowernumber'])
-  if availability['available'] != True:
-    availability['status'] = 'failed'
-    lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(item['barcode'], borrower['cardnumber'], availability)
-    )
-
-  # Checkout to Koha
-  statuses = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
-  if statuses['status'] == 'failed':
-    lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(event.item_barcode, borrower['cardnumber'], statuses)
-    )
-    return
-
-  try:
-    set_tag_gate_alarm_off(event)
-    # Send a notification to the UI
-    lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOuted(event.item_barcode, borrower['cardnumber'], statuses)
-    )
-  except Exception:
-    statuses['status'] = 'failed'
-    statuses['write_to_tag_failed'] = traceback.format_exc()
-    lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutFailed(event.item_barcode, borrower['cardnumber'], statuses)
     )
 
 def set_tag_gate_alarm_off(event):

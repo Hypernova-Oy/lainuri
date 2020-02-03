@@ -74,14 +74,14 @@ def test_enrich_rfid_tag_with_marc():
 def test_checkin():
   global borrower, item, record
   koha_api.current_event_id = 'checkin-10'
-  statuses = koha_api.checkin(item['barcode'])
-  assert statuses['status'] == 'success'
+  (status, states) = koha_api.checkin(item['barcode'])
+  assert status == 'success'
 
 def test_checkout():
   global borrower, item, record
   koha_api.current_event_id = 'checkout-11'
-  statuses = koha_api.checkout(item['barcode'], borrower['borrowernumber'])
-  assert statuses['status'] == 'success'
+  (status, states) = koha_api.checkout(item['barcode'], borrower['borrowernumber'])
+  assert status == 'success'
 
 def test_receipt():
   global borrower, item, record
