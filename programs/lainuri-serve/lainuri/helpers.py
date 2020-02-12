@@ -103,7 +103,8 @@ def find_dev_path(usb_vendor, usb_model) -> str:
   tty_lookalikes = glob.glob('/dev/ttyACM*')
   for tty_dev_path in tty_lookalikes:
     dev_info = _parse_udevadm_info(tty_dev_path)
-    if dev_info['vendor_id'] == usb_vendor and dev_info['model_id'] == usb_model:
+    log.debug(f"dev_info='{dev_info}'")
+    if dev_info['vendor_id'].upper() == usb_vendor.upper() and dev_info['model_id'].upper() == usb_model.upper():
       return tty_dev_path
   raise Exception(f"No device vendor='{usb_vendor}' model='{usb_model}' found in '{tty_lookalikes}'")
 
@@ -111,9 +112,9 @@ def _parse_udevadm_info(dev_path: str) -> dict:
   # pylint: disable=anomalous-backslash-in-string
   dev_info = subprocess.check_output(f"udevadm info -q all -n {dev_path}", shell=True).decode('latin1')
   parse_vendor_model = re.compile("""
-    ID_VENDOR_ID=(?P<vendor_id>\w+)$
+    ID_VENDOR_ID=(?P<vendor_id>\w+)
     .+?
-    ID_MODEL_ID=(?P<model_id>\w+)$
+    ID_MODEL_ID=(?P<model_id>\w+)
   """, re.S | re.M | re.X)
   match = parse_vendor_model.search(dev_info)
   if match:

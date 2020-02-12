@@ -5,14 +5,14 @@ log = logging.getLogger(__name__)
 import serial
 
 import lainuri.helpers
-from lainuri.barcode_reader.model.WGC_commands import *
+from lainuri.barcode_reader.model.WGI_commands import *
 
 
 def connect(self):
-  port = lainuri.helpers.find_dev_path('24EA', '0197')
+  port = lainuri.helpers.find_dev_path('24EA', '0187')
   log.info(f"Connecting to port='{port}'")
   ser = serial.Serial()
-  ser.baudrate = 115200
+  ser.baudrate = 9600
   ser.parity = serial.PARITY_NONE
   ser.databits = 8
   ser.stopbits = 1
@@ -23,13 +23,15 @@ def connect(self):
 
 def autoconfigure(self):
   configurations = [
-    WGC_SettingsEnter(),
-    WGC_AllBarcodes(disable_all_barcodes=1),
-    WGC_Code39Enable(),
-    WGC_Code39MinBarcodeLength(min_barcode_length=10),
-    WGC_Code39MaxBarcodeLength(max_barcode_length=12),
-    WGC_BarcodesSetSuffix(carriage_return_suffix=1), # TODO: The device actually doesn't set this new suffix, but it should set a suffix for better transport reliability.
-    WGC_SettingsExit(),
+    WGI_ConfirmCommunicationStatus(),
+    WGI_ScanMode(auto_scan=1),
+    WGI_TurnOnAllCode(),
   ]
   for cmd in configurations:
-    self.write(cmd)
+    send_command(self, cmd)
+
+def send_command(self, cmd):
+  self.write(cmd)
+  byttes = self.blocking_read()
+  if not (byttes and byttes == b'\x52\xA0\xEC\xFE\x74'):
+    raise Exception(f"Sending command {cmd} failed due to device error response.")

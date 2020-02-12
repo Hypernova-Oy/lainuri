@@ -34,9 +34,20 @@ class BarcodeReader():
     self.config_module.autoconfigure(self)
 
   def is_connected(self):
-    self.config_module.is_connected(self)
+    if not self.serial.is_open:
+      log.error(f"Barcode reader serial connection lost! Reconnecting.")
+      self.serial = connect(self)
+
+  def send_command(self, command):
+    """
+    Send a command which is under the barcode reader device's communication protocol, checking for success or failure in message processing.
+    """
+    self.config_module.send_command(self, command)
 
   def write(self, cmd):
+    """
+    Write raw bytes to the serial connection
+    """
     log.info(f"WRITE--> {type(cmd)}")
     data = cmd.pack()
     for b in data: print(hex(b), ' ', end='')
@@ -54,10 +65,18 @@ class BarcodeReader():
     return rv
 
   def blocking_read(self):
-    # Use the serial-system's blocking read to notify us of new bytes to read, instead of looping and polling.
+    """
+    Use the serial-system's blocking read to notify us of new bytes to read, instead of looping and polling.
+    """
     self.serial.timeout = None # wait forever / until requested number of bytes are received
     rv = self.serial.read(1)
     rv = rv + self.read()
+    if (rv):
+      log.debug(f"Received bytes='{rv.hex()}'")
+    return rv
+
+  def read_barcode_blocking(self):
+    rv = self.blocking_read()
     if (rv):
       barcode = rv[0:-1].decode('latin1') # Pop the last character, as it it the barcode termination character
       log.info(f"Received barcode='{barcode}' bytes='{rv}'")
