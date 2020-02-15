@@ -10,17 +10,14 @@ formatters:
 handlers:
   console:
     class: logging.StreamHandler
-    level: DEBUG
     formatter: simple
     stream: ext://sys.stdout
   console_complex:
     class: logging.StreamHandler
-    level: DEBUG
     formatter: colored
     stream: ext://sys.stdout
   scraper:
     class: logging.handlers.TimedRotatingFileHandler
-    level: DEBUG
     formatter: colored
     filename: {lainuri_log_dir}/scraper.log
     when: 'D'

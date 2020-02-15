@@ -93,7 +93,7 @@ class BarcodeReader():
     log.info("Barcodes polling starting")
 
     while(1):
-      barcode = self.blocking_read()
+      barcode = self.read_barcode_blocking()
       if (barcode):
         handler(barcode)
 

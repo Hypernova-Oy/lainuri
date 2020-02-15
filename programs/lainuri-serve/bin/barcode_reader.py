@@ -12,7 +12,7 @@ import time
 from lainuri.barcode_reader import BarcodeReader
 from lainuri.barcode_reader.model.WGI_commands import *
 
-#c['devices']['barcode-reader']['model'] = 'WGI3220USB'
+c['devices']['barcode-reader']['model'] = 'WGI3220USB'
 
 bcr = BarcodeReader()
 
@@ -40,3 +40,7 @@ print(bcr.read())
 
 print("READ READ READ")
 print(bcr.blocking_read())
+
+
+import pdb; pdb.set_trace()
+

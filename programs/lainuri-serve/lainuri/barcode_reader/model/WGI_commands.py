@@ -42,6 +42,36 @@ class WGICommand():
   def byte_to_int(self, by):
       return int.from_bytes(by, byteorder="little")
 
+class WGI_AimingLight(WGICommand):
+  """
+  ?
+  """
+  exID  = b'\xA1'
+  exCMD = b'\x03'
+  def __init__(self, turn_off=None, when_scan=None, always_on=None):
+    if when_scan or (not(turn_off) and not(when_scan) and not(always_on)):
+      self.data = b'\x01'
+    if turn_off:
+      self.data = b'\x00'
+    else:
+      self.data = b'\x02'
+    super().__init__()
+
+class WGI_IlluminateWorkMode(WGICommand):
+  """
+  ?
+  """
+  exID  = b'\xA1'
+  exCMD = b'\x04'
+  def __init__(self, turn_off=None, when_scan=None, always_on=None):
+    if when_scan or (not(turn_off) and not(when_scan) and not(always_on)):
+      self.data = b'\x01'
+    if turn_off:
+      self.data = b'\x00'
+    else:
+      self.data = b'\x02'
+    super().__init__()
+
 class WGI_ConfirmCommunicationStatus(WGICommand):
   """
   ?
@@ -62,6 +92,16 @@ class WGI_ReadVersion(WGICommand):
   def __init__(self):
     super().__init__()
 
+class WGI_RestoreDefault(WGICommand):
+  """
+  ?
+  """
+  exID  = b'\xA1'
+  exCMD = b'\x01'
+  data  = b'\x0F'
+  def __init__(self):
+    super().__init__()
+
 class WGI_ScanControl(WGICommand):
   """
   ?
@@ -70,9 +110,9 @@ class WGI_ScanControl(WGICommand):
   exCMD = b'\x01'
   def __init__(self, start_scan=None, stop_scan=None):
     if start_scan or (start_scan == None and stop_scan == None):
-      self.data = b'01'
+      self.data = b'\x01'
     else:
-      self.data = b'00'
+      self.data = b'\x00'
     super().__init__()
 
 class WGI_ScanMode(WGICommand):
@@ -130,7 +170,8 @@ class WGI_ACKFeedback(WGICommand):
   exCMD = b'\x00'
   def __init__(self, turn_on=None, turn_off=None):
     if turn_on or (not turn_on and not turn_off):
-      self.data = b'01'
+      self.data = b'\x01'
     else:
-      self.data = b'00'
+      self.data = b'\x00'
     super().__init__()
+
