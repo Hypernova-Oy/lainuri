@@ -1,0 +1,19 @@
+[Unit]
+Description=Lainuri backend services
+
+[Service]
+Type=idle
+User=root
+Environment="LAINURI_CONF_DIR=/etc/lainuri-serve/"
+Environment="LAINURI_LOG_DIR=/var/log/lainuri-serve/"
+Environment="PYTHONPATH='.'"
+WorkingDirectory=/opt/lainuri/programs/lainuri-serve/
+ExecStart=/usr/bin/python3 -m lainuri
+
+RestartSec=5s
+Restart=always
+
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
