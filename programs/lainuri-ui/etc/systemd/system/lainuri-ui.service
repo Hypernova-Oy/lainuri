@@ -1,0 +1,16 @@
+[Unit]
+Description=Lainuri frontend server at localhost:5000
+
+[Service]
+Type=idle
+User=pi
+WorkingDirectory=/opt/lainuri/programs/lainuri-ui
+ExecStart=npm run prod
+
+RestartSec=5s
+Restart=always
+
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
