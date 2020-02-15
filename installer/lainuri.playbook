@@ -1,0 +1,241 @@
+---
+
+## IN THIS PLAYBOOK
+##
+## Deploy Lainuri
+##
+
+- name: Install and configure Lainuri
+  hosts: lainuri
+  become: yes
+  tasks:
+
+  - name: Format the FQDN hostname
+    set_fact: fqdn_inventory_hostname={{inventory_hostname | regex_replace('_', '-') }}
+
+
+
+  # START OF BLOCK Configure Raspbian
+  - name: Configure Raspbian
+    block:
+      #This is a major security concern, as the openssh-server is enabled and the default raspbien is well-known
+    - name: Harden the default user password
+      user:
+        name: pi
+        password: "{{pi_password | password_hash('sha512', 'salt salt soo salty')}}"
+        system: yes
+        state: present
+
+    - name: Set default languages
+      locale_gen: name={{item}} state=present
+      with_items: "{{raspberry_pi_locales}}"
+      notify: Restart raspberry pi
+
+    - name: Set default keyboard layout
+      lineinfile:
+        dest: /etc/default/keyboard
+        regexp: "{{item.regexp}}"
+        line: "{{item.line}}"
+        state: present
+      with_items: "{{raspberry_pi_keyboard_layout}}"
+      notify: Restart raspberry pi
+
+    - name: Set hosts
+      lineinfile:
+        dest:   /etc/hosts
+        regexp: (raspberry|{{inventory_hostname}}|{{fqdn_inventory_hostname}})
+        line:   "127.0.0.1       {{fqdn_inventory_hostname}}"
+      notify: Restart raspberry pi
+
+    - name: Set hostname
+      hostname: name="{{fqdn_inventory_hostname}}"
+      notify: Restart raspberry pi
+
+    - name: Apt upgrade
+      apt:
+        upgrade: safe
+        update_cache: yes
+
+    - name: Apt install useful applications, such as xinput calibrator and virtual keyboard
+      apt:
+        name:
+          - xinput-calibrator
+          - matchbox-keyboard
+
+    - name: Configure LXDE autostart to trigger our startup script
+      lineinfile:
+        path:   /etc/xdg/lxsession/LXDE-pi/autostart
+        regexp: /home/pi/lainuri-config-display.sh
+        line:   /bin/bash /opt/lainuri-config-display.sh # {{ansible_managed}}
+      notify: Restart raspberry pi
+
+    - name: Set touch screen and display and start the UI on startup
+      copy:
+        dest: /opt/lainuri-config-display.sh
+        content: |
+            #!/bin/bash
+
+            GEOMETRY=($(DISPLAY=:0 xrandr | grep -P '^HDMI-\d' | perl -ne '$_ =~ /connected primary (\d+)x(\d+)\+(\d+)\+(\d+)/; print "$1 $2 $3 $4"'))
+            SCREEN_WIDTH=${GEOMETRY[0]}
+            SCREEN_HEIGHT=${GEOMETRY[1]}
+            SCREEN_MARGIN_LEFT=${GEOMETRY[2]}
+            SCREEN_MARGIN_TOP=${GEOMETRY[3]}
+
+            LAINURI_UI_URL="http://localhost:5000"
+            CHROMIUM_CACHE_DIR="/home/pi/lainuri-chromium-cache"
+
+            ## Rotate the display to correct orientation
+            # see:
+            #   xrandr
+            # for the display name
+            DISPLAY=:0 xrandr --output HDMI-1 --rotate left
+            # As the display is rotated, force the touch screen to rotate with the screen
+            # see:
+            #   xinput --list
+            # for the device name
+            #DISPLAY=:0 xinput --set-prop 'ILITEK ILITEK-TP' 'Coordinate Transformation Matrix' 0 1 0 -1 0 1 0 0 1 # inverted?
+            DISPLAY=:0 xinput --set-prop 'ILITEK ILITEK-TP' 'Coordinate Transformation Matrix' 0 -1 1 1 0 0 0 0 1
+            # Disable screen saving
+            xset s off
+            xset -dpms
+            xset s noblank
+
+
+            mkdir "$CHROMIUM_CACHE_DIR"
+            DISPLAY=:0 /usr/bin/chromium-browser --disable-infobars --disable-pinch \
+                                    --disable-session-crashed-bubble --disable-sync-preferences \
+                                    --disk-cache-dir="$CHROMIUM_CACHE_DIR" \
+                                    --hide-scrollbars --incognito --kiosk --kiosk-printing \
+                                    --noerrdialogs --no-first-run --no-touch-pinch --window-position=0,0 \
+                                    --window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT} \
+                                    $LAINURI_UI_URL
+
+        backup: yes
+      notify: Restart raspberry pi
+
+    - name: Set the lxpanel size for easier touch access
+      lineinfile:
+        path: /home/pi/.config/lxpanel/LXDE-pi/panels/panel
+        regexp: "{{item.regexp}}"
+        line:   "{{item.line}}"
+      loop:
+        - regexp: 'iconsize='
+          line:   'iconsize=52'
+        - regexp: 'height='
+          line:   'height=52'
+    # END OF BLOCK Configure Raspbian
+
+
+
+  - name: Get the source code
+    git:
+      repo: https://git.hypernova.fi/kivilahtio/lainuri.git
+      dest: /opt/lainuri
+      force: yes
+    ignore_errors: yes # For now we can ignore this as the git repo is protected
+    register: reg_source_code
+    notify:
+      - Restart lainuri-serve
+      - Restart lainuri-ui
+
+
+
+    # START OF BLOCK lainuri-serve
+  - name: Install, configure and daemonize lainuri-serve
+    block:
+      - name: Install requirements
+        pip:
+          chdir: /opt/lainuri/programs/lainuri-serve
+          requirements: requirements.txt
+          executable: /usr/bin/pip3
+
+      - name: Systemd service deployment
+        copy:
+          dest: /etc/systemd/system/lainuri-serve.service
+          remote_src: yes
+          src: /opt/lainuri/programs/lainuri-serve/etc/systemd/system/lainuri-serve.service
+
+      - name: Config and log file directories
+        file:
+          path: "{{item}}"
+          state: directory
+          mode: 0700
+        loop:
+          - /etc/lainuri-serve
+          - /var/log/lainuri-serve
+
+      - name: Service configuration
+        template:
+          dest: /etc/lainuri-serve/config.yaml
+          src: templates/lainuri_serve_config.yaml.j2
+          mode: 0600
+        notify: Restart lainuri-serve
+
+      - name: Systemd enable daemon
+        systemd:
+          name: lainuri-serve.service
+          daemon_reload: yes
+          enabled: yes
+          state: started
+    # END OF BLOCK lainuri-serve
+
+
+
+    # START OF BLOCK lainuri-ui
+  - name: Install, configure and daemonize lainuri-ui
+    block:
+      - name: Install global Node dependencies
+        npm:
+          global: yes
+          name: "{{item}}"
+        loop:
+          - npm
+          - "@vue/cli"
+
+      - name: Install requirements
+        npm:
+          path: /opt/lainuri/programs/lainuri-ui
+
+      - name: Build for production
+        command:
+          chdir: /opt/lainuri/programs/lainuri-ui
+          cmd: npm run build
+        when: reg_source_code.changed
+
+      - name: Systemd service deployment
+        copy:
+          dest: /etc/systemd/system/lainuri-ui.service
+          remote_src: yes
+          src: /opt/lainuri/programs/lainuri-ui/etc/systemd/system/lainuri-ui.service
+
+      - name: Systemd enable daemon
+        systemd:
+          name: lainuri-ui.service
+          daemon_reload: yes
+          enabled: yes
+    # END OF BLOCK lainuri-ui
+
+
+
+  handlers:
+    - name: Restart raspberry pi
+      command: shutdown -r now "Ansible updates triggered"
+      async: 1
+      poll: 0
+      ignore_errors: true
+      become: yes
+      notify: Wait for Raspberry PI to come back
+
+    - name: Wait for Raspberry PI to come back
+      local_action: wait_for host={{ ansible_host }} port={{ansible_port}} state=started delay=30
+
+    - name: Restart lainuri-serve
+      systemd:
+        name: lainuri-serve.service
+        state: restarted
+
+    - name: Restart lainuri-ui
+      systemd:
+        name: lainuri-ui.service
+        state: restarted
+
