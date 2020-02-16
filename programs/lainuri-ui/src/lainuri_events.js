@@ -87,14 +87,16 @@ class LEvent {
 class LECheckOut extends LEvent {
   static event = 'check-out';
 
-  static serializable_attributes = ['item_barcode', 'user_barcode'];
+  static serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type'];
   item_barcode;
   user_barcode;
+  tag_type;
 
-  constructor(item_barcode, user_barcode, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, user_barcode, tag_type = 'rfid', sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode;
     this.user_barcode = user_barcode;
+    this.tag_type = tag_type;
     this.construct(sender, recipient);
     this.validate_params();
   }
@@ -103,16 +105,18 @@ class LECheckOut extends LEvent {
 class LECheckOutComplete extends LEvent {
   static event = 'check-out-complete';
 
-  static serializable_attributes = ['item_barcode', 'user_barcode', 'status', 'states'];
+  static serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type', 'status', 'states'];
   item_barcode;
   user_barcode;
+  tag_type;
   states;
   status;
 
-  constructor(item_barcode, user_barcode, status, states, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, user_barcode, tag_type = 'rfid', status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode
     this.user_barcode = user_barcode
+    this.tag_type = tag_type
     this.states = states
     this.status = status
     this.construct(sender, recipient);
@@ -123,12 +127,14 @@ class LECheckOutComplete extends LEvent {
 class LECheckIn extends LEvent {
   static event = 'check-in';
 
-  static serializable_attributes = ['item_barcode'];
+  static serializable_attributes = ['item_barcode', 'tag_type'];
   item_barcode;
+  tag_type;
 
-  constructor(item_barcode, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, tag_type = 'rfid', sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode;
+    this.tag_type = tag_type;
     this.construct(sender, recipient);
     this.validate_params();
   }
@@ -137,14 +143,16 @@ class LECheckIn extends LEvent {
 class LECheckInComplete extends LEvent {
   static event = 'check-in-complete';
 
-  static serializable_attributes = ['item_barcode', 'status', 'status', 'states'];
+  static serializable_attributes = ['item_barcode', 'tag_type', 'status', 'states'];
   item_barcode;
+  tag_type;
   states;
   status;
 
-  constructor(item_barcode, status, states, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, tag_type = 'rfid', status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode
+    this.tag_type = tag_type;
     this.states = states
     this.status = status
     this.construct(sender, recipient);
@@ -332,6 +340,38 @@ class LEServerDisconnected extends LEvent {
     super(event_id);
   }
 }
+class LEServerStatusRequest extends LEvent {
+  static event = 'server-status-request';
+  default_dispatch = 'server';
+
+  static serializable_attributes = [];
+
+  constructor(sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.construct(sender, recipient);
+  }
+}
+
+class LEServerStatusResponse extends LEvent {
+  static event = 'server-status-response';
+
+  static serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status'];
+  barcode_reader_status;
+  thermal_printer_status;
+  rfid_reader_status;
+  touch_screen_status;
+
+  constructor(barcode_reader_status, thermal_printer_status, rfid_reader_status, touch_screen_status, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.barcode_reader_status = barcode_reader_status
+    this.thermal_printer_status = thermal_printer_status
+    this.rfid_reader_status = rfid_reader_status
+    this.touch_screen_status = touch_screen_status
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+
 class LEUserLoggingIn extends LEvent {
   static event = 'user-logging-in';
   default_dispatch = 'server';
@@ -425,5 +465,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
 }

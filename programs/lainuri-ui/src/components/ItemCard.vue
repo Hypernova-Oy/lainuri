@@ -10,10 +10,12 @@
       class="itemcard"
       @click="overlay = !overlay"
     >
+      <v-icon v-if="item_bib.tag_type === 'rfid'">mdi-access-point</v-icon>
+      <v-icon v-if="item_bib.tag_type === 'barcode'">mdi-barcode</v-icon>
       <v-img
         :src="item_bib.book_cover_url || 'image-placeholder.png'"
         contain
-        height="60%"
+        height="50%"
         class="white--text align-end"
         gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
       >
@@ -32,7 +34,7 @@
         <v-card-text v-text="item_bib.item_barcode"></v-card-text>
       </span>
       <v-overlay absolute :value="overlay"
-        v-if="item_bib.states"
+        v-if="item_bib.states && Object.keys(item_bib.states).length"
       >
         <v-card-text>
           {{item_bib.states}}

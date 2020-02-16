@@ -4,15 +4,16 @@ import {LEvent,
   LEConfigGetpublic, LEConfigGetpublic_Response,
   LEConfigWrite,
   LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed,
-  LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEException,
+  LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LEServerConnected, LEServerStatusRequest, LEException,
   LETestMockDevices} from './lainuri_events'
 
 // Keep track of active pending events that need to be canceled.
 let events = {};
 
 
-let vue;
 const lainuri_ws = new Lainuri('ws://localhost:53153');
+let interval_server_status_polling = 0;
+
 
 function start_ws () {
   lainuri_ws.attach_event_listener(LEException, this, function(event) {
@@ -26,10 +27,6 @@ function start_ws () {
       }
     }
   });
-  lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-    console.log(`Event '${LEBarcodeRead.name}' received.`);
-    vue.$data['barcode_read'] = event.barcode;
-  });
   lainuri_ws.attach_event_listener(LERingtonePlay, this, function(event) {
     console.log(`Event '${LERingtonePlay.name}' triggered.`);
   });
@@ -39,9 +36,6 @@ function start_ws () {
   });
   lainuri_ws.attach_event_listener(LEConfigWrite, this, function(event) {
     console.log(`Event '${LEConfigWrite.name}' triggered.`);
-  });
-  lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
-    console.log(`Event '${LEServerDisconnected.name}' triggered.`);
   });
   lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
     console.log(`Event '${LEServerConnected.name}' triggered.`);
@@ -60,6 +54,12 @@ function start_ws () {
   });
 
   lainuri_ws.open_websocket_connection();
+
+  if (! interval_server_status_polling) {
+    interval_server_status_polling = window.setInterval(() => lainuri_ws.dispatch_event(
+      new LEServerStatusRequest()
+    ), 30000);
+  }
 }
 
 
@@ -78,7 +78,4 @@ function send_user_logging_in() {
   lainuri_ws.dispatch_event(event);
 }
 
-function lainuri_set_vue(vue_instance) {
-  vue = vue_instance;
-}
-export {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in}
+export {start_ws, lainuri_ws, send_user_logging_in}

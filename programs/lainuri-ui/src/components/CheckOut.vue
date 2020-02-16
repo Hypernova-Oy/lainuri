@@ -13,7 +13,7 @@
             <v-btn
               v-on:click="abort_user_login"
               v-if="!is_user_logged_in"
-              large color="secondary"
+              x-large color="secondary"
             >
               PALAA
             </v-btn>
@@ -21,14 +21,14 @@
             <v-btn
               v-on:click="stop_checking_out"
               v-if="is_user_logged_in"
-              large color="secondary"
+              x-large color="secondary"
             >
               LOPETA
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_out_and_get_receipt"
               v-if="is_user_logged_in"
-              large color="secondary"
+              x-large color="secondary"
             >
               LOPETA + KUITTI
             </v-btn>
@@ -135,6 +135,7 @@
     <v-overlay :value="overlay_notifications.length">
       <OverlayNotification
         :item_bib="overlay_notifications[0]"
+        :mode="'checkout'"
         v-on:close_notification="close_notification"
       />
     </v-overlay>
@@ -188,6 +189,7 @@ export default {
       if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
       tag.states = event.states
       tag.status = event.status
+      tag.tag_type = event.tag_type
 
       if (tag.status === 'success') {
         this.items_checked_out_successfully.unshift(tag);
@@ -203,6 +205,7 @@ export default {
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
       console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
       if (this.user.user_barcode) {
+        event.tag.tag_type = 'barcode';
         this.barcodes_read.push(event.tag)
         this.checkout_item(event.tag);
       }
@@ -260,6 +263,7 @@ export default {
     user_login_failed: function (error) {
       this.$data.user = {};
       this.$emit('exception', event)
+      this.$emit('stop_checking_out');
     },
     user_login_success: function (event) {
       this.$data.user = event;
@@ -293,7 +297,7 @@ export default {
         item_bib.states = {status: 'pending'}
         item_bib.status = 'pending'
         //window.setTimeout(() =>
-          lainuri_ws.dispatch_event(new LECheckOut(item_bib.item_barcode, this.$data.user.user_barcode, 'client', 'server'))
+          lainuri_ws.dispatch_event(new LECheckOut(item_bib.item_barcode, this.$data.user.user_barcode, item_bib.tag_type, 'client', 'server'))
         //, delay);
       }
       else {

@@ -51,8 +51,10 @@ class Lainuri {
   ws;
   config;
   listeners = new Map();
+  reconnection_interval = 0;
 
   constructor(base_url = 'ws://localhost:53153') {
+    console.log(`Instantiating a new Lainuri(${base_url})`);
     this.base_url = base_url;
 
     // The connected websocket immediately responds with configuration and inventory status
@@ -64,22 +66,28 @@ class Lainuri {
   }
 
   open_websocket_connection() {
+    if (this.ws) this.ws.close();
+
     this.ws = new WebSocket(this.base_url);
     this.ws.onopen = (event) => {
       try {
         this.dispatch_event(new events.LEServerConnected());
       }
       catch(e) {
-        console.error(e)
-        this.dispatch_event(new events.LEException(e, 'client', 'server'));
+        console.error('[lainuri.open_websocket_connection().onopen] event=', event, 'exception', e, `WebSocket.readyState ${this.ws.readyState}`)
+        //this.dispatch_event(new events.LEException(e, 'client', 'server'));
       }
     }
+    /* If the websocket fails to connect onclose() is bubbled to after onerror() is triggered. Even if the connection was never opened?
+       This is very confusing... */
     this.ws.onclose = (event) => {
       try {
-        this.dispatch_event(new events.LEServerDisconnected());
+        if (! this.reconnection_interval) this.dispatch_event(new events.LEServerDisconnected()); // Send the disconnect-event only once
+        this.reconnect(event);
       }
       catch(e) {
-        this.dispatch_event(new events.LEException(e, 'client', 'server'));
+        console.error('[lainuri.open_websocket_connection().onclose] event=', event, 'exception', e, `WebSocket.readyState ${this.ws.readyState}`)
+        //this.dispatch_event(new events.LEException(e, 'client', 'server'));
       }
     }
     this.ws.onmessage = (event) => {
@@ -88,14 +96,43 @@ class Lainuri {
         this.dispatch_event(ParseEventFromWebsocketMessage(event.data, 'server', 'client'));
       }
       catch(e) {
-        this.dispatch_event(new events.LEException(e, 'client', 'server'));
+        console.error('[lainuri.open_websocket_connection().onmessage] event=', event, 'exception', e, `WebSocket.readyState ${this.ws.readyState}`)
+        //this.dispatch_event(new events.LEException(e, 'client', 'server'));
       }
     }
+    /* If the WebSocket fails to connect, this is called */
     this.ws.onerror = (event) => {
-      console.error(event);
-      this.dispatch_event(new events.LEException(new Error(event.data), 'client', 'server'))
+      console.error('[lainuri.open_websocket_connection().onerror] event=', event, `WebSocket.readyState ${this.ws.readyState}`)
+      if (! event.currentTarget.readyState === WebSocket.CLOSED) this.dispatch_event(new events.LEException(new Error(event.data), 'client', 'server'));
     }
     return this.ws;
+  }
+
+  reconnect(event) {
+    if (! this.reconnection_interval) {
+      this.reconnection_interval = window.setInterval(() => {
+        if (this.ws.readyState === WebSocket.CLOSED) {
+          console.log(`Reconnecting WebSocket - open_websocket_connection()`);
+          try {
+            this.open_websocket_connection();
+          } catch (e) {
+            console.log(`Reconnecting WebSocket - open_websocket_connection() - ${e}`);
+          }
+        }
+        else if (this.ws.readyState === WebSocket.CLOSING && this.ws.readyState === WebSocket.CONNECTING) {
+          console.log(`Reconnecting WebSocket - polling`);
+          // Keep waiting
+        }
+        else if (this.ws.readyState === WebSocket.OPEN) {
+          console.log(`Reconnecting WebSocket - complete`);
+          window.clearInterval(this.reconnection_interval);
+          this.reconnection_interval = 0;
+        }
+      }, 4000);
+    }
+    else {
+      // console.error(`Websocket reconnecting even if a reconnection is underway?`); // Dealing with this special case is hard, just ignore this, to preserev code brevity.
+    }
   }
 
   attach_event_listener(event, component, event_handler) {

@@ -5,9 +5,9 @@
     v-on:click.native="$emit('exception_close')"
   >
     <v-row align="center">
-      <v-col class="grow">{{except_str}}</v-col>
+      <v-col class="grow">{{exception}}</v-col>
       <v-col class="shrink">
-        <v-btn>OK</v-btn>
+        <v-btn x-large>OK</v-btn>
       </v-col>
     </v-row>
   </v-alert>
@@ -17,7 +17,7 @@
 export default {
   name: 'Exception',
   props: {
-    except_str: String,
+    exception: Object,
   },
 }
 </script>

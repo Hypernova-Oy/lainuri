@@ -10,13 +10,13 @@
             <v-spacer></v-spacer>
             <v-btn
               v-on:click="stop_checking_in"
-              large color="secondary"
+              x-large color="secondary"
             >
               LOPETA
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_in_and_get_receipt"
-              large color="secondary"
+              x-large color="secondary"
             >
               LOPETA + KUITTI
             </v-btn>
@@ -123,6 +123,7 @@
     <v-overlay :value="overlay_notifications.length">
       <OverlayNotification
         :item_bib="overlay_notifications[0]"
+        :mode="'checkin'"
         v-on:close_notification="close_notification"
       />
     </v-overlay>
@@ -161,6 +162,7 @@ export default {
       if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
       tag.states = event.states
       tag.status = event.status
+      tag.tag_type = event.tag_type
 
       if (event.status === 'success') {
         this.items_checked_in_successfully.unshift(tag);
@@ -175,13 +177,9 @@ export default {
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
       console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
-      if (this.user.user_barcode) {
-        this.barcodes_read.push(event.tag)
-        this.check_in_item(event.tag);
-      }
-      else {
-        console.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}', but no user logged in?`);
-      }
+      event.tag.tag_type = 'barcode';
+      this.barcodes_read.push(event.tag);
+      this.check_in_item(event.tag);
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
@@ -250,7 +248,7 @@ export default {
         item_bib.states = {status: 'pending'}
         item_bib.status = 'pending'
         //window.setTimeout(() =>
-          lainuri_ws.dispatch_event(new LECheckIn(item_bib.item_barcode, 'client', 'server'))
+          lainuri_ws.dispatch_event(new LECheckIn(item_bib.item_barcode, item_bib.tag_type, 'client', 'server'))
         //, delay);
       }
       else {

@@ -93,6 +93,7 @@ def message_clients(event: lainuri.event.LEvent):
       client.send_message(payload)
 
 def register_client(event):
+  log.info(f"Registering client: '{event}'")
   global clients
   clients.append(event.client)
 
@@ -101,9 +102,13 @@ def register_client(event):
 
   lainuri.websocket_handlers.config.get_public_configs()
 
+  log.info(f"Registered client: '{event}'. Clients present '{len(clients)}'")
+
 def deregister_client(event):
+  log.info(f"Deregistering client: '{event}'")
   global clients
   clients.remove(event.client)
+  log.info(f"Deregistered client: '{event}'. Clients present '{len(clients)}'")
 
 
 class SimpleChat(WebSocket):
@@ -114,6 +119,7 @@ class SimpleChat(WebSocket):
         event = ParseEventFromWebsocketMessage(self.data, self)
         push_event(event)
       except Exception as e:
+        log.error(f"Handling payload failed!: {self.data}")
         log.exception(e)
         push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
@@ -126,6 +132,7 @@ class SimpleChat(WebSocket):
         event = lainuri.event.LEvent('register-client', {}, self)
         push_event(event)
       except Exception as e:
+        log.error(f"Handling payload failed!: {self.data}")
         log.exception(e)
         push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
@@ -138,6 +145,7 @@ class SimpleChat(WebSocket):
         event = lainuri.event.LEvent('deregister-client', {}, self)
         push_event(event)
       except Exception as e:
+        log.error(f"Handling payload failed!: {self.data}")
         log.exception(e)
         push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:

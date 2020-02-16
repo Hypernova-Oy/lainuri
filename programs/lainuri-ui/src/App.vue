@@ -9,10 +9,20 @@
     >
       <div class="align-center">
         <v-img
+          v-if="app_mode !== 'mode_main_menu'"
           alt="Logo"
-          src="/xamk.png"
+          src="/xamk-logo-small.png"
           width="150"
-
+          v-bind:css="false"
+        />
+      </div>
+      <div class="align-center">
+        <v-img
+          v-if="app_mode === 'mode_main_menu'"
+          alt="Logo"
+          src="/xamk-logo-big.png"
+          width="150"
+          v-bind:css="false"
         />
       </div>
 
@@ -22,16 +32,16 @@
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkout'"
         id="checkout_mode_button"
         :width="app_mode === 'mode_checkout' ? 800 : 400"
-        hover   color="secondary" dark
+        hover   color="secondary" dark x-large
         v-on:click="enter_checkout_mode"
-      >LAINAA</v-btn>
+      ><h1>LAINAA</h1></v-btn>
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkin'"
         id="checkin_mode_button"
         :width="app_mode === 'mode_checkin' ? 800 : 400"
         :color="app_mode === 'mode_checkin' ? 'secondary' : 'primary'"
-        hover dark
+        hover dark x-large
         v-on:click="enter_checkin_mode"
-      >PALAUTA</v-btn>
+      ><h1>PALAUTA</h1></v-btn>
 
       <v-spacer></v-spacer>
 
@@ -43,7 +53,7 @@
     >
     </div>
     <v-container fluid max-height="800">
-      <Exception v-if="exception" :except_str="exception" v-on:exception_close="exception = null"/>
+      <Exception v-if="exceptions.length" :exception="exceptions[0]" v-on:exception_close="exceptions.shift()"/>
       <MainMenuView v-if="app_mode === 'mode_main_menu'"
         :rfid_tags_present="rfid_tags_present"
         v-on:exception="show_exception"
@@ -83,7 +93,7 @@ import MainMenuView from './components/MainMenuView.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
-import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEUserLoggedIn} from './lainuri_events'
+import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoggedIn} from './lainuri_events'
 
 let shared = {
   item_barcode: '167N00000111',
@@ -106,46 +116,61 @@ export default {
   },
   created: function () {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' triggered. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
+      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
       event.tags_new.forEach((item_bib) => {
         this.rfid_tags_present.push(item_bib);
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsLost, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsLost.name}' triggered. Lost RFID tags (${event.tags_lost.length}):`, event.tags_lost, event.tags_present);
+      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsLost.name}' received. Lost RFID tags (${event.tags_lost.length}):`, event.tags_lost, event.tags_present);
       event.tags_lost.forEach((item_bib) => {
         splice_bib_item_from_array(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode);
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsPresent, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsPresent.name}' triggered. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
+      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsPresent.name}' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
       this.rfid_tags_present = event.tags_present;
+    });
+    lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
+      console.log(`[${this.$options.name}]:> Event '${LEServerStatusResponse.name}' received.`);
+    });
+    lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
+      console.log(`[${this.$options.name}]:> Event '${LEServerConnected.name}' received.`);
+    });
+    lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
+      console.log(`[${this.$options.name}]:> Event '${LEServerDisconnected.name}' received.`);
+      this.$data.exceptions.push(event);
     });
     if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
-        console.log(`PRESEEDING!! Received '${LEServerConnected.name}'`);
+        console.log(`[${this.$options.name}]:> PRESEEDING!! Received '${LEServerConnected.name}'`);
         window.setTimeout(() => lainuri_ws.dispatch_event(
           new LEUserLoggedIn('Olli-Antti', 'Kivilahti', '2600104874', 'server', 'client')
         ), 4000);
       });
     }
-
-    lainuri_set_vue(this);
   },
 
   mounted: function () {
-    console.log("App.vue - mounted()");
-    start_ws();
+    console.log(`[${this.$options.name}]:> - mounted()`);
+    try {
+      start_ws();
+    } catch (e) {
+      console.error(`[${this.$options.name}]:> start_ws() :> ${e}`);
+    }
+  },
+
+  beforeDestroy: function () {
+    lainuri_ws.flush_listeners_for_component(this, this.$options.name);
+    lainuri_ws.ws.close();
   },
 
   data: function () {
     return {
-      activeBtn: 1,
       name: 'Vue.js',
       app_mode: 'mode_main_menu',
-      barcode_read: '',
-      //exception: null,
-      exception: "Traceback (most recent call last):\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/websocket_handlers/printer.py\", line 15, in print_receipt\n    borrower = koha_api.get_borrower(event.user_barcode)\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 169, in get_borrower\n    return self._expected_one_list_element(payload, f\"user_barcode='{user_barcode}'\")\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 93, in _expected_one_list_element\n    raise NoResults(error_msg)\nlainuri.exceptions.NoResults: user_barcode='None'\n",
+      //exceptions: [],
+      exceptions: [{exception: "Traceback (most recent call last):\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/websocket_handlers/printer.py\", line 15, in print_receipt\n    borrower = koha_api.get_borrower(event.user_barcode)\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 169, in get_borrower\n    return self._expected_one_list_element(payload, f\"user_barcode='{user_barcode}'\")\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 93, in _expected_one_list_element\n    raise NoResults(error_msg)\nlainuri.exceptions.NoResults: user_barcode='None'\n"}],
       rfid_tags_present: [
         {
           item_barcode: '167N00000001',
@@ -175,11 +200,11 @@ export default {
   methods: {
     enter_checkout_mode: function () {
       this.app_mode = 'mode_checkout';
-      console.log("Entering 'mode_checkout'");
+      console.log(`[${this.$options.name}]:> Entering 'mode_checkout'`);
     },
     enter_checkin_mode: function () {
       this.app_mode = 'mode_checkin';
-      console.log("Entering 'mode_checkin'");
+      console.log(`[${this.$options.name}]:> Entering 'mode_checkin'`);
     },
     enter_main_menu: function () {
       this.app_mode = 'mode_main_menu';
@@ -195,8 +220,8 @@ export default {
       this.enter_main_menu();
     },
     show_exception: function (exception) {
-      this.$data.exception = exception;
-    }
+      this.$data.exceptions.push(exception);
+    },
   }
 }
 </script>
@@ -231,7 +256,9 @@ body {
   height: 100%;
 }
 
-
+button {
+  font-size: 10em;
+}
 
 .bottom-bar-viewport {
   width: 100%;

@@ -6,11 +6,13 @@
       error: item_bib.status === 'failed' || item_bib.status === 'error',
     }"
     @click="$emit('close_notification')"
+    style="padding: 20px;"
   >
-    <h1>LAITA HYLLYYN OIKEALLA</h1>
-    {{item_bib.item_barcode}}
+    <h1 v-if="mode === 'checkin'">LAITA HYLLYYN OIKEALLA</h1>
+    <h1 v-if="mode === 'checkout'">LAINAAMINEN EPÄONNISTUI</h1>
     <ItemCard :item_bib="item_bib"/>
     <v-img
+      v-if="mode === 'checkin'"
       src="place_to_bin_right.png"
       contain
       class="white--text align-end"
@@ -29,6 +31,7 @@ export default {
   },
   props: {
     item_bib: Object,
+    mode: String,
   },
   data: () => ({
   }),

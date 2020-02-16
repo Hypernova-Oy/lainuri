@@ -22,7 +22,7 @@ def checkout(event):
       borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
     except Exception:
       lainuri.websocket_server.push_event(
-        lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, 'failed', {
+        lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, event.tag_type, 'failed', {
           'user_not_found': traceback.format_exc(),
         })
       )
@@ -34,7 +34,7 @@ def checkout(event):
       item = koha_api.get_item(event.item_barcode)
     except Exception:
       lainuri.websocket_server.push_event(
-        lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, 'failed', {
+        lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, event.tag_type, 'failed', {
           'item_not_found': traceback.format_exc(),
         })
       )
@@ -45,36 +45,42 @@ def checkout(event):
     availability = koha_api.availability(itemnumber=item['itemnumber'], borrowernumber=borrower['borrowernumber'])
     if availability['available'] != True:
       lainuri.websocket_server.push_event(
-        lainuri.event.LECheckOutComplete(item['barcode'], borrower['cardnumber'], 'failed', availability)
+        lainuri.event.LECheckOutComplete(item['barcode'], borrower['cardnumber'], event.tag_type, 'failed', availability)
       )
 
     # Checkout to Koha
     (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
     if status == 'failed':
       lainuri.websocket_server.push_event(
-        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'failed', states)
+        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'failed', states)
       )
       return
 
     try:
-      set_tag_gate_alarm_off(event)
-      # Send a notification to the UI
-      lainuri.websocket_server.push_event(
-        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'success', states)
-      )
+      set_tag_gate_alarm(event, False)
     except Exception:
-      states['write_to_tag_failed'] = traceback.format_exc()
+      states['set_tag_gate_alarm_failed'] = traceback.format_exc()
       lainuri.websocket_server.push_event(
-        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'failed', states)
+        lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'failed', states)
       )
+      return
+
+    # Send a notification to the UI
+    lainuri.websocket_server.push_event(
+      lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'success', states)
+    )
+
   except Exception:
     lainuri.websocket_server.push_event(
-      lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], 'failed', {
+      lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'failed', {
         'exception': traceback.format_exc(),
       })
     )
 
-def set_tag_gate_alarm_off(event):
+def set_tag_gate_alarm(event, flag_on):
+  if event.tag_type == "barcode":
+    return 1
+
   # Get the rfid_reader instance to write with
   rfid_reader = rfid.rfid_readers[0]
 
@@ -99,7 +105,7 @@ def set_tag_gate_alarm_off(event):
     block_address_of_rfid_security_gate_check = rfid_state.get_gate_security_block_address(tag)
 
     # Write the security block
-    security_block = b'\x36\x37\x38'
+    security_block = b'\x36\x37\x38' if flag_on else b'\x00\x00\x00'
     tag_memory_access_command = TagMemoryAccessCommand().ISO15693_WriteMultipleBlocks(
       tag=tag,
       start_block_address=block_address_of_rfid_security_gate_check,

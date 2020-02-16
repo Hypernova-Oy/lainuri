@@ -41,7 +41,7 @@ def test_checkout(subtests):
     lainuri.websocket_handlers.checkout.checkout(event)
 
   with subtests.test("And the gate security alarm is disabled"):
-    lainuri.websocket_handlers.checkout.set_tag_gate_alarm_off(event)
+    lainuri.websocket_handlers.checkout.set_tag_gate_alarm(event, False)
 
   with subtests.test("Then a LECheckOutComplete-event is dispatched"):
     event = lainuri.websocket_server.events[-1]

@@ -12,6 +12,7 @@ import lainuri.websocket_handlers.config
 import lainuri.websocket_handlers.checkout
 import lainuri.websocket_handlers.checkin
 import lainuri.websocket_handlers.printer
+import lainuri.websocket_handlers.status
 import lainuri.koha_api as koha_api
 
 event_id: int = 0
@@ -58,28 +59,32 @@ class LECheckOut(LEvent):
   event = 'check-out'
   default_handler = lainuri.websocket_handlers.checkout.checkout
 
-  serializable_attributes = ['item_barcode', 'user_barcode']
+  serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type']
   item_barcode = ''
   user_barcode = 0
+  tag_type = 'rfid'
 
-  def __init__(self, item_barcode: str, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, user_barcode: str, tag_type: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
     self.user_barcode = user_barcode
+    self.tag_type = tag_type if tag_type else self.tag_type
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LECheckOutComplete(LEvent):
   event = 'check-out-complete'
 
-  serializable_attributes = ['item_barcode', 'user_barcode', 'status', 'states']
+  serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type', 'status', 'states']
   item_barcode = ''
   user_barcode = 0
+  tag_type = 'rfid'
   states = {}
   status = ''
 
-  def __init__(self, item_barcode: str, user_barcode: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, user_barcode: str, tag_type: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
     self.user_barcode = user_barcode
+    self.tag_type = tag_type if tag_type else self.tag_type
     self.status = status
     self.states = states
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
@@ -89,24 +94,28 @@ class LECheckIn(LEvent):
   event = 'check-in'
   default_handler = lainuri.websocket_handlers.checkin.checkin
 
-  serializable_attributes = ['item_barcode']
+  serializable_attributes = ['item_barcode', 'tag_type']
   item_barcode = ''
+  tag_type = 'rfid'
 
-  def __init__(self, item_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, tag_type: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
+    self.tag_type = tag_type if tag_type else self.tag_type
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LECheckInComplete(LEvent):
   event = 'check-in-complete'
 
-  serializable_attributes = ['item_barcode', 'status', 'states']
+  serializable_attributes = ['item_barcode', 'status', 'states', 'tag_type']
   item_barcode = ''
+  tag_type = 'rfid'
   states = {}
   status = ''
 
-  def __init__(self, item_barcode: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, tag_type: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
+    self.tag_type = tag_type if tag_type else self.tag_type
     self.states = states
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
@@ -148,7 +157,7 @@ class LEBarcodeRead(LEvent):
 
   def __init__(self, barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode = barcode
-    self.tag = koha_api.get_fleshed_item_record(barcode)
+    self.tag = koha_api.get_fleshed_item_record(barcode, tag_type='barcode')
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
@@ -210,8 +219,8 @@ class LERFIDTagsLost(LEvent):
     self.tags_present = tags_present
     self.tags_lost = tags_lost
     message = {
-      'tags_lost': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_lost],
-      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_present],
+      'tags_lost': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_lost],
+      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
 
@@ -225,8 +234,8 @@ class LERFIDTagsNew(LEvent):
     self.tags_present = tags_present
     self.tags_new = tags_new
     message = {
-      'tags_new': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_new],
-      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in self.tags_present],
+      'tags_new': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_new],
+      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
@@ -240,8 +249,30 @@ class LERFIDTagsPresent(LEvent):
   def __init__(self, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.tags_present = tags_present
     message = {
-      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number()) for tag in tags_present],
+      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in tags_present],
     }
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEServerStatusRequest(LEvent):
+  event = 'server-status-request'
+  default_handler = lainuri.websocket_handlers.status.status_request
+
+class LEServerStatusResponse(LEvent):
+  event = 'server-status-response'
+
+  serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status']
+  barcode_reader_status = {}
+  thermal_printer_status = {}
+  rfid_reader_status = {}
+  touch_screen_status = {}
+
+  def __init__(self, barcode_reader_status: dict, thermal_printer_status: dict, rfid_reader_status: dict, touch_screen_status: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.barcode_reader_status = barcode_reader_status
+    self.thermal_printer_status = thermal_printer_status
+    self.rfid_reader_status = rfid_reader_status
+    self.touch_screen_status = touch_screen_status
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
@@ -312,15 +343,13 @@ class LEException(LEvent):
   event = 'exception'
 
   serializable_attributes = ['exception']
-  exception = ''
-  e = Exception()
+  exception = Exception()
 
-  def __init__(self, e, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    if isinstance(e, Exception):
-      self.e = e
+  def __init__(self, exception, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    if isinstance(exception, Exception):
       self.exception = traceback.format_exc()
     else:
-      self.exception = e
+      self.exception = exception
 
     message = {
       'exception': self.exception,

@@ -90,7 +90,7 @@ class KohaAPI():
     if l and len(l) > 1:
       raise Exception(f"Got more than one result! " + error_msg)
     if not l or len(l) == 0:
-      raise NoResults(error_msg)
+      raise NoResults(f"No results! {error_msg}")
     return l[0]
 
   def authenticated(self):
@@ -401,7 +401,7 @@ class MARCRecord():
 
 
 @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
-def get_fleshed_item_record(barcode):
+def get_fleshed_item_record(barcode, tag_type):
   log.info(f"Get fleshed item record: barcode='{barcode}'")
   exception = None
   try:
@@ -415,6 +415,7 @@ def get_fleshed_item_record(barcode):
       'book_cover_url': record.book_cover_url(),
       'edition': record.edition(),
       'item_barcode': barcode,
+      'tag_type': tag_type,
     }
   except Exception as e:
     exception = {
