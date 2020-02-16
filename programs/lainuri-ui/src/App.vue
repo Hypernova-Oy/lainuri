@@ -53,6 +53,7 @@
     >
     </div>
     <v-container fluid max-height="800">
+      <StatusBar :status="status"/>
       <Exception v-if="exceptions.length" :exception="exceptions[0]" v-on:exception_close="exceptions.shift()"/>
       <MainMenuView v-if="app_mode === 'mode_main_menu'"
         :rfid_tags_present="rfid_tags_present"
@@ -75,10 +76,9 @@
       color="blue-grey"
       class="white--text"
     >
-      <BottomMenu/>
-      <span>Vuetify</span>
+      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible PWM RS-232 Git EDA RTTTL
       <v-spacer></v-spacer>
-      <span>&copy; 2019</span>
+      <span>&copy; 2020</span>
     </v-footer>
   </v-app>
 </template>
@@ -90,6 +90,7 @@ import ItemCard from './components/ItemCard'
 import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
 import MainMenuView from './components/MainMenuView.vue'
+import StatusBar from './components/StatusBar.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
@@ -110,9 +111,9 @@ export default {
   components: {
     CheckIn,
     CheckOut,
-    BottomMenu,
     Exception,
     MainMenuView,
+    StatusBar,
   },
   created: function () {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
@@ -169,9 +170,10 @@ export default {
     return {
       name: 'Vue.js',
       app_mode: 'mode_main_menu',
-      //exceptions: [],
-      exceptions: [{exception: "Traceback (most recent call last):\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/websocket_handlers/printer.py\", line 15, in print_receipt\n    borrower = koha_api.get_borrower(event.user_barcode)\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 169, in get_borrower\n    return self._expected_one_list_element(payload, f\"user_barcode='{user_barcode}'\")\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 93, in _expected_one_list_element\n    raise NoResults(error_msg)\nlainuri.exceptions.NoResults: user_barcode='None'\n"}],
-      rfid_tags_present: [
+      exceptions: [],
+      //exceptions: [{exception: "Traceback (most recent call last):\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/websocket_handlers/printer.py\", line 15, in print_receipt\n    borrower = koha_api.get_borrower(event.user_barcode)\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 169, in get_borrower\n    return self._expected_one_list_element(payload, f\"user_barcode='{user_barcode}'\")\n  File \"/home/kivilahtio/work/Lainuri/RFID/python/lainuri/koha_api/__init__.py\", line 93, in _expected_one_list_element\n    raise NoResults(error_msg)\nlainuri.exceptions.NoResults: user_barcode='None'\n"}],
+      rfid_tags_present: [],
+      /*rfid_tags_present: [
         {
           item_barcode: '167N00000001',
           book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
@@ -190,10 +192,20 @@ export default {
           author: 'Olli-Antti Kivilahti',
         },
         shared,
-      ],
+      ],*/
       bottom_bar_view: undefined,
       bottom_bar_view_debug: false,
       bottom_bar_view_config: false,
+
+      status: {
+        server_off: false,
+        printer_off: false,
+        printer_paper_low: false,
+        printer_paper_out: false,
+        printer_receipt_not_torn: false,
+        rfid_reader_off: false,
+        barcode_reader_off: false,
+      }
     }
   },
   // define methods under the `methods` object

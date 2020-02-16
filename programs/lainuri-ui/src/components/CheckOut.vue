@@ -49,7 +49,7 @@
             color="primary"
             dark
           >
-            <v-toolbar-title>LAINASI</v-toolbar-title>
+            <v-toolbar-title>PALAUTUKSESI</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-app-bar>
 
