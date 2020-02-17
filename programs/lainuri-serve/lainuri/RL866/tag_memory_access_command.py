@@ -7,6 +7,7 @@ from typing import Callable
 import lainuri.helpers as helpers
 from lainuri.RL866.message import Message
 from lainuri.RL866.tag import Tag
+import lainuri.RL866.state
 
 EXPECTED_NO_BYTES = 0
 EXPECTED_MULTIPLE_BYTES = 255
@@ -74,7 +75,7 @@ class TagMemoryAccessCommand():
     self.response_parser = self._no_response_parser
     return self
 
-  def ISO15693_ReadMultipleBlocks(self, read_security_status=1, start_block_address=0, number_of_blocks_to_read=16):
+  def ISO15693_ReadMultipleBlocks(self, tag: Tag=None, read_security_status=1, start_block_address=0, number_of_blocks_to_read=16):
     log.info(f"TagMemoryAccessCommand ISO15693_ReadMultipleBlocks chosen")
     """
     Field 1.Read security status
@@ -88,6 +89,7 @@ class TagMemoryAccessCommand():
       Data type: WORD
     """
     if read_security_status: self.read_security_status = read_security_status
+    if tag and tag.tag_memory_capacity_blocks: number_of_blocks_to_read = tag.tag_memory_capacity_blocks - start_block_address
 
     self.command = helpers.int_to_word(0x0003)
     self.parameter = helpers.int_to_byte(read_security_status) + \
@@ -125,17 +127,53 @@ class TagMemoryAccessCommand():
   def ISO15693_GetTagSystemInformation(self):
     log.info(f"TagMemoryAccessCommand ISO15693_GetTagSystemInformation chosen")
     """
-    Field 1.Start block address:
-      Data type: WORD
-    Field 2.Number of blocks to write:
-      Data type: WORD
-    Field 3.Block data to write
-      Data type: BYTE[n]
-      n=Number of blocks * block size
+    Parameter: None
     """
     self.command = helpers.int_to_word(0x000A)
     self.parameter = b''
     self.response_parser = self.ISO15693_GetTagSystemInformation_ParseResponse
+    return self
+
+  def ISO15693_Write_AFI(self, tag: Tag, byte: bytes):
+    log.info(f"TagMemoryAccessCommand ISO15693_Write_AFI chosen")
+    """
+    Field 1.AFI:
+      Data type:BYTE
+    """
+    self.command = helpers.int_to_word(0x0006)
+    if len(byte) != 1:
+      raise Exception(f"Writing AFI to tag='{tag.serial_number()}' input error. AFI is only 1 byte! Trying to write bytes '{byte}'")
+    self.parameter = byte
+    self.response_parser = self._no_response_parser
+    return self
+
+  def _eas_compliant(self, tag: Tag):
+    if (not tag.air_protocol_type_id() == lainuri.RL866.state.AIR_PROTO_ISO15693) or \
+       (not " SLI" in lainuri.RL866.state.supported_tag_types[tag.air_protocol_type_id()][tag.tag_type_id()]):
+      raise Exception(f"EAS is supported only with SLI tag types. Uncompliant tag='{tag.__dict__}'")
+
+  def ISO15693_Enable_EAS(self, tag: Tag):
+    log.info(f"TagMemoryAccessCommand ISO15693_Enable_EAS chosen")
+    self._eas_compliant(tag)
+    self.command = helpers.int_to_word(0x000C)
+    self.parameter = b''
+    self.response_parser = self._no_response_parser
+    return self
+
+  def ISO15693_Disable_EAS(self, tag: Tag):
+    log.info(f"TagMemoryAccessCommand ISO15693_Disable_EAS chosen")
+    self._eas_compliant(tag)
+    self.command = helpers.int_to_word(0x000D)
+    self.parameter = b''
+    self.response_parser = self._no_response_parser
+    return self
+
+  def ISO15693_EAS_Alarm(self, tag: Tag):
+    log.info(f"TagMemoryAccessCommand ISO15693_EAS_Alarm chosen")
+    self._eas_compliant(tag)
+    self.command = helpers.int_to_word(0x000F)
+    self.parameter = b''
+    self.response_parser = self._no_response_parser
     return self
 
   def ISO15693_(self):
@@ -168,30 +206,35 @@ class TagMemoryAccessCommand():
     Field 6.IC reference
       Data type: BYTE;
     """
-    self.field1 = message.field14[0:1]
-    self.DSFID_present            = self.field1[0] & 1<<0
-    self.AFI_present              = self.field1[0] & 1<<1
-    self.tag_memory_info_present  = self.field1[0] & 1<<2
-    self.IC_reference_present     = self.field1[0] & 1<<3
+    response = {}
+    self.response = response
 
-    self.field2 = message.field14[1:9]
-    self.uid = helpers.lower_byte_fo_to_int(self.field2)
+    response['field1'] = message.field14[0:1]
+    response['DSFID_present']            = 1 if (response['field1'][0] & 1<<0) else 0
+    response['AFI_present']              = 1 if (response['field1'][0] & 1<<1) else 0
+    response['tag_memory_info_present']  = 1 if (response['field1'][0] & 1<<2) else 0
+    response['IC_reference_present']     = 1 if (response['field1'][0] & 1<<3) else 0
 
-    self.field3 = message.field14[9:10]
-    self.dsfid = helpers.lower_byte_fo_to_int(self.field3)
+    response['field2'] = message.field14[1:9]
+    response['uid'] = helpers.lower_byte_fo_to_int(response['field2'])
 
-    self.field4 = message.field14[10:11]
-    self.afi = helpers.lower_byte_fo_to_int(self.field4)
+    response['field3'] = message.field14[9:10]
+    response['dsfid'] = helpers.lower_byte_fo_to_int(response['field3'])
 
-    self.field51 = message.field14[11:12]
-    self.tag_memory_capacity_blocks = helpers.lower_byte_fo_to_int(self.field51)
-    tag.tag_memory_capacity_blocks = self.tag_memory_capacity_blocks
-    self.field52 = message.field14[12:13]
-    self.block_size = helpers.lower_byte_fo_to_int(self.field52)
-    tag.block_size = self.block_size
+    response['field4'] = message.field14[10:11]
+    response['afi'] = helpers.lower_byte_fo_to_int(response['field4'])
 
-    self.field6 = message.field14[13:14]
-    self.ic_reference = helpers.lower_byte_fo_to_int(self.field6)
+    response['field51'] = message.field14[11:12]
+    response['tag_memory_capacity_blocks'] = helpers.lower_byte_fo_to_int(response['field51'])
+    tag.tag_memory_capacity_blocks = response['tag_memory_capacity_blocks']
+    response['field52'] = message.field14[12:13]
+    response['block_size'] = helpers.lower_byte_fo_to_int(response['field52'])
+    tag.block_size = response['block_size']
+
+    response['field6'] = message.field14[13:14]
+    response['ic_reference'] = helpers.lower_byte_fo_to_int(response['field6'])
+
+    return response
 
   def ISO15693_ReadMultipleBlocks_ParseResponse(self, message: Message, tag: Tag):
     """
@@ -204,14 +247,21 @@ class TagMemoryAccessCommand():
       When read security status is 1:
       N= Number of blocks read * (Block size + security status (1Byte))
     """
-    self.field1 = message.field14[0:2]
-    self.number_blocks_read = helpers.word_to_int(self.field1)
+    response = {}
+    self.response = response
 
-    if hasattr(tag, 'block_size'):
-      self.field2 = message.field14[2:tag.block_size*self.number_blocks_read+2]
-    else:
-      self.field2 = message.field14[2:]
-    self.data_of_blocks_read = self.field2
+    response['field1'] = message.field14[0:2]
+    response['number_blocks_read'] = helpers.word_to_int(response['field1'])
+
+    block_size = tag.block_size if tag.block_size else 4
+    response['field2'] = message.field14[2:block_size*response['number_blocks_read']+2]
+    # Split the response to blocks of bytes
+    response['data_of_blocks_read'] = []
+    for i in range(0,response['number_blocks_read']): response['data_of_blocks_read'].append(response['field2'][i*block_size:(i+1)*block_size].hex())
+
+    return response
 
   def _no_response_parser(self, message: Message, tag: Tag):
-    if len(message.field14) != 0: raise Exception(f"Expected 0 bytes from response, but got bytes '{message.field14}'. Using command '{self.__dict__}'")
+    if len(message.field14) != 0: raise Exception(f"Expected 0 bytes from response, but got bytes '{message.field14}'. Using command '{self}'")
+    self.response = {}
+    return self.response

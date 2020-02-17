@@ -29,6 +29,9 @@ class Tag():
     if None == self._tag_type_id: raise AttributeError(f"tag_type_id not set for tag '{self.__dict__}'")
     return self._tag_type_id
 
+  def get_tag_type(self) -> str:
+    return lainuri.RL866.state.supported_tag_types[self.air_protocol_type_id()][self.tag_type_id()]
+
   def serial_number(self, serial_number=None):
     if serial_number: self._serial_number = serial_number
     if None == self._serial_number: raise AttributeError(f"serial_number not set for tag '{self.__dict__}'")

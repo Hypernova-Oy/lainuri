@@ -76,7 +76,7 @@
       color="blue-grey"
       class="white--text"
     >
-      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible PWM RS-232 Git EDA RTTTL
+      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git RTTTL
       <v-spacer></v-spacer>
       <span>&copy; 2020</span>
     </v-footer>
@@ -137,10 +137,11 @@ export default {
     });
     lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LEServerConnected.name}' received.`);
+      this.$data.status.server_off = false;
     });
     lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LEServerDisconnected.name}' received.`);
-      this.$data.exceptions.push(event);
+      this.$data.status.server_off = true;
     });
     if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {

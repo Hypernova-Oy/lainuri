@@ -193,8 +193,8 @@ def login_user(user_barcode: str):
     else:
       raise Exception("Login failed! koha_api should throw an Exception instead!")
   except InvalidUser as e:
-    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(e=str(e)))
+    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
   except NoResults as e:
-    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(e=str(e)))
+    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
   except Exception as e:
-    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(e=e))
+    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(exception=e))

@@ -174,7 +174,7 @@ class Lainuri {
         listener.handler.call(listener.component, event);
       });
     }
-    if (event.recipient === 'server' || event.default_dispatch === 'server') {
+    if (event.recipient === 'server' || (! event.recipient && event.default_dispatch === 'server')) {
       dispatched_times++;
       let payload = event.serialize_for_ws();
       console.log(`dispatch_event():> Sending '${payload}'`)

@@ -268,7 +268,7 @@ export default {
     },
     print_receipt_complete: function (event) {
       this.$data.receipt_printing = false;
-      if (event) {
+      if (event.status.exception) {
         this.$emit('exception', event.status.exception);
       }
       this.stop_checking_in();

@@ -401,7 +401,7 @@ class MARCRecord():
 
 
 @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
-def get_fleshed_item_record(barcode, tag_type):
+def get_fleshed_item_record(barcode):
   log.info(f"Get fleshed item record: barcode='{barcode}'")
   exception = None
   try:
@@ -415,7 +415,6 @@ def get_fleshed_item_record(barcode, tag_type):
       'book_cover_url': record.book_cover_url(),
       'edition': record.edition(),
       'item_barcode': barcode,
-      'tag_type': tag_type,
     }
   except Exception as e:
     exception = {

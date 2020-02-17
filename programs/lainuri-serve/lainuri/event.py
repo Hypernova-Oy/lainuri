@@ -219,8 +219,8 @@ class LERFIDTagsLost(LEvent):
     self.tags_present = tags_present
     self.tags_lost = tags_lost
     message = {
-      'tags_lost': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_lost],
-      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_present],
+      'tags_lost': [{**{'tag_type': 'rfid', 'tag_model': tag.get_tag_type()}, **koha_api.get_fleshed_item_record(tag.serial_number())} for tag in self.tags_lost],
+      'tags_present': [{**{'tag_type': 'rfid', 'tag_model': tag.get_tag_type()}, **koha_api.get_fleshed_item_record(tag.serial_number())} for tag in self.tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
 
@@ -234,8 +234,8 @@ class LERFIDTagsNew(LEvent):
     self.tags_present = tags_present
     self.tags_new = tags_new
     message = {
-      'tags_new': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_new],
-      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in self.tags_present],
+      'tags_new': [{**{'tag_type': 'rfid', 'tag_model': tag.get_tag_type()}, **koha_api.get_fleshed_item_record(tag.serial_number())} for tag in self.tags_new],
+      'tags_present': [{**{'tag_type': 'rfid', 'tag_model': tag.get_tag_type()}, **koha_api.get_fleshed_item_record(tag.serial_number())} for tag in self.tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
@@ -249,7 +249,7 @@ class LERFIDTagsPresent(LEvent):
   def __init__(self, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.tags_present = tags_present
     message = {
-      'tags_present': [koha_api.get_fleshed_item_record(tag.serial_number(), tag_type='rfid') for tag in tags_present],
+      'tags_present': [{**{'tag_type': 'rfid', 'tag_model': tag.get_tag_type()}, **koha_api.get_fleshed_item_record(tag.serial_number())} for tag in tags_present],
     }
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
