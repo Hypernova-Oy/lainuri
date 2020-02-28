@@ -51,6 +51,12 @@
       hostname: name="{{fqdn_inventory_hostname}}"
       notify: Restart raspberry pi
 
+    - name: lainuri user
+      user:
+        name: lainuri
+        group: lainuri
+        password: ""
+
     - name: Apt upgrade
       apt:
         upgrade: safe
@@ -102,13 +108,16 @@
 
 
             mkdir "$CHROMIUM_CACHE_DIR"
-            DISPLAY=:0 /usr/bin/chromium-browser --disable-infobars --disable-pinch \
-                                    --disable-session-crashed-bubble --disable-sync-preferences \
-                                    --disk-cache-dir="$CHROMIUM_CACHE_DIR" \
-                                    --hide-scrollbars --incognito --kiosk --kiosk-printing \
-                                    --noerrdialogs --no-first-run --no-touch-pinch --window-position=0,0 \
-                                    --window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT} \
-                                    $LAINURI_UI_URL
+            DISPLAY=:0 /usr/bin/chromium-browser
+                          --disable-features=TranslateUI \
+                          --disable-infobars --disable-pinch \
+                          --disable-restore-session-state \
+                          --disable-session-crashed-bubble --disable-sync-preferences \
+                          --disk-cache-dir="$CHROMIUM_CACHE_DIR" \
+                          --hide-scrollbars --incognito --kiosk --kiosk-printing \
+                          --noerrdialogs --no-first-run --no-touch-pinch --window-position=0,0 \
+                          --window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT} \
+                          $LAINURI_UI_URL
 
         backup: yes
       notify: Restart raspberry pi
@@ -170,6 +179,13 @@
           src: templates/lainuri_serve_config.yaml.j2
           mode: 0600
         notify: Restart lainuri-serve
+
+      - name: udev configuration
+        copy:
+          dest: /etc/udev/rules.d/99-lainuri.rules
+          remote_src: yes
+          src: /opt/lainuri/programs/lainuri-serve/etc/udev/rules.d/99-lainuri.rules
+        notify: Restart raspberry pi
 
       - name: Systemd enable daemon
         systemd:

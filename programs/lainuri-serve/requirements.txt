@@ -1,6 +1,10 @@
 beautifulsoup4
-urllib3
-lxml
 colorlog
-WeasyPrint
+coloredlogs
 jinja2
+lxml
+pyusb
+pyyaml
+simple_websocket_server
+urllib3
+WeasyPrint

@@ -1,0 +1,4 @@
+## RL866
+#SUBSYSTEM=="input", GROUP="input", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="FFFE", ATTRS{idProduct}=="0091", MODE:="0660", GROUP="lainuri"
+
