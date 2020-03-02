@@ -9,14 +9,14 @@ import traceback
 from lainuri.koha_api import koha_api
 import lainuri.websocket_server
 import lainuri.event
-import lainuri.websocket_handlers.checkout
+import lainuri.rfid_reader as rfid
 
 def checkin(event):
   try:
     (status, states) = koha_api.checkin(event.item_barcode)
 
     try:
-      lainuri.websocket_handlers.checkout.set_tag_gate_alarm(event, True)
+      rfid.set_tag_gate_alarm(event, True)
     except Exception as e:
       log.exception(e)
       status = 'error'

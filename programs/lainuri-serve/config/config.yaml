@@ -2,7 +2,8 @@ devices:
   rfid-reader:
     enabled: true
     polling_interval: 1 # How often the RFID reader checks for inventory status
-    afi: 0x9E
+    afi-checkout: 0xC2
+    afi-checkin: 0x07
     eas: True
     password: ''
   ringtone-player:

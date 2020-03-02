@@ -22,7 +22,13 @@ path_to_config_file = os.path.join(os.environ.get('LAINURI_CONF_DIR'), 'config.y
 def load_config():
   with open(path_to_config_file, 'r', encoding='UTF-8') as f:
     return yaml.safe_load(f.read())
-c = load_config()
+
+def validate_config(c: dict):
+  if bool(c['devices']['rfid-reader']['afi-checkout']) != bool(c['devices']['rfid-reader']['afi-checkin']):
+    raise ValueError(f"Configuration error: devices.rfid-reader.afi-checkout '{c['devices']['rfid-reader']['afi-checkout']}' and afi-checkin '{c['devices']['rfid-reader']['afi-checkin']}' must both be defined or not defined.")
+  return c
+
+c = validate_config(load_config())
 
 def persist_config():
   with open(path_to_config_file, 'w', encoding='UTF-8') as f:

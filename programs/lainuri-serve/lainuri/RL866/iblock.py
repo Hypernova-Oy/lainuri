@@ -578,16 +578,19 @@ class IBlock_TagMemoryAccess(IBlock, Request):
 
 class IBlock_TagMemoryAccess_Response(IBlock, Response):
   CMD = b'\x34'
-  def __init__(self, resp_bytes: bytearray, tag: Tag, mac_command: TagMemoryAccessCommand):
+  def __init__(self, resp_bytes: bytearray = None, tag: Tag, mac_command: TagMemoryAccessCommand):
     self.tag = tag
     self.mac_command = mac_command
+    if resp_bytes:
+      self.receive(resp_bytes)
 
+  def receive(self, resp_bytes: bytes):
     parseMessage(self, resp_bytes)
     parseIBlockResponseINF(self)
 
     if len(self.PARM) < 4: raise Exception(f"${type(self)} - Response '${resp_bytes}' has too small INF-block '{self.INF}'! Expected atleast 3 parameters, got '{self.PARM}'")
 
-    self.field1 = self.field1_access_operation_result(tag, mac_command)
+    self.field1 = self.field1_access_operation_result(self.tag, self.mac_command)
 
     super().__init__(RID=self.RID, INF=self.INF)
 
