@@ -28,12 +28,12 @@ tag = tags[0]
 
 print("Connecting to tag")
 bytes_written = rfid_reader.write( iblock.IBlock_TagConnect(tag) )
-tag_connect_response = iblock.IBlock_TagConnect_Response(rfid_reader.read(''), tag)
+tag_connect_response = iblock.IBlock_TagConnect_Response(tag)
 
 print("Read tag system information to determine the gate_security_check_block address")
 tag_memory_access_command = TagMemoryAccessCommand().ISO15693_GetTagSystemInformation()
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-tag_system_information_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+tag_system_information_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 tag_system_info = tag_system_information_response.mac_command.response
 pprint(tag_system_info)
 
@@ -44,7 +44,7 @@ tag_memory_access_command = TagMemoryAccessCommand().ISO15693_ReadMultipleBlocks
   number_of_blocks_to_read=256
 )
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 pprint(tag_memory_access_response.mac_command.response)
 
 iso28560_o = iso28560.new_data_object(
@@ -61,22 +61,22 @@ print("Writing AFI")
 security_block = b'\x9E'
 tag_memory_access_command = TagMemoryAccessCommand().ISO15693_Write_AFI(    tag=tag,    byte=security_block,  )
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-set_afi = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+set_afi = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
 print("Enabling EAS")
 tag_memory_access_command = TagMemoryAccessCommand().ISO15693_Enable_EAS(tag=tag)
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-set_eas = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+set_eas = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
 print("Check EAS Alarm")
 tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-eas_alarm = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+eas_alarm = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
 print("Disabling EAS")
 tag_memory_access_command = TagMemoryAccessCommand().ISO15693_Enable_EAS(tag=tag)
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-dis_eas = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+dis_eas = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
 
 import pdb; pdb.set_trace()
@@ -89,10 +89,10 @@ tag_memory_access_command = TagMemoryAccessCommand().ISO15693_Write_AFI(
   byte=security_block,
 )
 bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
 
 
 print("Disconnect the tag from the reader")
 bytes_written = rfid_reader.write( iblock.IBlock_TagDisconnect(tag) )
-tag_disconnect_response = iblock.IBlock_TagDisconnect_Response(rfid_reader.read(''), tag)
+tag_disconnect_response = iblock.IBlock_TagDisconnect_Response(tag)

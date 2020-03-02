@@ -110,7 +110,7 @@ class TagMemoryAccessCommand():
       n=Number of blocks * block size
     """
     if not tag.block_size: raise Exception(f"Tag.block_size not set for serial_number='{tag.serial_number()}'")
-    block_size = tag.block_size
+    block_size = tag.block_size()
     expected_data_size = block_size * number_of_blocks_to_write
 
     if len(blocks_data_bytes) != expected_data_size:
@@ -217,19 +217,23 @@ class TagMemoryAccessCommand():
 
     response['field2'] = message.field14[1:9]
     response['uid'] = helpers.lower_byte_fo_to_int(response['field2'])
+    tag.uid = response['uid']
 
     response['field3'] = message.field14[9:10]
     response['dsfid'] = helpers.lower_byte_fo_to_int(response['field3'])
+    tag.dsfid(response['dsfid'])
 
     response['field4'] = message.field14[10:11]
     response['afi'] = helpers.lower_byte_fo_to_int(response['field4'])
+    tag.afi(response['afi'])
 
     response['field51'] = message.field14[11:12]
     response['tag_memory_capacity_blocks'] = helpers.lower_byte_fo_to_int(response['field51'])
-    tag.tag_memory_capacity_blocks = response['tag_memory_capacity_blocks']
+    tag.memory_capacity_blocks(response['tag_memory_capacity_blocks'])
+
     response['field52'] = message.field14[12:13]
     response['block_size'] = helpers.lower_byte_fo_to_int(response['field52'])
-    tag.block_size = response['block_size']
+    tag.block_size(response['block_size'])
 
     response['field6'] = message.field14[13:14]
     response['ic_reference'] = helpers.lower_byte_fo_to_int(response['field6'])
@@ -253,11 +257,12 @@ class TagMemoryAccessCommand():
     response['field1'] = message.field14[0:2]
     response['number_blocks_read'] = helpers.word_to_int(response['field1'])
 
-    block_size = tag.block_size if tag.block_size else 4
+    block_size = tag.block_size()
     response['field2'] = message.field14[2:block_size*response['number_blocks_read']+2]
     # Split the response to blocks of bytes
     response['data_of_blocks_read'] = []
     for i in range(0,response['number_blocks_read']): response['data_of_blocks_read'].append(response['field2'][i*block_size:(i+1)*block_size].hex())
+    tag.tag_memory(response['field2'])
 
     return response
 

@@ -76,7 +76,7 @@ def test_IBlock_TagMemoryAccess__ISO15693_GetTagSystemInformation():
   assert req.pack() == b'\xfa\x0a\xff\x40\x34\x01\x02\x0a\x00\x99\x7b'
 
   msg_response = b'\xfa\x1a\x01\x40\x34\x00\x00\x11\x0a\x00\x01\x0f\xa7\x27\x38\x3f\x00\x01\x04\xe0\x00\x00\x1b\x03\x01\x20\xe7'
-  res = IBlock_TagMemoryAccess_Response(msg_response, tag, mac)
+  res = IBlock_TagMemoryAccess_Response(tag, mac, msg_response)
   assert res.pack() == msg_response
 
 def test_IBlock_TagMemoryAccess__ISO15693_WriteMultipleBlocks():
@@ -96,7 +96,7 @@ def test_IBlock_TagMemoryAccess__ISO15693_WriteMultipleBlocks():
     number_of_blocks_to_read=1
   )
   msg_response = b'\xfa\x12\x01\x00\x34\x00\x00\x09\x03\x00\x01\x01\x00\x36\x37\x38\x00\x57\x29'
-  res = IBlock_TagMemoryAccess_Response(msg_response, tag, mac)
+  res = IBlock_TagMemoryAccess_Response(tag, mac).receive(msg_response)
   assert res.pack() == msg_response
 
 def test_IBlock_TagDisconnect():

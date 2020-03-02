@@ -1,12 +1,12 @@
 import context
 import iso15692
-from iso15692.util import ByteStream
+from iso15692 import DataObject
 
 def test_iso15690_example_annex_p():
-  bs = ByteStream(b'\x7F\x02')
-  import pdb; pdb.set_trace()
-  assert iso15692.get_precursor(bs) == {
+  bs = b'\x7F\x02'
+  dob = DataObject(bs)
+  assert dob.get_precursor() == {
     'offset': 0,
-    'compaction_type_code': 0b011,
+    'compaction_type_code': 0b111,
     'object_identifier': 17,
   }

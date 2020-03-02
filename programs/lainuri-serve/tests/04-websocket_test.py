@@ -16,14 +16,15 @@ def test_message_parsing():
 
   event = lainuri.websocket_server.ParseEventFromWebsocketMessage(
     """{
-      "event": "barcode-read",
+      "event": "ringtone-played",
       "message": {
-        "barcode": "0xe00401003f3827a7"
+        "ringtone_type": "check-in",
+        "ringtone": ""
       },
-      "event_id": "barcode-read-3"
+      "event_id": "ringtone-played-3"
     }""",
     'client'
   )
   assert event
-  assert event.event == 'barcode-read'
-  assert event.barcode == '0xe00401003f3827a7'
+  assert event.event == 'ringtone-played'
+  assert event.ringtone_type == 'check-in'

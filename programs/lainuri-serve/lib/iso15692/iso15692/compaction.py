@@ -2,8 +2,6 @@ from bitarray import bitarray, frozenbitarray
 import logging
 import re
 
-from iso15692.util import ByteStream
-
 endian='little'
 default_encoding='iso-8859-1'
 bin00  = frozenbitarray(initial='00',  endian='big')
@@ -65,7 +63,7 @@ def encode_compacted_object_length(byttes: bytes) -> bytes:
       (len(byttes) & 0b000000000000001111111)
     ])
 
-def decode_compacted_object_length(tag_memory: ByteStream) -> int:
+def decode_compacted_object_length(tag_memory) -> int:
   first_byte = tag_memory.next()
   if(first_byte & 0b10000000):
     length_bytes = bytearray([first_byte])

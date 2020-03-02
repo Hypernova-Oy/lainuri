@@ -578,7 +578,7 @@ class IBlock_TagMemoryAccess(IBlock, Request):
 
 class IBlock_TagMemoryAccess_Response(IBlock, Response):
   CMD = b'\x34'
-  def __init__(self, resp_bytes: bytearray = None, tag: Tag, mac_command: TagMemoryAccessCommand):
+  def __init__(self, tag: Tag, mac_command: TagMemoryAccessCommand, resp_bytes: bytearray = None):
     self.tag = tag
     self.mac_command = mac_command
     if resp_bytes:
@@ -593,6 +593,7 @@ class IBlock_TagMemoryAccess_Response(IBlock, Response):
     self.field1 = self.field1_access_operation_result(self.tag, self.mac_command)
 
     super().__init__(RID=self.RID, INF=self.INF)
+    return self
 
   def field1_access_operation_result(self, tag: Tag, mac_command: TagMemoryAccessCommand):
     """

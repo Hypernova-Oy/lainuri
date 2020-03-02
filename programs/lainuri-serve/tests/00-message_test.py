@@ -2,8 +2,8 @@
 
 import context
 
-from RL866.message import Message, parseMessage
-import helpers
+from lainuri.RL866.message import Message, parseMessage
+import lainuri.helpers as helpers
 
 
 def test_Message2():

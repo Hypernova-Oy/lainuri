@@ -64,7 +64,7 @@ def test_enrich_rfid_tag_with_marc():
   record = MARCRecord(koha_api.get_record(item['biblionumber']))
   assert record.author() or record.title() or record.book_cover_url()
 
-  item_bib = get_fleshed_item_record(item['barcode'], tag_type='rfid')
+  item_bib = get_fleshed_item_record(item['barcode'])
   assert item_bib['item_barcode'] == 'l-t-i-good'
   assert item_bib['edition']
   assert item_bib['title']

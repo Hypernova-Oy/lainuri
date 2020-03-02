@@ -19,9 +19,10 @@ def test_iso28560_3_example_1():
         b'\x98\xA4'  # CRC  2 bytes
         b'\x44\x4B\x37\x31\x38\x35\x30\x30\x00\x00\x00\x00\x00'  # 3. Owner institution (ISIL)  13 bytes  DK-718500
       ),
-  )
+  ).decode()
   assert type(dob) == iso28560.ISO28560_3_Object
   assert dob.primary_item_identifier == '1000000056'
+  assert dob.get_primary_item_identifier() == '1000000056'
   assert dob.set_information['numbers_of_parts_in_item'] == 1
   assert dob.set_information['ordinal_part_number'] == 1
   assert dob.isil == 'DK-718500'
@@ -57,9 +58,10 @@ def test_iso28560_3_example_2():
         b'\x00' # 10. Order number         Empty
         b'\x61\x37\x38\x39\x36\x35\x36\x63\x00' # 21. Supplier invoice number      a789656c
       ),
-  )
+  ).decode()
   assert type(dob) == iso28560.ISO28560_3_Object
   assert dob.primary_item_identifier == '1000000136'
+  assert dob.get_primary_item_identifier() == '1000000136'
   assert dob.set_information['numbers_of_parts_in_item'] == 1
   assert dob.set_information['ordinal_part_number'] == 1
   assert dob.isil == 'DK-718500'
@@ -79,7 +81,7 @@ def test_iso28560_3_mv():
                            b'\x00\x00\x00\x00\x00\x00\x00\x00'
                            b'\x00\x00\x00\x00\x00\x00\x00\x00'
                            b'\x00\x00\x00\x00\x00\x00\x00\x00'),
-  )
+  ).decode()
   assert type(dob) == iso28560.ISO28560_3_Object
   assert dob.primary_item_identifier == '1620154429'
   assert dob.set_information['numbers_of_parts_in_item'] == 1

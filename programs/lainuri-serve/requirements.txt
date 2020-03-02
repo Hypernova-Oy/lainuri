@@ -3,6 +3,8 @@ colorlog
 coloredlogs
 jinja2
 lxml
+pytest
+pytest_subtests
 pyusb
 pyyaml
 simple_websocket_server

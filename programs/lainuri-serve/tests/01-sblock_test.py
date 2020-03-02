@@ -2,7 +2,7 @@
 
 import context
 
-from RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response 
+from lainuri.RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
 
 def test_SBlock_RESYNC():
   msg_request = SBlock_RESYNC()

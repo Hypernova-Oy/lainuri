@@ -16,6 +16,7 @@ from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_Rea
 from lainuri.RL866.tag import Tag
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 import lainuri.RL866.state as rfid_state
+import lainuri.websocket_server
 
 
 rfid_readers = []
@@ -119,6 +120,7 @@ class RFID_Reader():
           new_tag_already_present = 1
           break
       if not new_tag_already_present:
+        self.flesh_tag_details(new_tag)
         self.tags_new.append(new_tag)
         self.tags_present.append(new_tag)
 
@@ -131,13 +133,28 @@ class RFID_Reader():
       if old_tag_missing:
         self.tags_lost.append(tag_old)
 
-    #tags_present = [tag in tags_present if not filter(lambda tag_lost: tag.serial_number() == tag_lost.serial_number(), tags_lost) ]
     self.tags_present = [tag for tag in self.tags_present if not [tag_lost for tag_lost in self.tags_lost if tag.serial_number() == tag_lost.serial_number()]]
 
     if self.tags_new:
       lainuri.websocket_server.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
     if self.tags_lost:
       lainuri.websocket_server.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
+
+  def flesh_tag_details(self, tag: Tag):
+    with self.access_lock():
+      tag_memory_access_command = TagMemoryAccessCommand().ISO15693_GetTagSystemInformation()
+      rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
+      iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
+
+      tag_memory_access_command = TagMemoryAccessCommand().ISO15693_ReadMultipleBlocks(
+        read_security_status=0,
+        start_block_address=0,
+        number_of_blocks_to_read=256
+      )
+      rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
+      iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
+
+      return tag
 
 def get_current_inventory_status():
   global rfid_readers
@@ -177,7 +194,7 @@ def _set_tag_gate_alarm_direct_memory_access(rfid_reader, tag, flag_on):
   # Read tag system information to determine the gate_security_check_block address
   tag_memory_access_command = TagMemoryAccessCommand().ISO15693_GetTagSystemInformation()
   bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
   # Calculate the memory address of the gate security block for this tag type
   block_address_of_rfid_security_gate_check = rfid_state.get_gate_security_block_address(tag)
@@ -191,7 +208,7 @@ def _set_tag_gate_alarm_direct_memory_access(rfid_reader, tag, flag_on):
     blocks_data_bytes=security_block,
   )
   bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
   # Confirm the security block has been written
   tag_memory_access_command = TagMemoryAccessCommand().ISO15693_ReadMultipleBlocks(
@@ -200,7 +217,7 @@ def _set_tag_gate_alarm_direct_memory_access(rfid_reader, tag, flag_on):
     number_of_blocks_to_read=1
   )
   bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
   # Disconnect the tag from the reader, so others may connect
   bytes_written = rfid_reader.write( iblock.IBlock_TagDisconnect(tag) )
@@ -221,12 +238,12 @@ def _set_tag_gate_alarm_afi(rfid_reader, tag, flag_on):
     byte=security_block,
   )
   bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+  tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
   # Confirm the security block has been written
   tag_memory_access_command = TagMemoryAccessCommand().ISO15693_GetTagSystemInformation()
   bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-  tag_system_information_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+  tag_system_information_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
   tag_system_info = tag_system_information_response.mac_command.response
 
   # Disconnect the tag from the reader, so others may connect
@@ -245,26 +262,26 @@ def _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on):
     # Write the security block
     tag_memory_access_command = TagMemoryAccessCommand().ISO15693_Enable_EAS(tag=tag)
     bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-    tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+    tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
     # Confirm the security block has been written
     ## TODO: EAS_Alarm doesnt work?
     tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
     bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-    eas_alarm = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+    eas_alarm = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
     ## TODO: eas_alarm.mac_command.response.alarm == 1
 
   else:
     # Write the security block
     tag_memory_access_command = TagMemoryAccessCommand().ISO15693_Disable_EAS(tag=tag)
     bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-    tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+    tag_memory_access_response = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
 
     # Confirm the security block has been written
     ## TODO: EAS_Alarm doesnt work?
     tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
     bytes_written = rfid_reader.write(iblock.IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-    eas_alarm = iblock.IBlock_TagMemoryAccess_Response(rfid_reader.read(''), tag, tag_memory_access_command)
+    eas_alarm = iblock.IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
     ## TODO: eas_alarm.mac_command.response.alarm == 0
 
   # Disconnect the tag from the reader, so others may connect

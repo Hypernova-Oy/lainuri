@@ -2,8 +2,8 @@
 
 import context
 
-import RL866
-from RL866.CRC16 import crc16
+import lainuri.RL866
+from lainuri.RL866.CRC16 import crc16
 
 def test_crc16():
   crc = crc16(

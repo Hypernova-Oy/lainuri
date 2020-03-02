@@ -36,8 +36,11 @@ def ParseEventFromWebsocketMessage(raw_data: str, client: WebSocket):
   parameters = {}
   if serializable_attributes:
     parameters = {attr: data['message'].get(attr, None) for attr in serializable_attributes}
-  instance = event_class(**parameters, **instance_data)
-  return instance
+  try:
+    return event_class(**parameters, **instance_data)
+  except Exception as e:
+    raise type(e)(f"Creating event '{event_class}' with parameters '{parameters}' instance_data '{instance_data}' failed:\n" + traceback.format_exc())
+
 
 
 
