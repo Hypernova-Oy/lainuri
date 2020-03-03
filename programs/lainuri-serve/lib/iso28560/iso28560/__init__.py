@@ -1,8 +1,8 @@
 import iso15692
 import iso15692.format
-import iso15692.util
 
 import logging
+import yaml
 
 log = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def new_data_object(afi: int, dsfid: int, block_size: int, memory_capacity_block
   if not(afi == 0xC2 or afi == 0x07): #C2 == on loan, 07 == on shelf
     log.warn(f"AFI '{hex(afi)}' is not a well-known library value")
 
-  dob_class = _get_data_object_class(dsfid=dsfid)
+  dob_class = object_class if object_class else _get_data_object_class(dsfid=dsfid)
   return dob_class(afi, dsfid, block_size, memory_capacity_blocks, tag_memory)
 
 def _get_data_object_class(dsfid: int):
@@ -44,19 +44,12 @@ def _get_data_object_class(dsfid: int):
 
   if dsfid > 256:
     raise Exception(f"DSFID '{hex(dsfid)}' is not 1 byte!")
-  access_method = dsfid >> 3
-  if access_method == 0b000:
+  if dsfid == 0x06:
     if not dob_class: dob_class = ISO28560_2_Object
-  elif access_method == 0b111:
+  elif dsfid == 0x3E:
     if not dob_class: dob_class = ISO28560_3_Object
   else:
-    raise Exception(f"access method '{bin(access_method)}' is not known!")
-
-  data_format = dsfid & 0b00011111
-  if dob_class == ISO28560_2_Object and data_format != 0b00110:
-    log.warn(f"data format '{bin(data_format)}' is not a well-known library value")
-  elif dob_class == ISO28560_3_Object and data_format != 0b11110:
-    log.warn(f"data format '{bin(data_format)}' is not a well-known library value")
+    raise Exception(f"DSFID '{hex(dsfid)}' is not known! Overload your data format class implementation manually.")
 
   return dob_class
 
@@ -65,6 +58,10 @@ def _get_data_object_class(dsfid: int):
 class ISO28560_Object():
   def get_primary_item_identifier(self):
     raise Exception(f"Overload missing from class '{self}'. Overload this for your implementation!")
+
+  def __repr__(self):
+    return yaml.dump({'!type': self.__class__, '!id': hex(id(self)), **self.__dict__})
+
 
 
 class ISO28560_3_Object(ISO28560_Object):

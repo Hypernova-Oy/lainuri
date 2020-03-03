@@ -19,7 +19,7 @@
 
 from bitarray import bitarray, frozenbitarray
 import logging
-from pprint import pformat
+import yaml
 import re
 
 import iso15692.compaction
@@ -53,10 +53,13 @@ class ByteStream():
     self.byttes = byttes
     self.i = -1
 
-#  def __repr__(self):
-#    if self.i < 0:
-#      return '|' + self.byttes.hex()
-#    return f"ByteStream():> byttes='{self.byttes[0:self.i].hex() + '|' + self.byttes[self.i:self.i+1].hex() + '|' + self.byttes[self.i+1:].hex()}' i='{self.i}' len='{len(self.byttes)}'"
+  def __repr__(self):
+    byttes = ""
+    if self.i < 0:
+      byttes = f"'||{self.byttes.hex()}'"
+    else:
+      byttes = f"'{self.byttes[0:self.i].hex()}|{self.byttes[self.i:self.i+1].hex()}|{self.byttes[self.i+1:].hex()}'"
+    return yaml.dump({'!type': self.__class__, '!id': hex(id(self)), **self.__dict__, 'byttes': byttes})
 
   def current(self):
     return self.byttes[self.i]
@@ -92,7 +95,7 @@ class DataElement():
     self.compacted_data=compacted_data,
     self.length_of_compacted_data=length_of_compacted_data,
   def __repr__(self):
-    return pformat(self.__dict__)
+    return yaml.dump({'!type': self.__class__, '!id': hex(id(self)), **self.__dict__})
 
 
 
@@ -102,7 +105,7 @@ class DataObject():
     self._tag_memory = ByteStream(tag_memory) if tag_memory else None
 
   def __repr__(self):
-    return pformat(self.__dict__)
+    return yaml.dump({'!type': self.__class__, '!id': hex(id(self)), **self.__dict__})
 
   def add_data_element(self, data_element: DataElement):
     self.data_elements.append(data_element)
