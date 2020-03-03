@@ -4,15 +4,9 @@ log = logging.getLogger(__name__)
 
 from simple_websocket_server import WebSocket
 import json
+import time
 import traceback
 
-import lainuri.websocket_handlers.ringtone
-import lainuri.websocket_handlers.test
-import lainuri.websocket_handlers.config
-import lainuri.websocket_handlers.checkout
-import lainuri.websocket_handlers.checkin
-import lainuri.websocket_handlers.printer
-import lainuri.websocket_handlers.status
 import lainuri.koha_api as koha_api
 
 event_id: int = 0
@@ -24,6 +18,7 @@ def get_event_id(event_name: str) -> str:
 class LEvent():
   serializable_attributes = [] # Must be overloaded
   default_handler = None
+  timestamp = time.strftime("%H:%M:%S", time.localtime())
 
   def __init__(self, event: str = None, message: dict = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.event = event
@@ -57,7 +52,7 @@ class LEvent():
 
 class LECheckOut(LEvent):
   event = 'check-out'
-  default_handler = lainuri.websocket_handlers.checkout.checkout
+  default_handler = 'lainuri.websocket_handlers.checkout.checkout'
 
   serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type']
   item_barcode = ''
@@ -92,7 +87,7 @@ class LECheckOutComplete(LEvent):
 
 class LECheckIn(LEvent):
   event = 'check-in'
-  default_handler = lainuri.websocket_handlers.checkin.checkin
+  default_handler = 'lainuri.websocket_handlers.checkin.checkin'
 
   serializable_attributes = ['item_barcode', 'tag_type']
   item_barcode = ''
@@ -123,7 +118,7 @@ class LECheckInComplete(LEvent):
 
 class LERingtonePlay(LEvent):
   event = 'ringtone-play'
-  default_handler = lainuri.websocket_handlers.ringtone.ringtone_play
+  default_handler = 'lainuri.websocket_handlers.ringtone.ringtone_play'
 
   serializable_attributes = ['ringtone_type', 'ringtone']
   ringtone_type = ''
@@ -163,7 +158,7 @@ class LEBarcodeRead(LEvent):
 
 class LEConfigWrite(LEvent):
   event = 'config-write'
-  default_handler = lainuri.websocket_handlers.config.write_config
+  default_handler = 'lainuri.websocket_handlers.config.write_config'
 
   serializable_attributes = ['variable', 'new_value']
   variable = ''
@@ -178,7 +173,7 @@ class LEConfigWrite(LEvent):
 
 class LEPrintRequest(LEvent):
   event = 'print-request'
-  default_handler = lainuri.websocket_handlers.printer.print_receipt
+  default_handler = 'lainuri.websocket_handlers.printer.print_receipt'
 
   serializable_attributes = ['receipt_type', 'items', 'user_barcode']
   receipt_type = ''
@@ -256,7 +251,7 @@ class LERFIDTagsPresent(LEvent):
 
 class LEServerStatusRequest(LEvent):
   event = 'server-status-request'
-  default_handler = lainuri.websocket_handlers.status.status_request
+  default_handler = 'lainuri.websocket_handlers.status.status_request'
 
 class LEServerStatusResponse(LEvent):
   event = 'server-status-response'
@@ -334,7 +329,7 @@ class LEDeregisterClient(LEvent):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
 class LETestMockDevices(LEvent):
   event = 'test-mock-devices'
-  default_handler = lainuri.websocket_handlers.test.mock_devices
+  default_handler = 'lainuri.websocket_handlers.test.mock_devices'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
@@ -359,3 +354,40 @@ class LEException(LEvent):
 
 class LEUserLoginFailed(LEException):
   event = 'user-login-failed'
+
+
+
+
+
+
+
+
+
+
+
+
+
+eventname_to_eventclass = {}
+def map_eventname_to_eventclass():
+  g = globals()
+  for key in g:
+    imported = g[key]
+    if type(imported) == type and getattr(imported, '__init__', None): # This is a class type, since it has a constructor
+      eventname = imported.__dict__.get('event', None)
+      if eventname: eventname_to_eventclass[eventname] = imported
+map_eventname_to_eventclass()
+
+def parseEventFromWebsocketMessage(raw_data: str, client: WebSocket):
+  data = json.loads(raw_data)
+  event_class = eventname_to_eventclass.get(data['event'], None)
+  if not event_class: raise Exception(f"Event '{data['event']}' doesn't map to a event class")
+  if not data['event_id']: raise Exception(f"Event '{raw_data}' is missing event_id!")
+  instance_data = {'client': client, 'recipient': None, 'event_id': data['event_id']}
+  serializable_attributes = event_class.__dict__.get('serializable_attributes', None)
+  parameters = {}
+  if serializable_attributes:
+    parameters = {attr: data['message'].get(attr, None) for attr in serializable_attributes}
+  try:
+    return event_class(**parameters, **instance_data)
+  except Exception as e:
+    raise type(e)(f"Creating event '{event_class}' with parameters '{parameters}' instance_data '{instance_data}' failed:\n" + traceback.format_exc())

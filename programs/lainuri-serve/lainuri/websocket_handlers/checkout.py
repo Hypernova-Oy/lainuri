@@ -7,8 +7,8 @@ import traceback
 #from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
 from lainuri.koha_api import koha_api
-import lainuri.websocket_server
 import lainuri.event
+import lainuri.event_queue
 import lainuri.rfid_reader as rfid
 
 
@@ -19,7 +19,7 @@ def checkout(event):
     try:
       borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
     except Exception:
-      lainuri.websocket_server.push_event(
+      lainuri.event_queue.push_event(
         lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, event.tag_type, 'failed', {
           'user_not_found': traceback.format_exc(),
         })
@@ -31,7 +31,7 @@ def checkout(event):
     try:
       item = koha_api.get_item(event.item_barcode)
     except Exception:
-      lainuri.websocket_server.push_event(
+      lainuri.event_queue.push_event(
         lainuri.event.LECheckOutComplete(event.item_barcode, event.user_barcode, event.tag_type, 'failed', {
           'item_not_found': traceback.format_exc(),
         })
@@ -42,14 +42,14 @@ def checkout(event):
     # but it is way better at communicating the small details.
     availability = koha_api.availability(itemnumber=item['itemnumber'], borrowernumber=borrower['borrowernumber'])
     if availability['available'] != True:
-      lainuri.websocket_server.push_event(
+      lainuri.event_queue.push_event(
         lainuri.event.LECheckOutComplete(item['barcode'], borrower['cardnumber'], event.tag_type, 'failed', availability)
       )
 
     # Checkout to Koha
     (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
     if status == 'failed':
-      lainuri.websocket_server.push_event(
+      lainuri.event_queue.push_event(
         lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'failed', states)
       )
       return
@@ -58,18 +58,18 @@ def checkout(event):
       rfid.set_tag_gate_alarm(event, False)
     except Exception:
       states['set_tag_gate_alarm_failed'] = traceback.format_exc()
-      lainuri.websocket_server.push_event(
+      lainuri.event_queue.push_event(
         lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'failed', states)
       )
       return
 
     # Send a notification to the UI
-    lainuri.websocket_server.push_event(
+    lainuri.event_queue.push_event(
       lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'success', states)
     )
 
   except Exception:
-    lainuri.websocket_server.push_event(
+    lainuri.event_queue.push_event(
       lainuri.event.LECheckOutComplete(event.item_barcode, borrower['cardnumber'], event.tag_type, 'failed', {
         'exception': traceback.format_exc(),
       })

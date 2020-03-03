@@ -2,9 +2,9 @@
 
 import context
 
-import lainuri.websocket_server
 import lainuri.websocket_handlers.printer
 import lainuri.event
+import lainuri.event_queue
 import lainuri.koha_api
 import lainuri.printer as lp
 
@@ -29,13 +29,14 @@ def test_print_template_check_in():
   printable_sheet = lp.get_sheet_check_in(event.items)
   assert lp.print_html(printable_sheet)
 
-def est_print_koha_api():
+def test_print_koha_api():
   lainuri.koha_api.koha_api.authenticate()
 
+  import pdb; pdb.set_trace()
   lainuri.websocket_handlers.printer.print_receipt(
-    lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='2600104874')
+    lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good')
   )
-  response_event = lainuri.websocket_server.events[-1]
+  response_event = lainuri.event_queue.history[0]
 
   assert type(response_event) == lainuri.event.LEPrintResponse
   assert not response_event.status.get('exception', None)

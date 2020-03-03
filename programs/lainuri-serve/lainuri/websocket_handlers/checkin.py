@@ -7,8 +7,8 @@ import traceback
 #from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
 from lainuri.koha_api import koha_api
-import lainuri.websocket_server
 import lainuri.event
+import lainuri.event_queue
 import lainuri.rfid_reader as rfid
 
 def checkin(event):
@@ -22,11 +22,11 @@ def checkin(event):
       status = 'error'
       states['set_tag_gate_alarm_failed'] = traceback.format_exc()
 
-    lainuri.websocket_server.push_event(
+    lainuri.event_queue.push_event(
       lainuri.event.LECheckInComplete(event.item_barcode, event.tag_type, status, states)
     )
   except Exception:
-    lainuri.websocket_server.push_event(
+    lainuri.event_queue.push_event(
       lainuri.event.LECheckInComplete(event.item_barcode, event.tag_type, 'failed', {
         'exception': traceback.format_exc(),
       })

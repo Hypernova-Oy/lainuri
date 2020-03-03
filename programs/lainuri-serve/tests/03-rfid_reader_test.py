@@ -3,7 +3,9 @@
 import context
 
 import lainuri.config
-import lainuri.websocket_server
+import lainuri.event
+import lainuri.event_queue
+import lainuri.koha_api
 from lainuri.rfid_reader import RFID_Reader
 from lainuri.RL866.tag import Tag
 
@@ -11,12 +13,15 @@ import iso28560
 
 rfid_reader = None
 
-def test_rfid_reader(subtests):
-  rfid_reader = None
+def test_rfid_reader_system_information(subtests):
+  global rfid_reader
 
   with subtests.test("Given a rfid reader"):
-    rfid_reader = RFID_Reader()
+    rfid_reader = RFID_Reader() if not rfid_reader else rfid_reader
     assert rfid_reader
+
+  with subtests.test("And a Koha API authentication"):
+    assert lainuri.koha_api.koha_api.authenticate()
 
   with subtests.test("When rfid tags are inventoried"):
     rfid_reader.do_inventory()
@@ -31,6 +36,14 @@ def test_rfid_reader(subtests):
     assert tag.block_size() != None
     assert tag.memory_capacity_blocks() != None
     assert tag.iso25680_get_primary_item_identifier() != None
+
+  with subtests.test("And new rfid-tags are discovered"):
+    event_rfid_tags_new = lainuri.event_queue.history[0]
+    assert type(event_rfid_tags_new) == lainuri.event.LERFIDTagsNew
+    assert len(event_rfid_tags_new.tags_new) > 0
+    assert event_rfid_tags_new.message['tags_new'][0]['item_barcode']
+    assert len(event_rfid_tags_new.tags_present) > 0
+    assert event_rfid_tags_new.message['tags_present'][0]['item_barcode']
 
 def test_rfid_tag_data_format_overload(subtests):
   tag = None
@@ -98,4 +111,3 @@ def test_rfid_tag_data_format_overload(subtests):
 
     with subtests.test("(AFI) Then the rfid tag is checked for data format implementation"):
       assert tag.get_data_object_format_implementation() == iso28560.ISO28560_3_Object
-

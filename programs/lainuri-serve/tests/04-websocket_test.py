@@ -1,9 +1,9 @@
 import context
 
-import lainuri.websocket_server
+import lainuri.event
 
 def test_message_parsing():
-  event = lainuri.websocket_server.ParseEventFromWebsocketMessage(
+  event = lainuri.event.parseEventFromWebsocketMessage(
     """{
       "event": "register-client",
       "message": {},
@@ -14,7 +14,7 @@ def test_message_parsing():
   assert event
   assert event.event == 'register-client'
 
-  event = lainuri.websocket_server.ParseEventFromWebsocketMessage(
+  event = lainuri.event.parseEventFromWebsocketMessage(
     """{
       "event": "ringtone-played",
       "message": {

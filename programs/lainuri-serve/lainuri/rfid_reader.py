@@ -10,13 +10,13 @@ import _thread as thread
 import traceback
 
 import lainuri.event as le
+import lainuri.event_queue
 from lainuri.RL866.message import Message
 from lainuri.RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
 from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response, IBlock_TagMemoryAccess, IBlock_TagMemoryAccess_Response
 from lainuri.RL866.tag import Tag
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 import lainuri.RL866.state as rfid_state
-import lainuri.websocket_server
 
 
 rfid_readers = []
@@ -136,9 +136,11 @@ class RFID_Reader():
     self.tags_present = [tag for tag in self.tags_present if not [tag_lost for tag_lost in self.tags_lost if tag.serial_number() == tag_lost.serial_number()]]
 
     if self.tags_new:
-      lainuri.websocket_server.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
+      lainuri.event_queue.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
     if self.tags_lost:
-      lainuri.websocket_server.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
+      lainuri.event_queue.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
+
+    return self
 
   def flesh_tag_details(self, tag: Tag):
     with self.access_lock():

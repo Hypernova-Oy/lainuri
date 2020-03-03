@@ -3,10 +3,10 @@ from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 import lainuri.event as le
-import lainuri.websocket_server
+import lainuri.event_queue
 
 def status_request(event):
-  lainuri.websocket_server.push_event(
+  lainuri.event_queue.push_event(
     le.LEServerStatusResponse(
       barcode_reader_status={
         'status': 'pending',

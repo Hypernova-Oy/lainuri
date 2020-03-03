@@ -6,46 +6,30 @@ from simple_websocket_server import WebSocketServer, WebSocket
 
 import json
 import _thread as thread
-import threading
 import time
 import traceback
 
 import lainuri.helpers
 import lainuri.event
+import lainuri.event_queue
 from lainuri.koha_api import koha_api
 from lainuri.exceptions import InvalidUser, NoResults
-
-import lainuri.websocket_handlers.config
 import lainuri.rfid_reader
 import lainuri.barcode_reader
 
-eventname_to_eventclass = {}
-for key in lainuri.event.__dict__:
-  imported = lainuri.event.__dict__[key]
-  if type(imported) == type and getattr(imported, '__init__', None): # This is a class type, since it has a constructor
-    eventname = imported.__dict__.get('event', None)
-    if eventname: eventname_to_eventclass[eventname] = imported
-
-def ParseEventFromWebsocketMessage(raw_data: str, client: WebSocket):
-  data = json.loads(raw_data)
-  event_class = eventname_to_eventclass.get(data['event'], None)
-  if not event_class: raise Exception(f"Event '{data['event']}' doesn't map to a event class")
-  if not data['event_id']: raise Exception(f"Event '{raw_data}' is missing event_id!")
-  instance_data = {'client': client, 'recipient': None, 'event_id': data['event_id']}
-  serializable_attributes = event_class.__dict__.get('serializable_attributes', None)
-  parameters = {}
-  if serializable_attributes:
-    parameters = {attr: data['message'].get(attr, None) for attr in serializable_attributes}
-  try:
-    return event_class(**parameters, **instance_data)
-  except Exception as e:
-    raise type(e)(f"Creating event '{event_class}' with parameters '{parameters}' instance_data '{instance_data}' failed:\n" + traceback.format_exc())
-
+## Import all handlers, because the handle_events_loop dynamically invokes them
+import lainuri.websocket_handlers.checkin
+import lainuri.websocket_handlers.checkout
+import lainuri.websocket_handlers.config
+import lainuri.websocket_handlers.printer
+import lainuri.websocket_handlers.ringtone
+import lainuri.websocket_handlers.status
+import lainuri.websocket_handlers.test
 
 
 
 clients = []
-events = []
+
 """
 states:
 get_items: rfid tags and barcodes are interpreted as item barcodes and are pushed to the UI
@@ -59,34 +43,39 @@ def set_state(new_state: str):
   log.info(f"New state '{new_state}'")
   state = new_state
 
-def push_event(event: lainuri.event.LEvent):
-  global events
-  log.info(f"New event '{event.__dict__}'")
-  events.append(event)
+def handle_events_loop():
+  while(1):
+    try:
+      event = lainuri.event_queue.pop_event()
+      log.info(f"Handling event '{event.event_id or ''}':\n  '{event.__dict__}'")
 
-  # Messages originating from the Lainuri UI
-  if event.client:
-    if event.default_handler: event.default_handler()
-    elif event.event == 'user-logging-in':
-      set_state('user-logging-in')
-    elif event.event == 'user-login-abort':
-      set_state('get_items')
-    elif event.event == 'config-getpublic':
-      lainuri.websocket_handlers.config.get_public_configs(event)
-    elif event.event == 'register-client':
-      register_client(event)
-    elif event.event == 'deregister-client':
-      deregister_client(event)
-    elif event.event == 'exception':
-      log.error(f"Client exception: '{event.message}'")
-    else:
-      raise Exception(f"Unknown event '{event.__dict__}'")
+      # Messages originating from the Lainuri UI
+      if event.client:
+        if event.default_handler: eval(event.default_handler)(event)
+        elif event.event == 'user-logging-in':
+          set_state('user-logging-in')
+        elif event.event == 'user-login-abort':
+          set_state('get_items')
+        elif event.event == 'config-getpublic':
+          lainuri.websocket_handlers.config.get_public_configs(event)
+        elif event.event == 'register-client':
+          register_client(event)
+        elif event.event == 'deregister-client':
+          deregister_client(event)
+        elif event.event == 'exception':
+          log.error(f"Client exception: '{event.message}'")
+        else:
+          raise Exception(f"Unknown event '{event.__dict__}'")
 
-  # Messages from the server to the UI
-  else:
-    if event.event in ['user-logged-in','user-login-failed']:
-      set_state('get_items')
-    message_clients(event)
+      # Messages from the server to the UI
+      else:
+        if event.event in ['user-logged-in','user-login-failed']:
+          set_state('get_items')
+        message_clients(event)
+    except Exception as e:
+      log.error(f"Handling event failed!: {event}")
+      log.exception(e)
+      lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
 
 def message_clients(event: lainuri.event.LEvent):
   for client in clients:
@@ -100,8 +89,10 @@ def register_client(event):
   global clients
   clients.append(event.client)
 
-  tags_present = lainuri.rfid_reader.get_current_inventory_status()
-  lainuri.websocket_server.push_event(lainuri.event.LERFIDTagsPresent(tags_present, recipient=event.client))
+  lainuri.event_queue.push_event(lainuri.event.LERFIDTagsPresent(
+    tags_present=lainuri.rfid_reader.get_current_inventory_status(),
+    recipient=event.client)
+  )
 
   lainuri.websocket_handlers.config.get_public_configs()
 
@@ -119,12 +110,12 @@ class SimpleChat(WebSocket):
     event = None
     try:
       try:
-        event = ParseEventFromWebsocketMessage(self.data, self)
-        push_event(event)
+        event = lainuri.event.parseEventFromWebsocketMessage(self.data, self)
+        lainuri.event_queue.push_event(event)
       except Exception as e:
         log.error(f"Handling payload failed!: {self.data}")
         log.exception(e)
-        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
+        lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
 
@@ -133,11 +124,11 @@ class SimpleChat(WebSocket):
     try:
       try:
         event = lainuri.event.LEvent('register-client', {}, self)
-        push_event(event)
+        lainuri.event_queue.push_event(event)
       except Exception as e:
         log.error(f"Handling payload failed!: {self.data}")
         log.exception(e)
-        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
+        lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
 
@@ -146,11 +137,11 @@ class SimpleChat(WebSocket):
     try:
       try:
         event = lainuri.event.LEvent('deregister-client', {}, self)
-        push_event(event)
+        lainuri.event_queue.push_event(event)
       except Exception as e:
         log.error(f"Handling payload failed!: {self.data}")
         log.exception(e)
-        push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
+        lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
 
@@ -173,6 +164,8 @@ def start():
   else:
     log.info("WGC300 reader is disabled by config")
 
+  thread.start_new_thread(handle_events_loop, ())
+
   server = WebSocketServer('localhost', 53153, SimpleChat)
   server.serve_forever()
 
@@ -180,13 +173,13 @@ def handle_barcode_read(barcode: str):
   if (lainuri.websocket_server.state == 'user-logging-in'):
     lainuri.websocket_server.login_user(barcode)
   else:
-    lainuri.websocket_server.push_event(lainuri.event.LEBarcodeRead(barcode))
+    lainuri.event_queue.push_event(lainuri.event.LEBarcodeRead(barcode))
 
 def login_user(user_barcode: str):
   try:
     borrower = koha_api.get_borrower(user_barcode=user_barcode)
     if koha_api.authenticate_user(user_barcode=user_barcode):
-      lainuri.websocket_server.push_event(
+      lainuri.event_queue.push_event(
         lainuri.event.LEUserLoggedIn(
           firstname=borrower['firstname'],
           surname=borrower['surname'],
@@ -196,8 +189,8 @@ def login_user(user_barcode: str):
     else:
       raise Exception("Login failed! koha_api should throw an Exception instead!")
   except InvalidUser as e:
-    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
+    lainuri.event_queue.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
   except NoResults as e:
-    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
+    lainuri.event_queue.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
   except Exception as e:
-    lainuri.websocket_server.push_event(lainuri.event.LEUserLoginFailed(exception=e))
+    lainuri.event_queue.push_event(lainuri.event.LEUserLoginFailed(exception=e))

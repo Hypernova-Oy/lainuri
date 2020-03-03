@@ -2,6 +2,8 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+import lainuri.event_queue
+
 import _thread as thread
 import threading
 import traceback
@@ -35,7 +37,7 @@ def rtttl_daemon():
     except Exception as e:
       status['failed'] = traceback.format_exc()
 
-    lainuri.websocket_server.push_event(LEvent("ringtone-played", {'ringtone_type': play_ringtone_event.message.ringtone_type}))
+    lainuri.event_queue.push_event(LEvent("ringtone-played", {'ringtone_type': play_ringtone_event.message.ringtone_type}))
 
   log.info(f"Terminating RTTTL-Player thread")
   exit(0)
