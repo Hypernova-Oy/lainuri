@@ -20,10 +20,11 @@ from urllib3 import PoolManager, HTTPResponse
 
 class KohaAPI():
   required_permissions = {
-    'editcatalogue': '*',
-    'circulate': 'circulate_remaining_permissions',
+    'auth': 'get_session',
     'borrowers': 'view_borrowers',
   #  'catalogue': 'staff_login',
+    'circulate': 'circulate_remaining_permissions',
+    'editcatalogue': '*',
   }
 
   sessionid = ''

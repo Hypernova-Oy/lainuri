@@ -22,11 +22,17 @@ import lainuri.RL866.state as rfid_state
 
 rfid_readers = []
 
+def get_rfid_reader():
+  if len(rfid_readers) > 0:
+    return rfid_readers[0]
+  else:
+    rfid_readers.append(RFID_Reader())
+  return rfid_readers[0]
+
 class RFID_Reader():
 
   def __init__(self):
     self.lock = thread.allocate_lock()
-    rfid_readers.append(self)
     self.tags_present: Tag = []
     self.tags_lost: Tag = []
     self.tags_new: Tag = []

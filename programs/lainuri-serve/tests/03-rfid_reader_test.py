@@ -6,7 +6,7 @@ import lainuri.config
 import lainuri.event
 import lainuri.event_queue
 import lainuri.koha_api
-from lainuri.rfid_reader import RFID_Reader
+import lainuri.rfid_reader
 from lainuri.RL866.tag import Tag
 
 import iso28560
@@ -17,7 +17,7 @@ def test_rfid_reader_system_information(subtests):
   global rfid_reader
 
   with subtests.test("Given a rfid reader"):
-    rfid_reader = RFID_Reader() if not rfid_reader else rfid_reader
+    rfid_reader = lainuri.rfid_reader.get_rfid_reader() if not rfid_reader else rfid_reader
     assert rfid_reader
 
   with subtests.test("And a Koha API authentication"):

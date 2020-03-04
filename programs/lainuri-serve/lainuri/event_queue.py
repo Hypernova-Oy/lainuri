@@ -42,13 +42,14 @@ def push_history(event):
       hii = int(history_size/2)
       log.info(f"event_queue history flushed")
 
-def flush_history():
+def flush_all():
   """
   This is normally not needed. History automatically cleans itself.
   Used by testing to reset history state.
   """
-  global history, hii, history_lock
+  global history, hii, history_lock, q
   with history_lock:
     history = [None]*history_size
     hii = 0
+  q = queue.Queue(maxsize=0)
   return True

@@ -113,3 +113,5 @@ def test_IBlock_TagDisconnect():
   msg_response = b'\xfa\x08\x01\x00\x33\x00\x00\xa6\x4b'
   res = IBlock_TagDisconnect_Response(msg_response, tag)
   assert res.pack() == msg_response
+
+  state.transmission_sequence_number = 0 # Prevent leaking bad test context status to next tests

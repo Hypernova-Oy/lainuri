@@ -164,7 +164,7 @@ def start():
     koha_api.authenticate()
 
   if get_config('devices.rfid-reader.enabled'):
-    rfid_reader = lainuri.rfid_reader.RFID_Reader()
+    rfid_reader = lainuri.rfid_reader.get_rfid_reader()
     rfid_reader.start_polling_rfid_tags()
   else:
     log.info("RFID reader is disabled by config")

@@ -18,7 +18,7 @@ from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 
 from pprint import pprint
 
-rfid_reader = lainuri.rfid_reader.RFID_Reader()
+rfid_reader = lainuri.rfid_reader.get_rfid_reader()
 rfid_reader.do_inventory()
 
 tags = lainuri.rfid_reader.get_current_inventory_status()

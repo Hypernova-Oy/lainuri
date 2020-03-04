@@ -33,7 +33,7 @@ def test_authenticate():
 def test_user_login():
   global borrower, item, record
   koha_api.current_event_id = 'auth-user-4'
-  assert_raises('Testing bad enduser', NoResults, 'l-t-u-bad',
+  assert_raises('Testing bad enduser', exception_ils.NoUser, 'l-t-u-bad',
     lambda: koha_api.authenticate_user('l-t-u-bad')
   )
 
@@ -46,7 +46,7 @@ def test_user_login():
 def test_get_item():
   global borrower, item, record
   koha_api.current_event_id = 'item-6'
-  assert_raises('Testing bad item barcode', NoResults, 'l-t-i-bad',
+  assert_raises('Testing bad item barcode', exception_ils.NoItem, 'l-t-i-bad',
     lambda: koha_api.get_item('l-t-i-bad')
   )
 
@@ -71,23 +71,6 @@ def test_enrich_rfid_tag_with_marc():
   assert item_bib['title']
   assert item_bib['author']
   assert item_bib['book_cover_url']
-
-def test_checkin():
-  global borrower, item, record
-  koha_api.current_event_id = 'checkin-10'
-  (status, states) = koha_api.checkin(item['barcode'])
-  assert status == 'success'
-
-def test_checkout():
-  global borrower, item, record
-  koha_api.current_event_id = 'checkout-11'
-  (status, states) = koha_api.checkout(item['barcode'], borrower['borrowernumber'])
-  assert status == 'success'
-
-def test_receipt():
-  global borrower, item, record
-  koha_api.current_event_id = 'receipt-12'
-  assert koha_api.receipt(borrower['borrowernumber'])
 
 def assert_raises(name, e_class, e_string, cb):
   try:

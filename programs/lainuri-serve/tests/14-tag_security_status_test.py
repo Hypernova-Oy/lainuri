@@ -26,12 +26,12 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
   event = None
 
   assert get_config('devices.rfid-reader.enabled') == True
-  assert lainuri.event_queue.flush_history()
+  assert lainuri.event_queue.flush_all()
 
   with subtests.test("Given a rfid reader which has RFID tags in reading radius"):
-    rfid_reader = rfid.RFID_Reader()
-    assert len(rfid_reader.do_inventory().tags_new) > 0
-    assert type(lainuri.websocket_server.handle_one_event(1)) == lainuri.event.LERFIDTagsNew
+    rfid_reader = rfid.get_rfid_reader()
+    assert len(rfid_reader.do_inventory().tags_present) > 0
+    assert type(lainuri.websocket_server.handle_one_event(5)) == lainuri.event.LERFIDTagsNew
 
   with subtests.test("And a RFID tag"):
     tags_present = rfid.get_current_inventory_status()
@@ -44,10 +44,10 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
   with subtests.test("When the tag security status is set"):
     event = le.LESetTagAlarm(item_barcode=tag.iso25680_get_primary_item_identifier(), on=True, recipient='server')
     lainuri.event_queue.push_event(event)
-    assert lainuri.websocket_server.handle_one_event(1) == event
+    assert lainuri.websocket_server.handle_one_event(5) == event
 
   with subtests.test("Then a response event is generated"):
-    event = lainuri.websocket_server.handle_one_event(1)
+    event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[2]
     assert type(event) == le.LESetTagAlarmComplete
     assert event.status == Status.SUCCESS
@@ -59,13 +59,13 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
   with subtests.test("When the tag security status is unset"):
     event = le.LESetTagAlarm(item_barcode=tag.iso25680_get_primary_item_identifier(), on=False, recipient='server')
     lainuri.event_queue.push_event(event)
-    assert lainuri.websocket_server.handle_one_event(1) == event
+    assert lainuri.websocket_server.handle_one_event(5) == event
 
   with subtests.test("And the gate security alarm is disabled"):
     assert tag.afi() == get_config('devices.rfid-reader.afi-checkout')
 
   with subtests.test("Then a response-event is dispatched"):
-    event = lainuri.websocket_server.handle_one_event(1)
+    event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[4]
     assert type(event) == le.LESetTagAlarmComplete
     assert event.status == Status.SUCCESS
@@ -74,19 +74,19 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
 def test_set_gate_security_status_for_missing_tag(subtests):
   event = None
 
-  assert lainuri.event_queue.flush_history()
+  assert lainuri.event_queue.flush_all()
 
   with subtests.test("Given a rfid reader which has RFID tags in reading radius"):
-    rfid_reader = rfid.RFID_Reader()
+    rfid_reader = rfid.get_rfid_reader()
 
   with subtests.test("When the tag security status is set for an imaginary tag"):
     event = le.LESetTagAlarm(item_barcode='imaginary-primary-item-identifier', on=True, recipient='server')
     lainuri.event_queue.push_event(event)
-    assert lainuri.websocket_server.handle_one_event(1) == event
+    assert lainuri.websocket_server.handle_one_event(5) == event
     assert event == lainuri.event_queue.history[0]
 
   with subtests.test("Then a response event in generated"):
-    event = lainuri.websocket_server.handle_one_event(1)
+    event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LESetTagAlarmComplete
 
