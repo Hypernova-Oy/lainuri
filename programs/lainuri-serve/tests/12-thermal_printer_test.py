@@ -32,12 +32,11 @@ def test_print_template_check_in():
 def test_print_koha_api():
   lainuri.koha_api.koha_api.authenticate()
 
-  import pdb; pdb.set_trace()
   lainuri.websocket_handlers.printer.print_receipt(
     lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good')
   )
   response_event = lainuri.event_queue.history[0]
 
   assert type(response_event) == lainuri.event.LEPrintResponse
-  assert not response_event.status.get('exception', None)
-  assert response_event.status['success']
+  assert response_event.status == lainuri.event.Status.SUCCESS
+  assert not response_event.states.get('exception', None)

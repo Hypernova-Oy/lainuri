@@ -1,9 +1,9 @@
 import {Lainuri} from './lainuri-0.0.1'
 import {LEvent,
-  LEBarcodeRead, LERingtonePlay, LERingtonePlayed,
+  LEBarcodeRead, LERingtonePlay, LERingtonePlayComplete,
   LEConfigGetpublic, LEConfigGetpublic_Response,
   LEConfigWrite,
-  LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed,
+  LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort,
   LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEException,
   LETestMockDevices} from './lainuri_events'
 
@@ -21,7 +21,7 @@ function run_test_suite() {
     if (events[event.event_id]) {
       // If this exception-event is for the "ringtone playing" -event, we can notify the UI that the event
       // has failed.
-      if (event.event_id.indexOf(LERingtonePlayed.event)) {
+      if (event.event_id.indexOf(LERingtonePlayComplete.event)) {
         document.getElementById('rtttl_console').innerHTML(event.message);
       }
     }

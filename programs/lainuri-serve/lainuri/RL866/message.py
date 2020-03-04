@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+import lainuri.exception.rfid as exception_rfid
 import lainuri.RL866.CRC16
 import lainuri.RL866.state
 
@@ -132,9 +133,8 @@ def parseIBlockResponseINF(self):
   if not self.CMD == CMD: raise Exception(f"Trying to parse IBlock INF but the given message '{self}' has conflicting CMDs? Class instance CMD='{self.CMD}'. INF contains CMD='{CMD}'?")
 
   if self.STA[0] or self.STA[1]:
-    # TODO: Not sure about the endianness of the bytes
-    #status = (self.STA[0] <<8) + self.STA[1]
-    status = (self.STA[1] <<8) + self.STA[0]
+    status = helpers.word_to_int(self.STA)
+    #status = (self.STA[1] <<8) + self.STA[0]
     error = lainuri.RL866.state.error_codes.get(status)
-    if not error: raise Exception(f"Given message '{self}' has status error '{hex(status)}' but there is no matching error code?")
-    raise Exception(f"Given message '{self}' has status error '{error}'")
+    if not error: error = ['ERR_???', f"Given message '{self}' has status error '{self.STA.hex()}' but there is no matching error code?"]
+    raise exception_rfid.RFIDCommand(*error)

@@ -11,6 +11,7 @@ import traceback
 
 import lainuri.event as le
 import lainuri.event_queue
+import lainuri.exception.rfid as exception_rfid
 from lainuri.RL866.message import Message
 from lainuri.RL866.sblock import SBlock_RESYNC, SBlock_RESYNC_Response
 from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_ReadSystemConfigurationBlock_Response, IBlock_TagInventory, IBlock_TagInventory_Response, IBlock_TagConnect, IBlock_TagConnect_Response, IBlock_TagDisconnect, IBlock_TagDisconnect_Response, IBlock_TagMemoryAccess, IBlock_TagMemoryAccess_Response
@@ -173,26 +174,57 @@ def get_current_inventory_status():
 
 
 def set_tag_gate_alarm(event, flag_on):
-  if event.tag_type == "barcode":
-    return 1
-
+  """
+  @throws exception.rfid.TagNotDetected
+          exception.rfid.RFIDCommand
+  """
   # Get the rfid_reader instance to write with
   rfid_reader = rfid_readers[0]
 
   with rfid_reader.access_lock():
-    # Find the RFID tag instance
-    tags = rfid.get_current_inventory_status()
-    tag = [t for t in tags if t.serial_number() == event.item_barcode]
-    if not tag: raise Exception(f"Couldn't find a tag with serial_number='{event.item_barcode}'!")
-    if len(tag) > 1: raise Exception(f"Too many tags match serial_number='{event.item_barcode}'!")
-    tag = tag[0]
+    tag = None
 
-    afi = get_config('devices.rfid-reader.afi-checkout') # just checking if AFI is enabled in general
-    if afi: _set_tag_gate_alarm_afi(rfid_reader, tag, flag_on)
-    eas = get_config('devices.rfid-reader.eas')
-    if eas: _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on)
+    for try_count in range(1,3):
+      try:
+        # Find the RFID tag instance
+        tags = get_current_inventory_status()
+        tags = [t for t in tags if t.iso25680_get_primary_item_identifier() == event.item_barcode]
+        if not tags: raise exception_rfid.TagNotDetected(event.item_barcode)
+        tag = tags[0]
 
+        afi = get_config('devices.rfid-reader.afi-checkout') # just checking if AFI is enabled in general
+        if afi: _set_tag_gate_alarm_afi(rfid_reader, tag, flag_on)
+        eas = get_config('devices.rfid-reader.eas')
+        if eas: _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on)
+      except exception_rfid.RFIDCommand as e:
+        _handle_retriable_exception(e, try_count, rfid_reader, event.item_barcode, tag)
+      except exception_rfid.GateSecurityStatusVerification as e:
+        _handle_retriable_exception(e, try_count, rfid_reader, event.item_barcode, tag)
+      except Exception as e:
+        if tag: _finally_tag_disconnect(rfid_reader, event.item_barcode, tag)
+        raise e
   return 1
+
+def _finally_tag_disconnect(rfid_reader, item_barcode: str, tag: Tag) -> Tag:
+  """
+  @returns Tag on success, None on failure
+  """
+  try:
+    # Disconnect the tag from the reader, so others may connect
+    rfid_reader.write( IBlock_TagDisconnect(tag) )
+    IBlock_TagDisconnect_Response(rfid_reader.read(''), tag)
+    return tag
+  except Exception as e:
+    log.warn(f"Finally disconnecting tag item_barcode='{item_barcode}' failed: {e.__class__}:> {e}")
+    return None
+
+def _handle_retriable_exception(e: Exception, try_count: int, rfid_reader, item_barcode: str, tag: Tag):
+  if try_count < 3:
+    log.warn(f"{e.__class__}:> Retrying '{try_count}'. {str(e)}")
+  else:
+    if tag.get_connection_handle():
+      if tag: _finally_tag_disconnect(rfid_reader, item_barcode, tag)
+    raise e
 
 def _set_tag_gate_alarm_direct_memory_access(rfid_reader, tag, flag_on):
   # Connect to the tag
@@ -232,7 +264,7 @@ def _set_tag_gate_alarm_direct_memory_access(rfid_reader, tag, flag_on):
   tag_disconnect_response = IBlock_TagDisconnect_Response(rfid_reader.read(''), tag)
 
   if tag_memory_access_response.mac_command.response['data_of_blocks_read'] != security_block:
-    raise Exception(f"Writing the gate security status failed! Write was not confirmed.")
+    raise exception_rfid.GateSecurityStatusVerification(tag.iso25680_get_primary_item_identifier())
 
 def _set_tag_gate_alarm_afi(rfid_reader, tag, flag_on):
   # Connect to the tag
@@ -259,7 +291,7 @@ def _set_tag_gate_alarm_afi(rfid_reader, tag, flag_on):
   tag_disconnect_response = IBlock_TagDisconnect_Response(rfid_reader.read(''), tag)
 
   if tag_system_info['afi'] != security_block[0]:
-    raise Exception(f"Setting the AFI to '{security_block.hex()}'. Current value '{hex(tag_system_info['afi'])}'")
+    raise exception_rfid.GateSecurityStatusVerification(tag.iso25680_get_primary_item_identifier())
 
 def _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on):
   # Connect to the tag

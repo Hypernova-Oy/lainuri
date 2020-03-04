@@ -7,6 +7,7 @@ import json
 import time
 import traceback
 
+from lainuri.constants import Status
 import lainuri.koha_api as koha_api
 
 event_id: int = 0
@@ -18,7 +19,7 @@ def get_event_id(event_name: str) -> str:
 class LEvent():
   serializable_attributes = [] # Must be overloaded
   default_handler = None
-  timestamp = time.strftime("%H:%M:%S", time.localtime())
+  default_recipient = None
 
   def __init__(self, event: str = None, message: dict = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.event = event
@@ -26,6 +27,7 @@ class LEvent():
     self.client = client
     self.recipient = recipient
     self.event_id = event_id
+    self.timestamp = time.strftime("%H:%M:%S", time.localtime())
     if not(self.event_id) and self.event: self.event_id = get_event_id(self.event)
 
   def serialize_ws(self):
@@ -53,6 +55,7 @@ class LEvent():
 class LECheckOut(LEvent):
   event = 'check-out'
   default_handler = 'lainuri.websocket_handlers.checkout.checkout'
+  default_recipient = 'server'
 
   serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type']
   item_barcode = ''
@@ -68,15 +71,16 @@ class LECheckOut(LEvent):
 
 class LECheckOutComplete(LEvent):
   event = 'check-out-complete'
+  default_recipient = 'client'
 
   serializable_attributes = ['item_barcode', 'user_barcode', 'tag_type', 'status', 'states']
   item_barcode = ''
   user_barcode = 0
   tag_type = 'rfid'
   states = {}
-  status = ''
+  status = Status.NOT_SET
 
-  def __init__(self, item_barcode: str, user_barcode: str, tag_type: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, user_barcode: str, tag_type: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
     self.user_barcode = user_barcode
     self.tag_type = tag_type if tag_type else self.tag_type
@@ -88,6 +92,7 @@ class LECheckOutComplete(LEvent):
 class LECheckIn(LEvent):
   event = 'check-in'
   default_handler = 'lainuri.websocket_handlers.checkin.checkin'
+  default_recipient = 'server'
 
   serializable_attributes = ['item_barcode', 'tag_type']
   item_barcode = ''
@@ -101,16 +106,50 @@ class LECheckIn(LEvent):
 
 class LECheckInComplete(LEvent):
   event = 'check-in-complete'
+  default_recipient = 'client'
 
   serializable_attributes = ['item_barcode', 'status', 'states', 'tag_type']
   item_barcode = ''
   tag_type = 'rfid'
   states = {}
-  status = ''
+  status = Status.NOT_SET
 
-  def __init__(self, item_barcode: str, tag_type: str, status: str, states: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, tag_type: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
     self.tag_type = tag_type if tag_type else self.tag_type
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LESetTagAlarm(LEvent):
+  event = 'set-tag-alarm'
+  default_handler = 'lainuri.websocket_handlers.tag_alarm.set_tag_alarm'
+  default_recipient = 'server'
+
+  serializable_attributes = ['item_barcode', 'on']
+  item_barcode = ''
+  on = True
+
+  def __init__(self, item_barcode: str, on: bool, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    self.on = on
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LESetTagAlarmComplete(LEvent):
+  event = 'set-tag-alarm-complete'
+  default_recipient = 'client'
+
+  serializable_attributes = ['item_barcode', 'on', 'status', 'states']
+  item_barcode = ''
+  on = True
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, item_barcode: str, on: bool, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_barcode = item_barcode
+    self.on = on
     self.states = states
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
@@ -119,6 +158,7 @@ class LECheckInComplete(LEvent):
 class LERingtonePlay(LEvent):
   event = 'ringtone-play'
   default_handler = 'lainuri.websocket_handlers.ringtone.ringtone_play'
+  default_recipient = 'server'
 
   serializable_attributes = ['ringtone_type', 'ringtone']
   ringtone_type = ''
@@ -130,21 +170,27 @@ class LERingtonePlay(LEvent):
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
 
-class LERingtonePlayed(LEvent):
-  event = 'ringtone-played'
+class LERingtonePlayComplete(LEvent):
+  event = 'ringtone-play-complete'
+  default_recipient = 'client'
 
-  serializable_attributes = ['ringtone_type', 'ringtone']
+  serializable_attributes = ['ringtone_type', 'ringtone', 'states', 'status']
   ringtone_type = ''
   ringtone = ''
+  states = {}
+  status = Status.NOT_SET
 
-  def __init__(self, ringtone_type: str = None, ringtone: str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, status: Status, ringtone_type: str = None, ringtone: str = None, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.ringtone_type = ringtone_type
     self.ringtone = ringtone
+    self.states = states
+    self.status = status
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
 
 class LEBarcodeRead(LEvent):
   event = 'barcode-read'
+  default_recipient = 'client'
 
   serializable_attributes = ['barcode', 'tag']
   barcode = ''
@@ -159,6 +205,7 @@ class LEBarcodeRead(LEvent):
 class LEConfigWrite(LEvent):
   event = 'config-write'
   default_handler = 'lainuri.websocket_handlers.config.write_config'
+  default_recipient = 'server'
 
   serializable_attributes = ['variable', 'new_value']
   variable = ''
@@ -174,6 +221,7 @@ class LEConfigWrite(LEvent):
 class LEPrintRequest(LEvent):
   event = 'print-request'
   default_handler = 'lainuri.websocket_handlers.printer.print_receipt'
+  default_recipient = 'server'
 
   serializable_attributes = ['receipt_type', 'items', 'user_barcode']
   receipt_type = ''
@@ -188,24 +236,28 @@ class LEPrintRequest(LEvent):
 
 class LEPrintResponse(LEvent):
   event = 'print-response'
+  default_recipient = 'client'
 
-  serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'status']
+  serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'states', 'status']
   receipt_type = ''
   items = []
   user_barcode = ''
   printable_sheet = ''
-  status = {'success': 1, 'exception': ''}
+  states = {}
+  status = Status.NOT_SET
 
-  def __init__(self, receipt_type: str, items: list, user_barcode: str, printable_sheet: str, status: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, receipt_type: str, items: list, user_barcode: str, printable_sheet: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.receipt_type = receipt_type
     self.items = items
     self.user_barcode = user_barcode
     self.printable_sheet = printable_sheet
+    self.states = states
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LERFIDTagsLost(LEvent):
   event = 'rfid-tags-lost'
+  default_recipient = 'client'
 
   serializable_attributes = ['tags_lost','tags_present']
   tags_present = []
@@ -221,6 +273,7 @@ class LERFIDTagsLost(LEvent):
 
 class LERFIDTagsNew(LEvent):
   event = 'rfid-tags-new'
+  default_recipient = 'client'
 
   serializable_attributes = ['tags_new','tags_present']
   tags_present = []
@@ -237,6 +290,7 @@ class LERFIDTagsNew(LEvent):
 
 class LERFIDTagsPresent(LEvent):
   event = 'rfid-tags-present'
+  default_recipient = 'client'
 
   serializable_attributes = ['tags_present']
   tags_present = []
@@ -252,9 +306,11 @@ class LERFIDTagsPresent(LEvent):
 class LEServerStatusRequest(LEvent):
   event = 'server-status-request'
   default_handler = 'lainuri.websocket_handlers.status.status_request'
+  default_recipient = 'server'
 
 class LEServerStatusResponse(LEvent):
   event = 'server-status-response'
+  default_recipient = 'client'
 
   serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status']
   barcode_reader_status = {}
@@ -273,15 +329,11 @@ class LEServerStatusResponse(LEvent):
 
 class LEUserLoggingIn(LEvent):
   event = 'user-logging-in'
+  default_recipient = 'server'
 
   serializable_attributes = ['username', 'password']
   username = ''
   password = ''
-
-  lifecycle_map_event_to_hooks = {
-    'LEUserLoggedIn': 'onsuccess',
-    'LEException': 'onerror',
-  }
 
   def __init__(self, username: str = None, password:str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.password = password
@@ -289,80 +341,54 @@ class LEUserLoggingIn(LEvent):
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     #self.validate_params()
 
-class LEUserLoggedIn(LEvent):
-  event = 'user-logged-in'
+class LEUserLoginComplete(LEvent):
+  event = 'user-login-complete'
+  default_recipient = 'client'
 
-  serializable_attributes = ['firstname', 'surname', 'user_barcode']
+  serializable_attributes = ['firstname', 'surname', 'user_barcode', 'states', 'status']
   firstname = ''
   surname = ''
   user_barcode = ''
+  states = {}
+  status = Status.NOT_SET
 
-  lifecycle_map_event_to_hooks = {
-    'LEUserLoggedIn': 'onsuccess',
-    'LEException': 'onerror',
-  }
-
-  def __init__(self, firstname: str, surname: str, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, firstname: str, surname: str, user_barcode: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.firstname = firstname
     self.surname = surname
     self.user_barcode = user_barcode
+    self.states = states
+    self.status = status
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LEUserLoginAbort(LEvent):
   event = 'user-login-abort'
+  default_recipient = 'server'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
 
 class LERegisterClient(LEvent):
   event = 'register-client'
+  default_recipient = 'client'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
 
 class LEDeregisterClient(LEvent):
   event = 'deregister-client'
+  default_recipient = 'client'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
 class LETestMockDevices(LEvent):
   event = 'test-mock-devices'
   default_handler = 'lainuri.websocket_handlers.test.mock_devices'
+  default_recipient = 'client'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
-
-class LEException(LEvent):
-  event = 'exception'
-
-  serializable_attributes = ['exception']
-  exception = Exception()
-
-  def __init__(self, exception, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    if isinstance(exception, Exception):
-      self.exception = traceback.format_exc()
-    else:
-      self.exception = exception
-
-    message = {
-      'exception': self.exception,
-    }
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
-    self.validate_params()
-
-class LEUserLoginFailed(LEException):
-  event = 'user-login-failed'
-
-
-
-
-
-
-
-
-
 
 
 

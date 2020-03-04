@@ -1,9 +1,9 @@
 import {Lainuri} from './lainuri-0.0.1'
 import {LEvent,
-  LEBarcodeRead, LERingtonePlay, LERingtonePlayed,
+  LEBarcodeRead, LERingtonePlay, LERingtonePlayComplete,
   LEConfigGetpublic, LEConfigGetpublic_Response,
   LEConfigWrite,
-  LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed,
+  LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort,
   LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LEServerConnected, LEServerStatusRequest, LEException,
   LETestMockDevices} from './lainuri_events'
 
@@ -22,7 +22,7 @@ function start_ws () {
     if (events[event.event_id]) {
       // If this exception-event is for the "ringtone playing" -event, we can notify the UI that the event
       // has failed.
-      if (event.event_id.indexOf(LERingtonePlayed.event)) {
+      if (event.event_id.indexOf(LERingtonePlayComplete.event)) {
         document.getElementById('rtttl_console').innerHTML(event.message);
       }
     }
@@ -30,8 +30,8 @@ function start_ws () {
   lainuri_ws.attach_event_listener(LERingtonePlay, this, function(event) {
     console.log(`Event '${LERingtonePlay.name}' triggered.`);
   });
-  lainuri_ws.attach_event_listener(LERingtonePlayed, this, function(event) {
-    console.log(`Event '${LERingtonePlayed.name}' triggered.`);
+  lainuri_ws.attach_event_listener(LERingtonePlayComplete, this, function(event) {
+    console.log(`Event '${LERingtonePlayComplete.name}' triggered.`);
     document.getElementById('rtttl_console').innerHTML("Finished playing: " + event.message);
   });
   lainuri_ws.attach_event_listener(LEConfigWrite, this, function(event) {

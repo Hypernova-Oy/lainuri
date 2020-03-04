@@ -160,6 +160,44 @@ class LECheckInComplete extends LEvent {
   }
 }
 
+class LESetTagAlarm extends LEvent {
+  static event = 'set-tag-alarm';
+
+  static serializable_attributes = ['item_barcode'];
+  item_barcode;
+  on;
+
+  constructor(item_barcode, on, sender, recipient, event_id) {
+    super(event_id)
+    this.item_barcode = item_barcode
+    this.on = on
+    this.states = states
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
+class LESetTagAlarmCompleteextends extends LEvent {
+  static event = 'set-tag-alarm-complete'
+
+  static serializable_attributes = ['item_barcode', 'status', 'states']
+  item_barcode;
+  on;
+  states;
+  status;
+
+  constructor(item_barcode, on, status, states, sender, recipient, event_id) {
+    super(event_id)
+    this.item_barcode = item_barcode
+    this.on = on
+    this.states = states
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+
 class LEBarcodeRead extends LEvent {
   static event = 'barcode-read';
 
@@ -191,17 +229,21 @@ class LERingtonePlay extends LEvent {
     if (!(this.ringtone_type) && !(this.ringtone)) { this.throw_missing_attribute("ringtone_type' or 'ringtone'") }
   }
 }
-class LERingtonePlayed extends LEvent {
-  static event = 'ringtone-played';
+class LERingtonePlayComplete extends LEvent {
+  static event = 'ringtone-play-complete';
 
-  static serializable_attributes = ['ringtone_type', 'ringtone'];
+  static serializable_attributes = ['status', 'ringtone_type', 'ringtone', 'states'];
   ringtone_type;
   ringtone;
+  states;
+  status;
 
-  constructor(ringtone_type = undefined, ringtone = undefined, sender, recipient, event_id = undefined) {
+  constructor(status, ringtone_type = undefined, ringtone = undefined, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.ringtone_type = ringtone_type;
     this.ringtone = ringtone;
+    this.states = states
+    this.status = status
     this.construct(sender, recipient);
     if (!(this.ringtone_type) && !(this.ringtone)) { this.throw_missing_attribute("ringtone_type' or 'ringtone'") }
   }
@@ -381,7 +423,7 @@ class LEUserLoggingIn extends LEvent {
   password;
 
   lifecycle_map_event_to_hooks = {
-    [LEUserLoggedIn.constructor.name]: 'onsuccess',
+    [LEUserLoginComplete.constructor.name]: 'onsuccess',
     [LEException.constructor.name]: 'onerror',
   };
 
@@ -393,8 +435,8 @@ class LEUserLoggingIn extends LEvent {
     //this.validate_params()
   }
 }
-class LEUserLoggedIn extends LEvent {
-  static event = 'user-logged-in';
+class LEUserLoginComplete extends LEvent {
+  static event = 'user-login-complete';
 
   static serializable_attributes = ['firstname', 'surname', 'user_barcode'];
   firstname;
@@ -403,7 +445,7 @@ class LEUserLoggedIn extends LEvent {
   password;
 
   lifecycle_map_event_to_hooks = {
-    [LEUserLoggedIn.constructor.name]: 'onsuccess',
+    [LEUserLoginComplete.constructor.name]: 'onsuccess',
     [LEException.constructor.name]: 'onerror',
   };
 
@@ -447,9 +489,7 @@ class LEException extends LEvent {
     this.validate_params()
   }
 }
-class LEUserLoginFailed extends LEException {
-  static event = 'user-login-failed';
-}
+
 /**
  * Trigger the server to send mocked RFID tag reads and barcode reads
  */
@@ -465,5 +505,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayed, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
 }

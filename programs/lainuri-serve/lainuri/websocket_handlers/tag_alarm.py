@@ -2,33 +2,33 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+from lainuri.constants import Status
+import lainuri.event
+import lainuri.event_queue
+import lainuri.rfid_reader
+
 import traceback
 
 #from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
-from lainuri.koha_api import koha_api
-from lainuri.constants import Status
-import lainuri.event
-import lainuri.event_queue
-import lainuri.rfid_reader as rfid
+def set_tag_alarm(event):
 
-def checkin(event):
   try:
-    (status, states) = koha_api.checkin(event.item_barcode)
+    lainuri.rfid_reader.set_tag_gate_alarm(event, event.on)
     lainuri.event_queue.push_event(
-      lainuri.event.LECheckInComplete(
+      lainuri.event.LESetTagAlarmComplete(
         item_barcode=event.item_barcode,
-        tag_type=event.tag_type,
-        status=status,
-        states=states,
+        on=event.on,
+        status=Status.SUCCESS,
       )
     )
   except Exception as e:
     lainuri.event_queue.push_event(
-      lainuri.event.LECheckInComplete(
+      lainuri.event.LESetTagAlarmComplete(
         item_barcode=event.item_barcode,
-        tag_type=event.tag_type,
+        on=event.on,
         status=type(e).__name__,
         states={'exception': traceback.format_exc()}
       )
     )
+

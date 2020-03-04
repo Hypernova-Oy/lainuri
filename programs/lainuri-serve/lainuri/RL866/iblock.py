@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+import lainuri.exception.rfid as exception_rfid
 import lainuri.helpers as helpers
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 from lainuri.RL866.message import Message, Request, Response, parseMessage, parseIBlockResponseINF
@@ -633,8 +634,8 @@ class IBlock_TagMemoryAccess_Response(IBlock, Response):
     if self.access_status != 1:
       self.error_code = helpers.word_to_int(self.field14)
       error = state.error_codes.get(self.error_code)
-      if not error: raise Exception(f"Given message '{self}' has status error '{hex(self.error_code)}' but there is no matching error code?")
-      raise Exception(f"Given message '{self}' has status error '{error}'")
+      if not error: error = ['ERR_???', f"Given message '{self}' has status error '{self.STA.hex()}' but there is no matching error code?"]
+      raise exception_rfid.RFIDCommand(*error)
 
     if not mac_command.response_parser:
       raise Exception(f"No response handler in mac_command '{mac_command}'! Message '{self.__dict__}'")

@@ -9,11 +9,13 @@ import _thread as thread
 import time
 import traceback
 
+from lainuri.constants import Status
 import lainuri.helpers
 import lainuri.event
 import lainuri.event_queue
 from lainuri.koha_api import koha_api
-from lainuri.exceptions import InvalidUser, NoResults
+from lainuri.exception import NoResults
+import lainuri.exception.ils as exception_ils
 import lainuri.rfid_reader
 import lainuri.barcode_reader
 
@@ -24,6 +26,7 @@ import lainuri.websocket_handlers.config
 import lainuri.websocket_handlers.printer
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.status
+import lainuri.websocket_handlers.tag_alarm
 import lainuri.websocket_handlers.test
 
 
@@ -46,36 +49,44 @@ def set_state(new_state: str):
 def handle_events_loop():
   while(1):
     try:
-      event = lainuri.event_queue.pop_event()
-      log.info(f"Handling event '{event.event_id or ''}':\n  '{event.__dict__}'")
-
-      # Messages originating from the Lainuri UI
-      if event.client:
-        if event.default_handler: eval(event.default_handler)(event)
-        elif event.event == 'user-logging-in':
-          set_state('user-logging-in')
-        elif event.event == 'user-login-abort':
-          set_state('get_items')
-        elif event.event == 'config-getpublic':
-          lainuri.websocket_handlers.config.get_public_configs(event)
-        elif event.event == 'register-client':
-          register_client(event)
-        elif event.event == 'deregister-client':
-          deregister_client(event)
-        elif event.event == 'exception':
-          log.error(f"Client exception: '{event.message}'")
-        else:
-          raise Exception(f"Unknown event '{event.__dict__}'")
-
-      # Messages from the server to the UI
-      else:
-        if event.event in ['user-logged-in','user-login-failed']:
-          set_state('get_items')
-        message_clients(event)
+      handle_one_event()
     except Exception as e:
       log.error(f"Handling event failed!: {event}")
       log.exception(e)
       lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
+
+def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
+  event = lainuri.event_queue.pop_event(timeout=timeout)
+  log.info(f"Handling event '{event.event_id or ''}':\n  '{event.__dict__}'")
+
+  # Messages originating from the Lainuri UI
+  if event.recipient == 'server' or (not(event.recipient) and event.default_recipient == 'server'):
+    if event.default_handler: eval(event.default_handler)(event)
+    elif event.event == 'user-logging-in':
+      set_state('user-logging-in')
+    elif event.event == 'user-login-abort':
+      set_state('get_items')
+    elif event.event == 'config-getpublic':
+      lainuri.websocket_handlers.config.get_public_configs(event)
+    elif event.event == 'register-client':
+      register_client(event)
+    elif event.event == 'deregister-client':
+      deregister_client(event)
+    elif event.event == 'exception':
+      log.error(f"Client exception: '{event.message}'")
+    else:
+      raise Exception(f"Unknown event '{event.__dict__}'")
+
+  # Messages from the server to the UI
+  elif event.recipient == 'client' or (not(event.recipient) and event.default_recipient == 'client'):
+    if event.event in ['user-login-complete']:
+      set_state('get_items')
+    message_clients(event)
+
+  else:
+    raise Exception(f"Don't know how to route event '{event.event_id or ''}':\n  '{event.__dict__}'")
+
+  return event
 
 def message_clients(event: lainuri.event.LEvent):
   for client in clients:
@@ -176,21 +187,41 @@ def handle_barcode_read(barcode: str):
     lainuri.event_queue.push_event(lainuri.event.LEBarcodeRead(barcode))
 
 def login_user(user_barcode: str):
+  borrower = None
   try:
     borrower = koha_api.get_borrower(user_barcode=user_barcode)
     if koha_api.authenticate_user(user_barcode=user_barcode):
       lainuri.event_queue.push_event(
-        lainuri.event.LEUserLoggedIn(
+        lainuri.event.LEUserLoginComplete(
           firstname=borrower['firstname'],
           surname=borrower['surname'],
           user_barcode=borrower['cardnumber'],
+          status=Status.SUCCESS,
         )
       )
     else:
       raise Exception("Login failed! koha_api should throw an Exception instead!")
-  except InvalidUser as e:
-    lainuri.event_queue.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
+  except exception_ils.InvalidUser as e:
+    lainuri.event_queue.push_event(lainuri.event.LEUserLoginComplete(
+      firstname=borrower['firstname'] if borrower else '',
+      surname=borrower['surname'] if borrower else '',
+      user_barcode=borrower['cardnumber'] if borrower else user_barcode,
+      status=Status.ERROR,
+      states={'exception': str(e)},
+    ))
   except NoResults as e:
-    lainuri.event_queue.push_event(lainuri.event.LEUserLoginFailed(exception=str(e)))
+    lainuri.event_queue.push_event(lainuri.event.LEUserLoginComplete(
+      firstname=borrower['firstname'] if borrower else '',
+      surname=borrower['surname'] if borrower else '',
+      user_barcode=borrower['cardnumber'] if borrower else user_barcode,
+      status=Status.ERROR,
+      states={'exception': str(e)},
+    ))
   except Exception as e:
-    lainuri.event_queue.push_event(lainuri.event.LEUserLoginFailed(exception=e))
+    lainuri.event_queue.push_event(lainuri.event.LEUserLoginComplete(
+      firstname=borrower['firstname'] if borrower else '',
+      surname=borrower['surname'] if borrower else '',
+      user_barcode=borrower['cardnumber'] if borrower else user_barcode,
+      status=Status.ERROR,
+      states={'exception': str(e)},
+    ))

@@ -7,6 +7,8 @@ import time
 import pytest_subtests
 
 import lainuri.websocket_server
+import lainuri.koha_api
+from lainuri.constants import Status
 import lainuri.event as le
 import lainuri.websocket_handlers.checkin
 import lainuri.websocket_handlers.checkout
@@ -20,6 +22,9 @@ def test_checkout_barcode(subtests):
   global good_item_barcode, good_user_barcode
   borrower = None
 
+  with subtests.test("Given an API authentication"):
+    assert lainuri.koha_api.koha_api.authenticate()
+
   with subtests.test("When the barcode is checked in"):
     event = le.LECheckIn(item_barcode=good_item_barcode, tag_type='barcode')
     lainuri.websocket_handlers.checkin.checkin(event)
@@ -28,7 +33,7 @@ def test_checkout_barcode(subtests):
     event = lainuri.event_queue.history[0]
     assert type(event) == le.LECheckInComplete
     assert event.item_barcode == good_item_barcode
-    assert event.status == 'complete'
+    assert event.status == Status.SUCCESS
 
   with subtests.test("When the barcode is checked out"):
     event = le.LECheckOut(item_barcode=good_item_barcode, user_barcode=good_user_barcode, tag_type='barcode')
@@ -38,7 +43,7 @@ def test_checkout_barcode(subtests):
     event = lainuri.event_queue.history[1]
     assert type(event) == le.LECheckOutComplete
     assert event.item_barcode == good_item_barcode
-    assert event.status == 'complete'
+    assert event.status == Status.SUCCESS
 
 
 
@@ -50,7 +55,10 @@ def test_checkout_rfid(subtests):
 
   assert get_config('devices.rfid-reader.enabled') == True
 
-  with subtests.test("Given a rfid reader which has RFID tags in reading radius"):
+  with subtests.test("Given an API authentication"):
+    assert lainuri.koha_api.koha_api.authenticate()
+
+  with subtests.test("And a rfid reader which has RFID tags in reading radius"):
     rfid_reader = rfid.RFID_Reader()
     assert len(rfid_reader.do_inventory().tags_new) > 0
 
@@ -69,20 +77,14 @@ def test_checkout_rfid(subtests):
   with subtests.test("Then a response event in generated"):
     event = lainuri.event_queue.history[3]
     assert type(event) == le.LECheckInComplete
-    assert event.status == 'complete'
-
-  with subtests.test("And the gate security alarm is enabled"):
-    assert tag.afi() == get_config('devices.rfid-reader.afi-checkin')
+    assert event.status == Status.SUCCESS
 
   with subtests.test("When the tag is checked out"):
     event = le.LECheckOut(item_barcode=tag.iso25680_get_primary_item_identifier(), user_barcode=good_user_barcode, tag_type='barcode')
     lainuri.websocket_handlers.checkout.checkout(event)
 
-  with subtests.test("And the gate security alarm is disabled"):
-    assert tag.afi() == get_config('devices.rfid-reader.afi-checkout')
-
   with subtests.test("Then a LECheckOutComplete-event is dispatched"):
     event = lainuri.event_queue.history[1]
     assert type(event) == le.LECheckOutComplete
-    assert event.status == 'complete'
+    assert event.status == Status.SUCCESS
 

@@ -45,6 +45,13 @@ def test_rfid_reader_system_information(subtests):
     assert len(event_rfid_tags_new.tags_present) > 0
     assert event_rfid_tags_new.message['tags_present'][0]['item_barcode']
 
+def test_rfid_reader_exception_handling_finally_disconnect_tag():
+  tag = rfid_reader.tags_present[0]
+  tag.connect(b'\x00') #Mock a connection
+  #import pdb; pdb.set_trace() # To debug this failing test a debugger is needed because the finally-handler by design hides all exceptions
+  tag_resp = lainuri.rfid_reader._finally_tag_disconnect(rfid_reader, 'test_rfid_reader_exception_handling_finally_disconnect_tag-barcode', tag)
+  assert tag == tag_resp
+
 def test_rfid_tag_data_format_overload(subtests):
   tag = None
 

@@ -49,7 +49,7 @@
 
 <script>
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
-import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed} from '../lainuri_events'
+import {LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort} from '../lainuri_events'
 
 
 let emited = 0

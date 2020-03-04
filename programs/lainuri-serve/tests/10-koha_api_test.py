@@ -3,7 +3,8 @@
 import context
 import lainuri.config
 
-from lainuri.exceptions import InvalidUser, NoResults
+from lainuri.exception import NoResults
+import lainuri.exception.ils as exception_ils
 from lainuri.koha_api import koha_api, MARCRecord, get_fleshed_item_record
 
 borrower = {}
@@ -19,7 +20,7 @@ def test_authenticate():
   lainuri.config.c['koha']['userid'] = 'l-t-dev-bad'
   lainuri.config.c['koha']['password'] = 'bad_pass'
   koha_api.current_event_id = 'event-id-2'
-  assert_raises('Testing bad authentication', InvalidUser, 'l-t-dev-bad',
+  assert_raises('Testing bad authentication', exception_ils.InvalidUser, 'l-t-dev-bad',
     lambda: koha_api.authenticate()
   )
 

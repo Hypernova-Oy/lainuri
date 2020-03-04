@@ -16,15 +16,15 @@ def test_message_parsing():
 
   event = lainuri.event.parseEventFromWebsocketMessage(
     """{
-      "event": "ringtone-played",
+      "event": "ringtone-play-complete",
       "message": {
         "ringtone_type": "check-in",
         "ringtone": ""
       },
-      "event_id": "ringtone-played-3"
+      "event_id": "ringtone-play-complete-3"
     }""",
     'client'
   )
   assert event
-  assert event.event == 'ringtone-played'
+  assert event.event == 'ringtone-play-complete'
   assert event.ringtone_type == 'check-in'

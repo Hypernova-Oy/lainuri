@@ -94,7 +94,7 @@ import StatusBar from './components/StatusBar.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
-import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoggedIn} from './lainuri_events'
+import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
 
 let shared = {
   item_barcode: '167N00000111',
@@ -147,7 +147,7 @@ export default {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
         console.log(`[${this.$options.name}]:> PRESEEDING!! Received '${LEServerConnected.name}'`);
         window.setTimeout(() => lainuri_ws.dispatch_event(
-          new LEUserLoggedIn('Olli-Antti', 'Kivilahti', '2600104874', 'server', 'client')
+          new LEUserLoginComplete('Olli-Antti', 'Kivilahti', '2600104874', 'server', 'client')
         ), 4000);
       });
     }

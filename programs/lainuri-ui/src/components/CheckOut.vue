@@ -150,7 +150,7 @@ import PrintNotification from '../components/PrintNotification.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from '../helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
-import {LEUserLoggedIn, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
+import {LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
 
 
 export default {
@@ -166,17 +166,18 @@ export default {
   created: function () {
     send_user_logging_in();
 
-    lainuri_ws.attach_event_listener(LEUserLoginFailed, this, function(event) {
-      console.log(`Event '${LEUserLoginFailed.name}' received.`);
-      this.user_login_failed(event);
-    });
-    lainuri_ws.attach_event_listener(LEUserLoggedIn, this, (event) => {
-      console.log(`Received event '${LEUserLoggedIn.name}'`);
-      if (! this.is_user_logged_in) {
-        this.user_login_success(event);
+    lainuri_ws.attach_event_listener(LEUserLoginComplete, this, (event) => {
+      console.log(`Received event '${LEUserLoginComplete.name}'`);
+      if (event.status === "SUCCESS") {
+        if (! this.is_user_logged_in) {
+          this.user_login_success(event);
+        }
+        else {
+          console.error(`User '${this.$data.user.user_barcode}' already logged in? Login attempt from user '${event.user_barcode}'`);
+        }
       }
       else {
-        console.error(`User '${this.$data.user.user_barcode}' already logged in? Login attempt from user '${event.user_barcode}'`);
+        this.user_login_failed(event);
       }
     });
     lainuri_ws.attach_event_listener(LECheckOutComplete, this, function(event) {
@@ -228,7 +229,7 @@ export default {
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
       console.log(`Received event '${LEPrintResponse.name}'`);
       this.$data.receipt_printing = false;
-      this.$emit('exception', event.status.exception);
+      this.$emit('exception', event.states.exception);
       this.stop_checking_out();
     });
   },

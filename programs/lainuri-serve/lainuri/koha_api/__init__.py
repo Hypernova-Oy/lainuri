@@ -4,7 +4,9 @@ log = logging.getLogger(__name__)
 # Save HTTP responses to a scrape-log so we can later inspect what went wrong in the brittle screen scraping components.
 log_scrape = logging.getLogger('lainuri.scraping')
 
-from lainuri.exceptions import InvalidPassword, InvalidUser, NoResults
+from lainuri.constants import Status
+import lainuri.exception as exception
+import lainuri.exception.ils as exception_ils
 
 from bs4 import BeautifulSoup
 import bs4
@@ -86,13 +88,6 @@ class KohaAPI():
       if payload.get('required_permissions'):
         raise Exception(f"Lainuri device is missing permission '{payload.get('required_permissions')}'. Lainuri needs these permissions to access Koha: '{self.required_permissions}'")
 
-  def _expected_one_list_element(self, l: list, error_msg: str):
-    if l and len(l) > 1:
-      raise Exception(f"Got more than one result! " + error_msg)
-    if not l or len(l) == 0:
-      raise NoResults(f"No results! {error_msg}")
-    return l[0]
-
   def authenticated(self):
     r = self.http.request(
       'GET',
@@ -114,7 +109,7 @@ class KohaAPI():
     payload = self._receive_json(r)
     error = payload.get('error', None)
     if error:
-      if 'Login failed' in error: raise InvalidUser(get_config('koha.userid'))
+      if 'Login failed' in error: raise exception_ils.InvalidUser(get_config('koha.userid'))
       else: raise Exception(f"Unknown error '{error}'")
     self.sessionid = payload['sessionid']
     self.reauthenticate_tries = 0
@@ -127,7 +122,7 @@ class KohaAPI():
       if borrower:
         return borrower
       else:
-        raise InvalidUser(user_barcode)
+        raise exception_ils.InvalidUser(user_barcode)
 
   def _auth_post(self, password, userid=None, user_barcode=None):
     if not userid or user_barcode:
@@ -166,11 +161,17 @@ class KohaAPI():
       error = payload.get('error', None)
       if error:
         raise Exception(f"Unknown error '{error}'")
-    return self._expected_one_list_element(payload, f"user_barcode='{user_barcode}'")
+
+    if len(payload) > 1:
+      raise Exception(f"Got more than one user with barcode='{user_barcode}'!")
+    if len(payload) == 0:
+      raise exception_ils.NoUser(user_barcode)
+
+    return payload[0]
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
-  def get_item(self, barcode):
-    log.info(f"Get item: barcode='{barcode}'")
+  def get_item(self, item_barcode):
+    log.info(f"Get item: item_barcode='{item_barcode}'")
     r = self.http.request_encode_url(
       'GET',
       self.koha_baseurl + f'/api/v1/items',
@@ -178,7 +179,7 @@ class KohaAPI():
         'Cookie': f'CGISESSID={self.sessionid}',
       },
       fields = {
-        'barcode': barcode,
+        'barcode': item_barcode,
       },
     )
     self.current_request_url = self.koha_baseurl + f'/api/v1/items'
@@ -187,7 +188,13 @@ class KohaAPI():
       error = payload.get('error', None)
       if error:
         raise Exception(f"Unknown error '{error}'")
-    return self._expected_one_list_element(payload, f"barcode='{barcode}'")
+
+    if len(payload) > 1:
+      raise Exception(f"Got more than one item with item_barcode='{item_barcode}'!")
+    if len(payload) == 0:
+      raise exception_ils.NoItem(item_barcode)
+
+    return payload[0]
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_record(self, biblionumber):
@@ -203,14 +210,11 @@ class KohaAPI():
     error = payload.get('error', None)
     if error:
       if r.status == 404:
-        raise NoResults(biblionumber)
+        raise exception.NoResults(biblionumber)
       raise Exception(f"Unknown error '{error}'")
     return payload
 
-  def checkin(self, barcode) -> dict:
-    """
-    Returns dict['status'] == 'failed' on error
-    """
+  def checkin(self, barcode) -> tuple:
     log.info(f"Checkin: barcode='{barcode}'")
     r = self.http.request(
       'POST',
@@ -231,9 +235,9 @@ class KohaAPI():
 
     if (alerts or messages):
       states['unhandled'] = [*(alerts or []), *(messages or [])]
-      states['status'] = 'failed'
-    if states.get('status', None) != 'failed':
-      states['status'] = 'success'
+      states['status'] = Status.ERROR
+    if states.get('status', None) != Status.ERROR:
+      states['status'] = Status.SUCCESS
     log.info(f"Checkin barcode='{barcode}' with states='{states}'")
     return (states.pop('status'), states)
 
@@ -252,10 +256,7 @@ class KohaAPI():
 
     return None
 
-  def checkout(self, barcode, borrowernumber) -> dict:
-    """
-    Returns dict['status'] == 'failed' on error
-    """
+  def checkout(self, barcode, borrowernumber) -> tuple:
     log.info(f"Checkout: barcode='{barcode}' borrowernumber='{borrowernumber}'")
     r = self.http.request(
       'POST',
@@ -280,9 +281,9 @@ class KohaAPI():
 
     if (alerts or messages):
       states['unhandled'] = [*(alerts or []), *(messages or [])]
-      states['status'] = 'failed'
-    if states.get('status', None) != 'failed':
-      states['status'] = 'success'
+      states['status'] = Status.ERROR
+    if states.get('status', None) != Status.ERROR:
+      states['status'] = Status.SUCCESS
     log.info(f"Checkout complete: barcode='{barcode}' borrowernumber='{borrowernumber}' with states='{states}'")
     return (states.pop('status'), states)
 
@@ -297,11 +298,10 @@ class KohaAPI():
     match = m_needsconfirmation.search(message)
     if match:
       states['needs_confirmation'] = 1
-      states['status'] = 'failed'
+      states['status'] = Status.ERROR
       return 'needs_confirmation'
 
     return None
-
 
   def receipt(self, borrowernumber) -> str:
     log.info(f"Receipt: borrowernumber='{borrowernumber}'")
@@ -323,7 +323,6 @@ class KohaAPI():
     receipt_text = receipt.prettify()
     return receipt_text
 
-
   def availability(self, borrowernumber, itemnumber):
     log.info(f"Availability: borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'")
     r = self.http.request(
@@ -338,8 +337,13 @@ class KohaAPI():
       error = payload.get('error', None)
       if error:
         raise Exception(f"Unknown error '{error}'")
-    availability = self._expected_one_list_element(payload, f"Availability: borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'")
-    return availability['availability']
+
+    if len(payload) > 1:
+      raise Exception(f"Got more than one availability result with borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'!")
+    if len(payload) == 0:
+      raise Exception(f"Got no availability result with borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'!")
+
+    return payload[0]['availability']
 
 
 class MARCRecord():
