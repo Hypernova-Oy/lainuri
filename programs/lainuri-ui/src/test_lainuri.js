@@ -61,12 +61,6 @@ function run_test_suite() {
     lainuri_ws.dispatch_event(play_event);
   }
 
-  function send_user_logging_in() {
-    let event = new LEUserLoggingIn(undefined, undefined, 'client', 'server');
-    // Persist reference to the event which is pending for the completion message from the server
-    events[event.event_id] = event;
-    lainuri_ws.dispatch_event(event);
-  }
 
   function abort_user_login() {
     let event = new LEUserLoginAbort(undefined, undefined, 'client', 'server');

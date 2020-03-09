@@ -92,9 +92,10 @@ import CheckOut from './components/CheckOut.vue'
 import MainMenuView from './components/MainMenuView.vue'
 import StatusBar from './components/StatusBar.vue'
 
-import {find_tag_by_key, splice_bib_item_from_array} from './helpers'
-import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from './lainuri'
-import {LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
+import {ItemBib} from './item_bib'
+import {splice_bib_item_from_array} from './helpers'
+import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
+import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
 
 let shared = {
   item_barcode: '167N00000111',
@@ -119,7 +120,7 @@ export default {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
       event.tags_new.forEach((item_bib) => {
-        this.rfid_tags_present.push(item_bib);
+        this.rfid_tags_present.push(new ItemBib(item_bib));
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsLost, this, function(event) {
@@ -130,7 +131,7 @@ export default {
     });
     lainuri_ws.attach_event_listener(LERFIDTagsPresent, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LERFIDTagsPresent.name}' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
-      this.rfid_tags_present = event.tags_present;
+      this.rfid_tags_present = event.tags_present.reduce((reducer, elem) => {reducer.push(new ItemBib(elem)); return reducer}, []);
     });
     lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LEServerStatusResponse.name}' received.`);
@@ -147,7 +148,7 @@ export default {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
         console.log(`[${this.$options.name}]:> PRESEEDING!! Received '${LEServerConnected.name}'`);
         window.setTimeout(() => lainuri_ws.dispatch_event(
-          new LEUserLoginComplete('Olli-Antti', 'Kivilahti', '2600104874', 'server', 'client')
+          new LEUserLoginComplete('Olli-Antti', 'Kivilahti', '2600104874', Status.SUCCESS, {}, 'server', 'client')
         ), 4000);
       });
     }
@@ -222,8 +223,7 @@ export default {
     enter_main_menu: function () {
       this.app_mode = 'mode_main_menu';
       this.rfid_tags_present.forEach(bib_item => {
-        bib_item.states = null
-        bib_item.status = null
+        ItemBib.prototype.flush_statuses.call(bib_item)
       });
     },
     stop_checking_out: function () {

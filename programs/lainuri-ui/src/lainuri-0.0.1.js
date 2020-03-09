@@ -41,12 +41,6 @@ function ParseEventFromWebsocketMessage(raw_data, sender = undefined, recipient 
 
 class Lainuri {
 
-  /**
-   * Keep track of event lifecycles here.
-   * This is needed to trigger lifecycle hooks on pending events.
-   */
-  events = {};
-
   base_url;
   ws;
   config;
@@ -158,15 +152,6 @@ class Lainuri {
   dispatch_event(event) {
     let dispatched_times = 0
 
-/*    if (this.events[event.event_id]) {
-      // we receive events to an existing event and trigger lifecycle hooks
-      event.lifecycle_reached(event);
-    }
-    else {
-      this.events[event.event_id] = event;
-    }*/
-
-
     if (this.listeners[event.event]) {
       this.listeners[event.event].forEach(listener => {
         dispatched_times++;
@@ -179,10 +164,6 @@ class Lainuri {
       let payload = event.serialize_for_ws();
       console.log(`dispatch_event():> Sending '${payload}'`)
       this.ws.send(payload);
-      event.lifecycle_reached('ondispatched');
-    }
-    else { // Event is not sent away but received instead. Trigger lifecycle hooks
-      //event.lifecycle_reached('ondispatched');
     }
     if (! dispatched_times) {
       console.log(`Receiving event '${event.event_id}', but no event handler registered?`);

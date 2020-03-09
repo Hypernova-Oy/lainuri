@@ -26,7 +26,7 @@
     </v-card>
 
     <v-row dense>
-      <v-col v-if="items_checked_in_successfully.length"
+      <v-col v-if="Object.keys(items_checked_in_successfully).length"
         :cols="column_width"
       >
         <v-card
@@ -37,26 +37,26 @@
             color="primary"
             dark
           >
-            <v-toolbar-title>LAINASI</v-toolbar-title>
+            <v-toolbar-title>PALAUTUKSESI</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-app-bar>
 
           <v-container class="item_scrollview">
             <v-row dense>
               <v-col
-                v-for="(item) in items_checked_in_successfully"
-                :key="item.item_barcode"
+                v-for="(item_bib) in items_checked_in_successfully"
+                :key="item_bib.item_barcode"
                 align="center"
                 justify="center"
               >
-                <ItemCard v-bind:key="item.item_barcode" :item_bib="item"/>
+                <ItemCard v-bind:key="item_bib.item_barcode" :item_bib="item_bib"/>
               </v-col>
             </v-row>
           </v-container>
         </v-card>
       </v-col>
 
-      <v-col v-if="rfid_tags_present.reduce((red, bib) => red === true || !(bib.status) || bib.status === 'pending', false)"
+      <v-col v-if="show_rfid_tags_present_column"
         :cols="column_width"
       >
         <v-card
@@ -74,19 +74,19 @@
           <v-container class="item_scrollview">
             <v-row dense>
               <v-col
-                v-for="(item) in rfid_tags_present"
-                :key="item.item_barcode"
+                v-for="(item_bib) in rfid_tags_present"
+                :key="item_bib.item_barcode"
                 align="center"
                 justify="center"
               >
-                <ItemCard v-if="!item.status || (item.status !== 'failed' && item.status !== 'success')" v-bind:key="item.item_barcode" :item_bib="item"/>
+                <ItemCard v-if="item_bib.status !== Status.ERROR && item_bib.status !== Status.SUCCESS" v-bind:key="item_bib.item_barcode" :item_bib="item_bib"/>
               </v-col>
             </v-row>
           </v-container>
         </v-card>
       </v-col>
 
-      <v-col v-if="items_checked_in_failed.length"
+      <v-col v-if="Object.keys(items_checked_in_failed).length"
         :cols="column_width"
       >
         <v-card
@@ -104,12 +104,12 @@
           <v-container class="item_scrollview">
             <v-row dense>
               <v-col
-                v-for="(item) in items_checked_in_failed"
-                :key="item.item_barcode"
+                v-for="(item_bib) in items_checked_in_failed"
+                :key="item_bib.item_barcode"
                 align="center"
                 justify="center"
               >
-                <ItemCard v-bind:key="item.item_barcode" :item_bib="item"/>
+                <ItemCard v-bind:key="item_bib.item_barcode" :item_bib="item"/>
               </v-col>
             </v-row>
           </v-container>
@@ -127,7 +127,6 @@
         v-on:close_notification="close_notification"
       />
     </v-overlay>
-
   </v-container>
 </template>
 
@@ -136,9 +135,10 @@ import ItemCard from '../components/ItemCard.vue'
 import OverlayNotification from '../components/OverlayNotification.vue'
 import PrintNotification from '../components/PrintNotification.vue'
 
-import {find_tag_by_key, splice_bib_item_from_array} from '../helpers'
-import {start_ws, lainuri_set_vue, lainuri_ws} from '../lainuri'
-import {LERFIDTagsNew, LECheckIn, LECheckInComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
+import {find_tag_by_key, push_if_not_exists, splice_bib_item_from_array} from '../helpers'
+import {ItemBib} from '../item_bib'
+import {lainuri_set_vue, lainuri_ws} from '../lainuri'
+import {Status, LERFIDTagsNew, LECheckIn, LECheckInComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
 
 let emited = 0
 export default {
@@ -153,122 +153,178 @@ export default {
   },
   created: function () {
     lainuri_ws.attach_event_listener(LECheckInComplete, this, function(event) {
-      console.log(`Received event '${LECheckInComplete.name}' for barcode='${event.item_barcode}'`);
-      let tag = find_tag_by_key(this.rfid_tags_present, 'item_barcode', event.item_barcode)
-      if (!tag) {
-        tag = find_tag_by_key(this.barcodes_read, 'item_barcode', event.item_barcode)
-        splice_bib_item_from_array(this.barcodes_read, 'item_barcode', event.item_barcode);
-      }
-      if (!tag) throw new Error(`Couldn't find a tag with 'item_barcode'='${event.item_barcode}'`);
-      tag.states = event.states
-      tag.status = event.status
-      tag.tag_type = event.tag_type
-
-      if (event.status === 'success') {
-        this.items_checked_in_successfully.unshift(tag);
-      }
-      else {
-        this.items_checked_in_failed.unshift(tag);
-      }
-
-      if (Object.keys(event.states).length) {
-        this.overlay_notifications.push(tag);
-      }
+      console.log(`[${this.$options.name}]:> Event '${LECheckInComplete.name}' for barcode='${event.item_barcode}'`);
+      this.check_in_complete(event);
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-      console.log(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
-      event.tag.tag_type = 'barcode';
-      this.barcodes_read.push(event.tag);
-      this.check_in_item(event.tag);
+      console.log(`[${this.$options.name}]:> Event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
+      this.start_or_continue_transaction(event.tag)
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
       event.tags_new.forEach((item_bib) => {
         let tags_present_item_bib = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
         if (! tags_present_item_bib) {
-          console.error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}')`);
+          throw new Error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
         }
-        this.check_in_item(tags_present_item_bib);
+        this.start_or_continue_transaction(tags_present_item_bib);
       });
     });
+    lainuri_ws.attach_event_listener(LESetTagAlarmComplete, this, function(event) {
+      console.log(`[${this.$options.name}]:> Event '${LESetTagAlarmComplete.name}' for item_barcode='${event.item_barcode}'`);
+      this.set_rfid_tag_alarm_complete(event);
+    });
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
-      console.log(`Received event '${LEPrintResponse.name}'`);
+      console.log(`[${this.$options.name}]:> Event '${LEPrintResponse.name}'`);
       if (this.receipt_printing) {this.print_receipt_complete(event);}
       else {console.error(`Received event '${LEPrintResponse.name}' but not printing a receipt. User race condition maybe?`)}
     });
   },
   mounted: function () {
-    this.start_checking_in();
+    this.start_transactions();
   },
   beforeDestroy: function () {
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
-    this.items_checked_in_failed = []
-    this.items_checked_in_successfully = []
-    this.barcodes_read = []
+    this.items_checked_in_failed = {}
+    this.items_checked_in_successfully = {}
   },
   computed: {
+    show_rfid_tags_present_column: function () {
+      for (let item_bib in this.rfid_tags_present.values()) {
+        if (! [Status.SUCCESS, Status.ERROR].includes(item_bib.status)) {
+          return true
+        }
+      }
+      return false
+    },
     column_width: function () {
       let visible_columns = 0;
-      if (this.items_checked_in_failed.length) {
+      if (Object.keys(this.items_checked_in_failed).length) {
         visible_columns++;
         console.log(`column_width():> this.items_checked_in_failed visible`)
       }
-      if (this.items_checked_in_successfully.length) {
+      if (Object.keys(this.items_checked_in_successfully).length) {
         visible_columns++;
         console.log(`column_width():> this.items_checked_in_successfully visible`)
       }
-      if (this.rfid_tags_present.reduce((red, bib) => red === true || !(bib.status) || bib.status === 'pending', false)) {
-        visible_columns++;
-        console.log(`column_width():> this.rfid_tags_present visible`)
+      for (let item_bib in this.rfid_tags_present.values()) {
+        if (! [Status.SUCCESS, Status.ERROR].includes(ItemBib.prototype.get_status_summary.apply(item_bib))) {
+          visible_columns++;
+          console.log(`column_width():> this.rfid_tags_present visible`)
+          break
+        }
       }
       return (12 / visible_columns);
     }
   },
   methods: {
+    start_or_continue_transaction: function (tag) {
+      console.log(`[${this.$options.name}]:> start_or_continue_transaction():> tag='${tag}'`)
+      let item_bib = this.$data.transactions[tag.item_barcode]
+      if (!item_bib) {
+        console.log(`[${this.$options.name}]:> item_barcode='${tag.item_barcode}', starting check-in transaction`)
+        this.$data.transactions[tag.item_barcode] = tag
+        this.check_in_item(tag);
+      }
+      else {
+        console.log(`[${this.$options.name}]:> item_barcode='${tag.item_barcode}', resuming check-in transaction`)
+        if (tag.tag_type === 'rfid') {
+          item_bib.tag_type = tag.tag_type; // The same item can be identified via barcode reader or the rfid reader. RFID is the dominant detection method and if rfid is used, the transaction has more steps.
+        }
+        if (item_bib.status_check_in === Status.NOT_SET || ! [Status.ERROR, Status.SUCCESS, Status.PENDING].includes(item_bib.status_check_in)) {
+          console.log(`[${this.$options.name}]:> item_barcode='${item_bib.item_barcode}' status_check_in='${item_bib.status_check_in}', resuming check-in transaction - do check-in`)
+          this.check_in_item(item_bib);
+        }
+        else if (tag.tag_type === 'rfid' && item_bib.status_set_tag_alarm === Status.NOT_SET || ! [Status.SUCCESS, Status.PENDING].includes(item_bib.status_set_tag_alarm)) {
+          console.log(`[${this.$options.name}]:> item_barcode='${item_bib.item_barcode}' set_rfid_tag_alarm='${item_bib.status_set_tag_alarm}', resuming check-in transaction - set rfid tag security status`)
+          this.set_rfid_tag_alarm(item_bib)
+        }
+      }
+    },
     stop_checking_in: function () {
-      console.log("Stopped checking out");
+      console.log(`[${this.$options.name}]:> Stopped checking out`);
       this.$data.user = {};
       this.$emit('stop_checking_in');
     },
     stop_checkin_in_and_get_receipt: function () {
-      console.log("Stopping checking out and getting a receipt");
+      console.log(`[${this.$options.name}]:> Stopping checking out and getting a receipt`);
       this.print_receipt();
       //this.stop_checking_in(); // The kill signal is given when the receipt printing confirmation is received from the server
     },
-    start_checking_in: function (event) {
-      console.log(`Started checking out. Items present '${this.rfid_tags_present.length}'`);
+    start_transactions: function (event) {
+      console.log(`[${this.$options.name}]:> Started transactions. Items present '${this.rfid_tags_present.length}'`);
       for (let i in this.rfid_tags_present) {
-        let item_bib = this.rfid_tags_present[i];
-        this.check_in_item(item_bib, 1000*i);
+        this.start_or_continue_transaction(this.rfid_tags_present[i]);
       }
     },
     check_in_item: function (item_bib, delay) {
-      console.log(`Checking out item '${item_bib.item_barcode}'`);
-      if (! item_bib.checked_in) {
-        item_bib.states = {status: 'pending'}
-        item_bib.status = 'pending'
-        //window.setTimeout(() =>
-          lainuri_ws.dispatch_event(new LECheckIn(item_bib.item_barcode, item_bib.tag_type, 'client', 'server'))
-        //, delay);
+      console.log(`[${this.$options.name}]:> Checking out item '${item_bib.item_barcode}'`);
+      if (! [Status.PENDING, Status.SUCCESS].includes(item_bib.status_check_in)) {
+        ItemBib.prototype.set_status_check_in.call(item_bib, Status.PENDING)
+        lainuri_ws.dispatch_event(new LECheckIn(item_bib.item_barcode, item_bib.tag_type, 'client', 'server'))
       }
       else {
-        console.error(`Checking out item '${item_bib.item_barcode}', but it is already checked out?`);
+        console.error(`[${this.$options.name}]:> Checking out item '${item_bib.item_barcode}', but it is already being checked out?`);
+      }
+    },
+    check_in_complete: function (event) {
+      let item_bib = this.transactions[event.item_barcode]
+      if (!item_bib) throw new Error(`Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+
+      ItemBib.prototype.set_status_check_in.call(item_bib, event.status, event.states)
+
+      if (item_bib.status_check_in === Status.SUCCESS) {
+        this.items_checked_in_successfully[item_bib.item_barcode] = item_bib;
+        delete this.items_checked_in_failed[item_bib.item_barcode]
+      }
+      else {
+        this.items_checked_in_failed[item_bib.item_barcode] = item_bib;
+        delete this.items_checked_in_successfully[item_bib.item_barcode]
+      }
+
+      if (Object.keys(item_bib.states_check_in).length) {
+        this.overlay_notifications.push(item_bib);
+      }
+
+      if (item_bib.status_check_in === Status.SUCCESS) {
+        if (item_bib.tag_type === 'rfid' && item_bib.status_set_tag_alarm === Status.NOT_SET) {
+          this.set_rfid_tag_alarm(item_bib)
+        }
+      }
+    },
+    set_rfid_tag_alarm: function (item_bib) {
+      console.log(`[${this.$options.name}]:> set_rfid_tag_alarm. item_barcode='${item_bib.item_barcode}'`);
+      if (! [Status.PENDING, Status.SUCCESS].includes(item_bib.status_set_tag_alarm)) {
+        ItemBib.prototype.set_status_set_tag_alarm.call(item_bib, Status.PENDING)
+        lainuri_ws.dispatch_event(new LESetTagAlarm(item_bib.item_barcode, true, 'client', 'server'))
+      }
+      else {
+        console.error(`[${this.$options.name}]:> set_rfid_tag_alarm. item_barcode '${item_bib.item_barcode}', but it is already being set?`);
+      }
+    },
+    set_rfid_tag_alarm_complete: function (event) {
+      let item_bib = this.transactions[event.item_barcode]
+      if (!item_bib) throw new Error(`Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+
+      ItemBib.prototype.set_status_set_tag_alarm.call(item_bib, event.status, event.states)
+      if (event.status !== Status.SUCCESS) {
+        this.overlay_notifications.push(item_bib);
       }
     },
     print_receipt: function () {
-      console.log("Printing receipt");
+      console.log(`[${this.$options.name}]:> Printing receipt`);
       this.$data.receipt_printing = true;
       lainuri_ws.dispatch_event(
         new LEPrintRequest(
           'check-in',
-          this.$data.items_checked_in_successfully,
+          Object.values(this.$data.items_checked_in_successfully),
           {},
         ),
       );
     },
     print_receipt_complete: function (event) {
       this.$data.receipt_printing = false;
-      if (event.status.exception) {
+      if (event.status !== Status.SUCCESS) {
         this.$emit('exception', event.status.exception);
       }
       this.stop_checking_in();
@@ -279,8 +335,11 @@ export default {
     },
   },
   data: () => ({
+    // Include imports
+    Status: Status,
+
     receipt_printing: false,
-    barcodes_read: [],
+    transactions: {}, // key is item_barcode
     overlay_notifications: [
 /*      {
         item_barcode: '167N00770111',
@@ -303,7 +362,7 @@ export default {
         },
       },*/
     ],
-    items_checked_in_successfully: [
+    items_checked_in_successfully: {},
 /*      {
         item_barcode: '167N00770111',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
@@ -311,8 +370,7 @@ export default {
         author: 'Olli-Antti Kivilahti',
         status: 'success',
       },*/
-    ],
-    items_checked_in_failed: [
+    items_checked_in_failed: {},
 /*      {
         item_barcode: '167N00660001',
         book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
@@ -355,7 +413,6 @@ export default {
         author: 'Olli-Antti Kivilahti',
         status: 'error',
       },*/
-    ],
   }),
 }
 </script>

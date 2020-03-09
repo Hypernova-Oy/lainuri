@@ -3,15 +3,26 @@
       ripple
       raised
       v-bind:class="{
-        error: item_bib.status === 'failed',
-        success: item_bib.status === 'success',
-        pending: item_bib.status === 'pending',
+        error: item_bib.status === Status.ERROR,
+        success: item_bib.status === Status.SUCCESS,
+        pending: item_bib.status === Status.PENDING,
       }"
       class="itemcard"
       @click="overlay = !overlay"
     >
-      <v-icon v-if="item_bib.tag_type === 'rfid'">mdi-access-point</v-icon>
-      <v-icon v-if="item_bib.tag_type === 'barcode'">mdi-barcode</v-icon>
+      <v-icon v-if="item_bib.tag_type === 'rfid'"                                         >mdi-access-point</v-icon>
+      <v-icon v-else-if="item_bib.tag_type === 'barcode'"                                 >mdi-barcode</v-icon>
+      <!-- Render transaction step status icons here -->
+      <v-icon v-if="item_bib.status_check_in === Status.SUCCESS"       color="success darken-2"    >mdi-login</v-icon>
+      <v-icon v-else-if="item_bib.status_check_in === Status.PENDING"  color="yellow darken-2"     >mdi-login</v-icon>
+      <v-icon v-else-if="item_bib.status_check_in === Status.ERROR"    color="error darken-2"      >mdi-login</v-icon>
+      <v-icon v-if="item_bib.status_check_out === Status.SUCCESS"      color="success darken-2"    >mdi-logout</v-icon>
+      <v-icon v-else-if="item_bib.status_check_out === Status.PENDING" color="yellow darken-2"     >mdi-logout</v-icon>
+      <v-icon v-else-if="item_bib.status_check_out === Status.ERROR"   color="error darken-2"      >mdi-logout</v-icon>
+      <v-icon v-if="item_bib.status_set_tag_alarm === Status.SUCCESS"  color="success darken-2"    >mdi-alarm-light-outline</v-icon>
+      <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.PENDING" color="yellow darken-2" >mdi-alarm-light-outline</v-icon>
+      <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.ERROR" color="error darken-2"    >mdi-alarm-light-outline</v-icon>
+
       <v-img
         :src="item_bib.book_cover_url || 'image-placeholder.png'"
         contain
@@ -20,7 +31,7 @@
         gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
       >
         <v-progress-circular
-          v-if="item_bib.status === 'pending'"
+          v-if="item_bib.status === Status.PENDING"
           class="progress"
           size="150"
           width="25"
@@ -34,10 +45,10 @@
         <v-card-text v-text="item_bib.item_barcode"></v-card-text>
       </span>
       <v-overlay absolute :value="overlay"
-        v-if="item_bib.states && Object.keys(item_bib.states).length"
+        v-if="exception_summary"
       >
         <v-card-text>
-          {{item_bib.states}}
+          {{exception_summary}}
         </v-card-text>
       </v-overlay>
     </v-card>
@@ -45,16 +56,31 @@
 
 <script>
 
+import {ItemBib} from '../item_bib.js'
+import {Status} from '../lainuri_events.js'
+import {translate_exception} from '../exception.js'
+
 export default {
   name: 'CheckOut',
   props: {
-    item_bib: Object,
+    item_bib: ItemBib,
   },
   data: () => ({
+    // Include imports
+    Status: Status,
+
     overlay: true,
   }),
   created: function () {
 
+  },
+  computed: {
+    exception_summary: function () {
+      let e_str = '';
+      if (this.item_bib.states_check_in) e_str += translate_exception(this.item_bib.states_check_in);
+      if (this.item_bib.states_set_tag_alarm) e_str += translate_exception(this.item_bib.states_set_tag_alarm);
+      return e_str;
+    },
   },
 }
 </script>
@@ -68,6 +94,9 @@ export default {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.itemcard-content .v-card__title {
+  overflow: hidden;
 }
 .progress {
   position: absolute;

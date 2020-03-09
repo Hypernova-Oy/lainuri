@@ -5,6 +5,13 @@ function get_event_id(event_name) {
   return event_name + '-' + event_id++;
 }
 
+const Status = Object.freeze({
+  "SUCCESS":"SUCCESS",
+  "ERROR":"ERROR",
+  "PENDING":"PENDING",
+  "NOT_SET":"NOT_SET",
+})
+
 class LEvent {
 
   event
@@ -14,13 +21,6 @@ class LEvent {
   recipient;
   default_dispatch = undefined;
   event_id;
-
-  /**
-   * Overload. These attributes are sent as a part of the websocket message
-   */
-  lifecycle_hooks = ['ondispatched', 'onsuccess', 'onerror'];
-  lifecycle_hook_impls = {};
-  lifecycle_map_event_to_hooks = []
 
   constructor(event_id = undefined) {
     let constr = this.constructor; // As the this.event is static, it doesn't mix transparently with other class instance attributes
@@ -40,28 +40,6 @@ class LEvent {
         this.throw_missing_attribute(attribute_name)
       }
     });
-  }
-
-  on(lifecycle_phase, cb) {
-    if (lifecycle_phase && !this.lifecycle_hooks[lifecycle_phase]) {
-      throw new Error(`Lifecycle phase '${lifecycle_phase}' not supported by event '${this.constructor.name}'`);
-    }
-    if (! this.lifecycle_hook_impls[lifecycle_phase]) {
-      this.lifecycle_hook_impls[lifecycle_phase] = [];
-    }
-    this.lifecycle_hook_impls[this.lifecycle_hooks].append(cb);
-  }
-  lifecycle_reached(lifecycle_phase) {
-    if (lifecycle_phase instanceof LEvent) {
-      lifecycle_phase = this.lifecycle_map_event_to_hooks[lifecycle_phase.event];
-      if (!lifecycle_phase) { throw new Error(`LEvent '${this.constructor.name}' is missing lifecycle phase transition from LEvent '${lifecycle_phase.constructor.name}'`); }
-    }
-    if (typeof lifecycle_phase === "string") {
-      if (this.lifecycle_hook_impls[lifecycle_phase]) {
-        console.log(`Calling lifecycle hooks '${lifecycle_phase}' of '${this.constructor.name}'`);
-        this.lifecycle_hook_impls[lifecycle_phase].forEach((cb) => cb.call(this));
-      }
-    }
   }
 
   serialize_for_ws() {
@@ -110,7 +88,7 @@ class LECheckOutComplete extends LEvent {
   user_barcode;
   tag_type;
   states;
-  status;
+  status = Status.NOT_SET;
 
   constructor(item_barcode, user_barcode, tag_type = 'rfid', status, states, sender, recipient, event_id = undefined) {
     super(event_id);
@@ -147,7 +125,7 @@ class LECheckInComplete extends LEvent {
   item_barcode;
   tag_type;
   states;
-  status;
+  status = Status.NOT_SET;
 
   constructor(item_barcode, tag_type = 'rfid', status, states, sender, recipient, event_id = undefined) {
     super(event_id);
@@ -163,7 +141,7 @@ class LECheckInComplete extends LEvent {
 class LESetTagAlarm extends LEvent {
   static event = 'set-tag-alarm';
 
-  static serializable_attributes = ['item_barcode'];
+  static serializable_attributes = ['item_barcode', 'on'];
   item_barcode;
   on;
 
@@ -171,21 +149,19 @@ class LESetTagAlarm extends LEvent {
     super(event_id)
     this.item_barcode = item_barcode
     this.on = on
-    this.states = states
-    this.status = status
     this.construct(sender, recipient);
     this.validate_params();
   }
 }
 
-class LESetTagAlarmCompleteextends extends LEvent {
+class LESetTagAlarmComplete extends LEvent {
   static event = 'set-tag-alarm-complete'
 
-  static serializable_attributes = ['item_barcode', 'status', 'states']
+  static serializable_attributes = ['item_barcode', 'on', 'status', 'states']
   item_barcode;
   on;
   states;
-  status;
+  status = Status.NOT_SET;
 
   constructor(item_barcode, on, status, states, sender, recipient, event_id) {
     super(event_id)
@@ -236,7 +212,7 @@ class LERingtonePlayComplete extends LEvent {
   ringtone_type;
   ringtone;
   states;
-  status;
+  status = Status.NOT_SET;
 
   constructor(status, ringtone_type = undefined, ringtone = undefined, states, sender, recipient, event_id = undefined) {
     super(event_id);
@@ -312,14 +288,16 @@ class LEPrintResponse extends LEvent {
   items;
   user_barcode;
   printable_sheet;
-  status;
+  states;
+  status = Status.NOT_SET
 
-  constructor(receipt_type, items, user_barcode, printable_sheet, status, sender, recipient, event_id = undefined) {
+  constructor(receipt_type, items, user_barcode, printable_sheet, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.receipt_type = receipt_type
     this.items = items
     this.user_barcode = user_barcode
     this.printable_sheet = printable_sheet
+    this.states = states
     this.status = status
     this.construct(sender, recipient);
     this.validate_params()
@@ -422,11 +400,6 @@ class LEUserLoggingIn extends LEvent {
   username;
   password;
 
-  lifecycle_map_event_to_hooks = {
-    [LEUserLoginComplete.constructor.name]: 'onsuccess',
-    [LEException.constructor.name]: 'onerror',
-  };
-
   constructor(username = '', password = '', sender, recipient, event_id = undefined) {
     super(event_id);
     this.username = username;
@@ -443,17 +416,16 @@ class LEUserLoginComplete extends LEvent {
   surname;
   user_barcode;
   password;
+  states;
+  status = Status.NOT_SET;
 
-  lifecycle_map_event_to_hooks = {
-    [LEUserLoginComplete.constructor.name]: 'onsuccess',
-    [LEException.constructor.name]: 'onerror',
-  };
-
-  constructor(firstname, surname, user_barcode, sender, recipient, event_id = undefined) {
+  constructor(firstname, surname, user_barcode, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.firstname = firstname;
     this.surname = surname;
     this.user_barcode = user_barcode;
+    this.states = states
+    this.status = status
     this.construct(sender, recipient);
     this.validate_params()
   }
@@ -505,5 +477,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LEUserLoginFailed
+  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
 }

@@ -149,8 +149,8 @@ import OverlayNotification from '../components/OverlayNotification.vue'
 import PrintNotification from '../components/PrintNotification.vue'
 
 import {find_tag_by_key, splice_bib_item_from_array} from '../helpers'
-import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
-import {LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
+import {lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
+import {Status, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse} from '../lainuri_events'
 
 
 export default {
@@ -168,7 +168,7 @@ export default {
 
     lainuri_ws.attach_event_listener(LEUserLoginComplete, this, (event) => {
       console.log(`Received event '${LEUserLoginComplete.name}'`);
-      if (event.status === "SUCCESS") {
+      if (event.status === Status.SUCCESS) {
         if (! this.is_user_logged_in) {
           this.user_login_success(event);
         }

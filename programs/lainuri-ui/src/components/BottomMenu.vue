@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import {start_ws, lainuri_set_vue, lainuri_ws, send_user_logging_in, abort_user_login} from '../lainuri'
+import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from '../lainuri'
 import {LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort} from '../lainuri_events'
 
 
