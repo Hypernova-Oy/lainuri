@@ -190,7 +190,7 @@ def set_tag_gate_alarm(event, flag_on):
   with rfid_reader.access_lock():
     tag = None
 
-    for try_count in range(1,3):
+    for try_count in [1,2,3]:
       try:
         # Find the RFID tag instance
         tags = get_current_inventory_status()
@@ -202,6 +202,9 @@ def set_tag_gate_alarm(event, flag_on):
         if afi: _set_tag_gate_alarm_afi(rfid_reader, tag, flag_on)
         eas = get_config('devices.rfid-reader.eas')
         if eas: _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on)
+
+        return 1 # Break away from the retry-loop
+
       except exception_rfid.RFIDCommand as e:
         _handle_retriable_exception(e, try_count, rfid_reader, event.item_barcode, tag)
       except exception_rfid.GateSecurityStatusVerification as e:
@@ -228,6 +231,7 @@ def _handle_retriable_exception(e: Exception, try_count: int, rfid_reader, item_
   if try_count < 3:
     log.warn(f"{e.__class__}:> Retrying '{try_count}'. {str(e)}")
   else:
+    log.warn(f"{e.__class__}:> Retries over '{try_count}'. Raising {str(e)}")
     if tag.get_connection_handle():
       if tag: _finally_tag_disconnect(rfid_reader, item_barcode, tag)
     raise e
@@ -312,9 +316,9 @@ def _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on):
 
     # Confirm the security block has been written
     ## TODO: EAS_Alarm doesnt work?
-    tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
-    bytes_written = rfid_reader.write(IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-    eas_alarm = IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
+    #tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
+    #bytes_written = rfid_reader.write(IBlock_TagMemoryAccess(tag, tag_memory_access_command))
+    #eas_alarm = IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
     ## TODO: eas_alarm.mac_command.response.alarm == 1
 
   else:
@@ -325,9 +329,9 @@ def _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on):
 
     # Confirm the security block has been written
     ## TODO: EAS_Alarm doesnt work?
-    tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
-    bytes_written = rfid_reader.write(IBlock_TagMemoryAccess(tag, tag_memory_access_command))
-    eas_alarm = IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
+    #tag_memory_access_command = TagMemoryAccessCommand().ISO15693_EAS_Alarm(tag=tag)
+    #bytes_written = rfid_reader.write(IBlock_TagMemoryAccess(tag, tag_memory_access_command))
+    #eas_alarm = IBlock_TagMemoryAccess_Response(tag, tag_memory_access_command).receive(rfid_reader.read(''))
     ## TODO: eas_alarm.mac_command.response.alarm == 0
 
   # Disconnect the tag from the reader, so others may connect

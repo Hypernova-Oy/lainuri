@@ -9,6 +9,8 @@ import traceback
 from weasyprint import HTML, CSS
 import subprocess
 
+cli_print_command = ['lp', '-']
+
 def print_html(html_text: str):
   log.debug(f"print_html text='{html_text}'")
   if get_config('devices.thermal-printer.enabled') != True:
@@ -45,6 +47,7 @@ def print_html(html_text: str):
   return 1
 
 def print_thermal_receipt(byttes: bytes):
+  global cli_print_command
   ## Save to log the receipt document
   open(
     os.environ.get('LAINURI_LOG_DIR')+'receipt'+datetime.today().isoformat()+'.pdf',
@@ -53,14 +56,11 @@ def print_thermal_receipt(byttes: bytes):
 
   ## Invoke system CUPS printer
   if get_config('devices.thermal-printer.enabled'):
-    command = ['lp', '-']
-    try:
-      process = subprocess.Popen(command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-      process.communicate(input=byttes, timeout=20)
-      if process.returncode != 0:
-        raise Exception(f"Program exit code not 0. exit='{process.returncode}', stderr='{process.stderr}', stdout='{process.stdout}'")
-    except Exception as e:
-      raise Exception(f"Failed to print receipt! linux-command='{command}' exception='{traceback.format_exc()}'")
+    process = subprocess.Popen(cli_print_command, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    process.communicate(input=byttes, timeout=20)
+    if process.returncode != 0:
+      raise Exception(f"Program exit code not 0. exit='{process.returncode}', stderr='{process.stderr}', stdout='{process.stdout}', command='{cli_print_command}'")
+
   else:
     log.info(f"Thermal printer is disabled from configuration.")
 

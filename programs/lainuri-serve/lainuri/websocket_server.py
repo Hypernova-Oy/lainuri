@@ -51,9 +51,9 @@ def handle_events_loop():
     try:
       handle_one_event()
     except Exception as e:
-      log.error(f"Handling event failed!: {event}")
+      log.error(f"Handling event failed!")
       log.exception(e)
-      lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
+      #lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
 
 def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
   event = lainuri.event_queue.pop_event(timeout=timeout)
@@ -91,7 +91,7 @@ def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
 def message_clients(event: lainuri.event.LEvent):
   for client in clients:
     if (event.recipient and event.recipient == client) or (not(event.recipient) and not(client == event.client)):
-      payload = event.serialize_ws()
+      payload = event.serialized or event.serialize_ws()
       log.info(f"Message to client '{client.address}': '{payload}'")
       client.send_message(payload)
 
@@ -100,10 +100,7 @@ def register_client(event):
   global clients
   clients.append(event.client)
 
-  lainuri.event_queue.push_event(lainuri.event.LERFIDTagsPresent(
-    tags_present=lainuri.rfid_reader.get_current_inventory_status(),
-    recipient=event.client)
-  )
+  lainuri.event_queue.push_event(lainuri.event.LERFIDTagsPresent(tags_present=lainuri.rfid_reader.get_current_inventory_status()))
 
   lainuri.websocket_handlers.config.get_public_configs()
 
@@ -134,7 +131,7 @@ class SimpleChat(WebSocket):
     event = None
     try:
       try:
-        event = lainuri.event.LEvent('register-client', {}, self)
+        event = lainuri.event.LERegisterClient(client=self, recipient='server')
         lainuri.event_queue.push_event(event)
       except Exception as e:
         log.error(f"Handling payload failed!: {self.data}")
@@ -147,7 +144,7 @@ class SimpleChat(WebSocket):
     event = None
     try:
       try:
-        event = lainuri.event.LEvent('deregister-client', {}, self)
+        event = lainuri.event.LEDeregisterClient(client=self, recipient='server')
         lainuri.event_queue.push_event(event)
       except Exception as e:
         log.error(f"Handling payload failed!: {self.data}")
@@ -177,7 +174,10 @@ def start():
 
   thread.start_new_thread(handle_events_loop, ())
 
-  server = WebSocketServer('localhost', 53153, SimpleChat)
+  port = int(get_config('server.port'))
+  hostname = get_config('server.hostname')
+  log.info(f"Starting WebSocketServer on '{hostname}:{port}'")
+  server = WebSocketServer(hostname, port, SimpleChat)
   server.serve_forever()
 
 def handle_barcode_read(barcode: str):

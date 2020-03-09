@@ -8,13 +8,11 @@ import lainuri.event
 import lainuri.event_queue
 
 def get_public_configs(event=None):
-  lainuri.event_queue.push_event(lainuri.event.LEvent(
-    'config-getpublic-response',
-    {'config': lainuri.config.get_public_configs()},
+  lainuri.event_queue.push_event(lainuri.event.LEConfigGetpublic_Response(
+    config=lainuri.config.get_public_configs(),
   ))
 
 def write_config(event):
-  lainuri.event_queue.push_event(lainuri.event.LEvent(
-    'config-write-response',
-    lainuri.config.write_config(event.message['variable'], event.message['new_value']),
+  lainuri.event_queue.push_event(lainuri.event.LEConfigWriteResponse(
+    **lainuri.config.write_config(event.variable, event.new_value)
   ))

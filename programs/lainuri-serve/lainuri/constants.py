@@ -1,6 +1,6 @@
-from enum import Enum
+#from enum import Enum # Enum breaks json serializer, otherwise things work fine!
 
-class Status(Enum):
+class Status():
   SUCCESS = 'SUCCESS'
   ERROR = 'ERROR'
-  NOT_SET = None
+  NOT_SET = 'NOT_SET'

@@ -6,6 +6,7 @@ import traceback
 
 #from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
+from lainuri.constants import Status
 import lainuri.event
 import lainuri.event_queue
 import lainuri.exception as exception
@@ -31,7 +32,7 @@ def checkout(event):
           item_barcode=item['barcode'],
           user_barcode=borrower['cardnumber'],
           tag_type=event.tag_type,
-          status=lainuri.event.Status.ERROR,
+          status=Status.ERROR,
           states=availability
         )
       )
@@ -39,7 +40,7 @@ def checkout(event):
 
     # Checkout to Koha
     (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
-    if status != lainuri.event.Status.SUCCESS:
+    if status != Status.SUCCESS:
       lainuri.event_queue.push_event(
         lainuri.event.LECheckOutComplete(
           item_barcode=event.item_barcode,
@@ -68,8 +69,11 @@ def checkout(event):
         item_barcode=event.item_barcode,
         user_barcode=event.user_barcode,
         tag_type=event.tag_type,
-        status=type(e).__name__,
-        states={'exception': traceback.format_exc()}
+        status=Status.ERROR,
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': traceback.format_exc()}
+        },
       )
     )
     return

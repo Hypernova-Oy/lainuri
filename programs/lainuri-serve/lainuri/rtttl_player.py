@@ -29,19 +29,21 @@ def rtttl_daemon():
     event_play_ringtone.wait()
     event_play_ringtone.clear()
 
-    status = {}
+    states = {}
     try:
       lainuri.rtttl_player.play_rtttl(lainuri.config.get_ringtone(
         ringtone_name=play_ringtone_event.message.ringtone_type,
         rtttl_tunes=play_ringtone_event.message.ringtone
       ))
-      status['success'] = 1
+      status = Status.SUCCESS
     except Exception as e:
-      status['failed'] = traceback.format_exc()
+      status = Status.ERROR
+      states['exception'] = traceback.format_exc()
 
     lainuri.event_queue.push_event(lainuri.event.LERingtonePlayComplete(
-      status=Status.SUCCESS,
-      ringtone_type=play_ringtone_event.message.ringtone_type
+      status=status,
+      states=states,
+      ringtone_type=play_ringtone_event.message.ringtone_type,
     ))
 
   log.info(f"Terminating RTTTL-Player thread")

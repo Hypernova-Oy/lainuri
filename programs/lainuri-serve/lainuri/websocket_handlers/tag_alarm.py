@@ -27,8 +27,11 @@ def set_tag_alarm(event):
       lainuri.event.LESetTagAlarmComplete(
         item_barcode=event.item_barcode,
         on=event.on,
-        status=type(e).__name__,
-        states={'exception': traceback.format_exc()}
+        status=Status.ERROR,
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': traceback.format_exc()}
+        },
       )
     )
 

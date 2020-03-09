@@ -12,60 +12,43 @@ from lainuri.koha_api import koha_api
 import lainuri.printer
 
 def print_receipt(event):
-  if event.receipt_type == 'check-out':
-    return print_check_out_receipt(event)
-  elif event.receipt_type == 'check-in':
-    return print_check_in_receipt(event)
+  borrower = None
+  printable_sheet = None
 
-def print_check_out_receipt(event):
   try:
-    borrower = koha_api.get_borrower(event.user_barcode)
-    printable_sheet = koha_api.receipt(borrower['borrowernumber'])
-    lainuri.printer.print_html(printable_sheet)
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, Status.SUCCESS)
-    )
-  except subprocess.CalledProcessError as e:
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, Status.ERROR, {
-        'exception': traceback.format_exc() + ". exit='" + e.returncode + "' output='" + e.output + "'"
-      })
-    )
-  except subprocess.TimeoutExpired as e:
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, Status.ERROR, {
-        'exception': traceback.format_exc() + ". output='" + e.output + "'"
-      })
-    )
+
+    if event.receipt_type == 'check-out':
+
+      borrower = koha_api.get_borrower(event.user_barcode)
+      printable_sheet = koha_api.receipt(borrower['borrowernumber'])
+      lainuri.printer.print_html(printable_sheet)
+      lainuri.event_queue.push_event(
+        le.LEPrintResponse(
+          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
+          status=Status.SUCCESS,
+        )
+      )
+
+    elif event.receipt_type == 'check-in':
+
+      printable_sheet = lainuri.printer.get_sheet_check_in(event.items)
+      lainuri.printer.print_html(printable_sheet)
+      lainuri.event_queue.push_event(
+        le.LEPrintResponse(
+          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
+          status=Status.SUCCESS,
+        )
+      )
   except Exception as e:
     lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, '', Status.ERROR, {
-        'exception': traceback.format_exc()
-      })
-    )
-
-def print_check_in_receipt(event):
-  try:
-    printable_sheet = lainuri.printer.get_sheet_check_in(event.items)
-    lainuri.printer.print_html(printable_sheet)
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, Status.SUCCESS)
-    )
-  except subprocess.CalledProcessError as e:
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, Status.ERROR, {
-        'exception': traceback.format_exc() + ". exit='" + e.returncode + "' output='" + e.output + "'"
-      })
-    )
-  except subprocess.TimeoutExpired as e:
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, printable_sheet, Status.ERROR, {
-        'exception': traceback.format_exc() + ". output='" + e.output + "'"
-      })
-    )
-  except Exception as e:
-    lainuri.event_queue.push_event(
-      le.LEPrintResponse(event.receipt_type, event.items, event.user_barcode, '', Status.ERROR, {
-        'exception': traceback.format_exc()
-      })
+      le.LEPrintResponse(
+        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet or None,
+        status=Status.ERROR,
+        states={
+          'exception': {
+            'type': type(e).__name__,
+            'trace': traceback.format_exc(),
+          },
+        }
+      )
     )

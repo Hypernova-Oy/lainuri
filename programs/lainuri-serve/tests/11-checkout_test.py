@@ -119,3 +119,32 @@ def test_checkout_rfid_via_event_queue(subtests):
   with subtests.test("And the event failed due to item already checked out, needs_confirmation"):
     assert event.states == {'needs_confirmation': 1}
     assert event.status == Status.ERROR
+
+
+
+def test_checkout_exception_item_not_found(subtests):
+  global good_item_barcode, good_user_barcode
+  tag = None
+  borrower = None
+  event = None
+  assert lainuri.event_queue.flush_all()
+
+  with subtests.test("Given an API authentication"):
+    assert lainuri.koha_api.koha_api.authenticate()
+
+  with subtests.test("When the tag is checked out"):
+    event = le.LECheckOut(item_barcode='barcode-not-registered', user_barcode=good_user_barcode, tag_type='barcode')
+    lainuri.event_queue.push_event(event)
+    assert lainuri.websocket_server.handle_one_event(5) == event
+    assert event == lainuri.event_queue.history[0]
+
+  with subtests.test("Then a response event is generated"):
+    event = lainuri.websocket_server.handle_one_event(5)
+    assert event == lainuri.event_queue.history[1]
+    assert type(event) == le.LECheckOutComplete
+
+  with subtests.test("And the exception class matches"):
+    assert event.status == Status.ERROR
+    assert len(event.states) == 1
+    assert event.states['exception']['type'] == 'NoItem'
+

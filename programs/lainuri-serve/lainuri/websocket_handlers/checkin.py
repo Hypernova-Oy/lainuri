@@ -28,7 +28,10 @@ def checkin(event):
       lainuri.event.LECheckInComplete(
         item_barcode=event.item_barcode,
         tag_type=event.tag_type,
-        status=type(e).__name__,
-        states={'exception': traceback.format_exc()}
+        status=Status.ERROR,
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': traceback.format_exc()}
+        },
       )
     )

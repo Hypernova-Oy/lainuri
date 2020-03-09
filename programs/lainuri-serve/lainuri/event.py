@@ -37,6 +37,12 @@ class LEvent():
         msg[att] = getattr(self, att)
       self.message = msg
 
+    print(json.dumps({
+      'event': self.event,
+      'message': self.message,
+      'event_id': self.event_id,
+    }))
+
     return json.dumps({
       'event': self.event,
       'message': self.message,
@@ -202,6 +208,27 @@ class LEBarcodeRead(LEvent):
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
+class LEConfigGetpublic(LEvent):
+  event = 'config-getpublic'
+  default_handler = 'lainuri.websocket_handlers.config.get_public_configs'
+  default_recipient = 'server'
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEConfigGetpublic_Response(LEvent):
+  event = 'config-getpublic-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['config']
+  config = {}
+
+  def __init__(self, config: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.config = config
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
 class LEConfigWrite(LEvent):
   event = 'config-write'
   default_handler = 'lainuri.websocket_handlers.config.write_config'
@@ -214,6 +241,23 @@ class LEConfigWrite(LEvent):
   def __init__(self, variable: str, new_value: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.variable = variable
     self.new_value = new_value
+    message = {key: getattr(self, key) for key in self.serializable_attributes}
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEConfigWriteResponse(LEvent):
+  event = 'config-write-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['variable', 'new_value', 'old_value']
+  variable = ''
+  new_value = ''
+  old_value = ''
+
+  def __init__(self, variable: str, new_value: str, old_value: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.variable = variable
+    self.new_value = new_value
+    self.old_value = old_value
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
@@ -371,17 +415,18 @@ class LEUserLoginAbort(LEvent):
 
 class LERegisterClient(LEvent):
   event = 'register-client'
-  default_recipient = 'client'
+  default_recipient = 'server'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
 
 class LEDeregisterClient(LEvent):
   event = 'deregister-client'
-  default_recipient = 'client'
+  default_recipient = 'server'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+
 class LETestMockDevices(LEvent):
   event = 'test-mock-devices'
   default_handler = 'lainuri.websocket_handlers.test.mock_devices'
@@ -390,7 +435,23 @@ class LETestMockDevices(LEvent):
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
 
+class LEException(LEvent):
+  event = 'exception'
 
+  serializable_attributes = ['exception']
+  exception = Exception()
+
+  def __init__(self, exception, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    if isinstance(exception, Exception):
+      self.exception = traceback.format_exc()
+    else:
+      self.exception = exception
+
+    message = {
+      'exception': self.exception,
+    }
+    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
 
 
 eventname_to_eventclass = {}

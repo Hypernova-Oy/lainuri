@@ -24,6 +24,7 @@ hii = 0
 
 def push_event(event):
   global q
+  event.serialized = event.serialize_ws()
   q.put(event)
   push_history(event)
   return event

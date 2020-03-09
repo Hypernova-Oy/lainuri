@@ -5,6 +5,7 @@ from lainuri.config import get_config
 
 import time
 import pytest_subtests
+import unittest.mock
 
 import lainuri.websocket_server
 import lainuri.koha_api
@@ -91,4 +92,49 @@ def test_set_gate_security_status_for_missing_tag(subtests):
     assert type(event) == le.LESetTagAlarmComplete
 
   with subtests.test("And the event status is TagNotDetected"):
-    assert event.status == exception_rfid.TagNotDetected.__name__
+    assert event.status == Status.ERROR
+    assert event.states['exception']['type'] == exception_rfid.TagNotDetected.__name__
+
+
+def test_set_gate_security_status_for_failing_command(subtests):
+  event = None
+
+  assert lainuri.event_queue.flush_all()
+
+  patched_handle_retriable_exception = unittest.mock.patch('lainuri.rfid_reader._handle_retriable_exception', side_effect=lainuri.rfid_reader._handle_retriable_exception);
+  mock_handle_retriable_exception = patched_handle_retriable_exception.start()
+
+  patched_set_tag_gate_alarm_eas = unittest.mock.patch(
+    'lainuri.rfid_reader._set_tag_gate_alarm_eas',
+    side_effect=lainuri.rfid_reader.exception_rfid.RFIDCommand('test-command','mocked test rfid command execution to fail'))
+  mock_set_tag_gate_alarm_eas = patched_set_tag_gate_alarm_eas.start()
+
+
+  with subtests.test("Given a rfid reader which has RFID tags in reading radius"):
+    rfid_reader = rfid.get_rfid_reader()
+
+  with subtests.test("And a RFID tag"):
+    tags_present = rfid.get_current_inventory_status()
+    assert len(tags_present) > 0
+    tag = tags_present[0]
+
+  with subtests.test("And the RFID tag is registered in the test Koha instance as a circulable Item"):
+    assert tag.iso25680_get_primary_item_identifier() == good_item_barcode
+
+  with subtests.test("When the tag security status is set for an imaginary tag"):
+    event = le.LESetTagAlarm(item_barcode=good_item_barcode, on=True, recipient='server')
+    lainuri.event_queue.push_event(event)
+    assert lainuri.websocket_server.handle_one_event(5) == event
+    assert event == lainuri.event_queue.history[0]
+
+  with subtests.test("Then a response event in generated"):
+    event = lainuri.websocket_server.handle_one_event(5)
+    assert event == lainuri.event_queue.history[1]
+    assert type(event) == le.LESetTagAlarmComplete
+
+  with subtests.test("And the event status is ERROR with expected exception"):
+    assert event.status == Status.ERROR
+    assert event.states['exception']['type'] == exception_rfid.RFIDCommand.__name__
+
+  with subtests.test("And the operation was retried until failure"):
+    assert mock_handle_retriable_exception.call_count == 3

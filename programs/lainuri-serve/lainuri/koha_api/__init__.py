@@ -57,10 +57,10 @@ class KohaAPI():
 
       alerts = soup.select('.dialog.alert')
       # Filter away hidden alerts
-      alerts = [m for m in alerts if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
+      alerts = [m.prettify() for m in alerts if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
       messages = soup.select('.dialog.message')
       # Filter away hidden messages
-      messages = [m for m in messages if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
+      messages = [m.prettify() for m in messages if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
     except Exception as e:
       log_scrape.info(f"event_id='{self.current_event_id}'\n" + data)
       log.error(f"Failed to parse HTML for event_id='{self.current_event_id}': {traceback.format_exc()}")
@@ -231,8 +231,8 @@ class KohaAPI():
     (soup, alerts, messages) = self._receive_html(r)
 
     states = {}
-    alerts = [a for a in alerts if not self.checkin_has_status(a.prettify(), states)]
-    messages = [a for a in messages if not self.checkin_has_status(a.prettify(), states)]
+    alerts = [a for a in alerts if not self.checkin_has_status(a, states, barcode)]
+    messages = [a for a in messages if not self.checkin_has_status(a, states, barcode)]
 
     if (alerts or messages):
       states['unhandled'] = [*(alerts or []), *(messages or [])]
@@ -242,18 +242,23 @@ class KohaAPI():
     log.info(f"Checkin barcode='{barcode}' with states='{states}'")
     return (states.pop('status'), states)
 
-  def checkin_has_status(self, message, states):
-    m_not_checked_out = re.compile('Not checked out', re.S | re.M | re.I)
+  def checkin_has_status(self, message, states, barcode):
+    m_not_checked_out = re.compile('Not checked out', re.S | re.M)
     match = m_not_checked_out.search(message)
     if match:
       states['not_checked_out'] = 1
       return 'not_checked_out'
 
-    m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+?)\n', re.S | re.M | re.I)
+    m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+?)\n', re.S | re.M)
     match = m_return_to_another_branch.search(message)
     if match:
       states['return_to_another_branch'] = match.group('branchname')
       return 'return_to_another_branch'
+
+    m_no_item = re.compile('No item with barcode', re.S | re.M)
+    match = m_no_item.search(message)
+    if match:
+      raise exception_ils.NoItem(barcode)
 
     return None
 
@@ -277,8 +282,8 @@ class KohaAPI():
     (soup, alerts, messages) = self._receive_html(r)
 
     states = {}
-    alerts = [a for a in alerts if not self.checkout_has_status(a.prettify(), states)]
-    messages = [a for a in messages if not self.checkout_has_status(a.prettify(), states)]
+    alerts = [a for a in alerts if not self.checkout_has_status(a, states)]
+    messages = [a for a in messages if not self.checkout_has_status(a, states)]
 
     if (alerts or messages):
       states['unhandled'] = [*(alerts or []), *(messages or [])]
