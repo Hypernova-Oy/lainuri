@@ -31,20 +31,23 @@
 
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkout'"
         id="checkout_mode_button"
-        :width="app_mode === 'mode_checkout' ? 800 : 400"
+        :width="app_mode === 'mode_checkout' ? 800 : 350"
         hover   color="secondary" dark x-large
         v-on:click="enter_checkout_mode"
-      ><h1>LAINAA</h1></v-btn>
+      ><h1>{{t('App/Check_out')}}</h1></v-btn>
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkin'"
         id="checkin_mode_button"
-        :width="app_mode === 'mode_checkin' ? 800 : 400"
+        :width="app_mode === 'mode_checkin' ? 800 : 350"
         :color="app_mode === 'mode_checkin' ? 'secondary' : 'primary'"
         hover dark x-large
         v-on:click="enter_checkin_mode"
-      ><h1>PALAUTA</h1></v-btn>
+      ><h1>{{t('App/Check_in')}}</h1></v-btn>
 
       <v-spacer></v-spacer>
 
+      <v-col cols="1">
+        <LanguagePicker/>
+      </v-col>
 
     </v-app-bar>
     <div id="app-bar-spacer-helper"
@@ -80,13 +83,45 @@
       <v-spacer></v-spacer>
       <span>&copy; 2020</span>
     </v-footer>
+
+    <v-btn dark @click="repl_active = true">Open REPL</v-btn>
+    <v-snackbar
+      v-model="repl_active"
+      :timeout="0"
+    >
+      <v-textarea
+        name="input-7-1"
+        label="REPL here"
+        placeholder="This is evaled in the context of the 'App.vue'-component"
+        v-model="repl"
+        clearable="true"
+        outlined="true"
+      ></v-textarea>
+      <v-btn
+        color="red"
+        text
+        @click="repl_execute()"
+      >
+        Run
+      </v-btn>
+      <v-btn
+        color="pink"
+        text
+        @click="repl_active = false"
+      >
+        Close
+      </v-btn>
+    </v-snackbar>
   </v-app>
 </template>
 
 <script>
+import Globalize from 'globalize'
+
 import BottomMenu from './components/BottomMenu.vue'
 import Exception from './components/Exception.vue'
 import ItemCard from './components/ItemCard'
+import LanguagePicker from './components/LanguagePicker.vue'
 import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
 import MainMenuView from './components/MainMenuView.vue'
@@ -113,6 +148,7 @@ export default {
     CheckIn,
     CheckOut,
     Exception,
+    LanguagePicker,
     MainMenuView,
     StatusBar,
   },
@@ -207,7 +243,10 @@ export default {
         printer_receipt_not_torn: false,
         rfid_reader_off: false,
         barcode_reader_off: false,
-      }
+      },
+
+      repl_active: false,
+      repl: '',
     }
   },
   // define methods under the `methods` object
@@ -234,6 +273,16 @@ export default {
     },
     show_exception: function (exception) {
       this.$data.exceptions.push(exception);
+    },
+    set_language: function (lang_2_char) {
+      this.$setLocale(lang_2_char)
+      this.$data.active_language_2_char = lang_2_char
+    },
+
+
+    repl_execute: function () {
+      let resp = eval(this.$data.repl);
+      console.log(resp);
     },
   }
 }
@@ -279,6 +328,15 @@ button {
   overflow: hidden;
   border: 1px solid rgba(#000, .26);
   background: rgba(#000, .06);
+}
+
+.lang-menu-open-container {
+  position: relative;
+}
+.lang-menu-open-container .lang-menu-dropdown-icon {
+  position: absolute;
+  bottom: 10px;
+  left: 50px;
 }
 
 </style>

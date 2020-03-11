@@ -8,7 +8,7 @@
       color="primary"
       dark
     >
-      <v-toolbar-title>RFID TAGIT LÖYDETTY</v-toolbar-title>
+      <v-toolbar-title>{{t('MainMenuView/RFID_tags_found')}}</v-toolbar-title>
 
       <v-spacer></v-spacer>
 

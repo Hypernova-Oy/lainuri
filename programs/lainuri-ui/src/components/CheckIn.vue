@@ -3,7 +3,7 @@
     <v-card ripple raised>
       <v-row>
         <v-col>
-          <v-card-title>PALAUTETAAN</v-card-title>
+          <v-card-title>{{t('CheckIn/Checking_in')}}</v-card-title>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -12,13 +12,13 @@
               v-on:click="stop_checking_in"
               x-large color="secondary"
             >
-              LOPETA
+              {{t('CheckIn/Stop')}}
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_in_and_get_receipt"
               x-large color="secondary"
             >
-              LOPETA + KUITTI
+              {{t('CheckIn/Stop+Receipt')}}
             </v-btn>
           </v-card-actions>
         </v-col>
@@ -37,7 +37,7 @@
             color="primary"
             dark
           >
-            <v-toolbar-title>PALAUTUKSESI</v-toolbar-title>
+            <v-toolbar-title>{{t('CheckIn/Your_Check_ins')}}</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-app-bar>
 
@@ -67,7 +67,7 @@
             color="primary"
             dark
           >
-            <v-toolbar-title>JONOSSA</v-toolbar-title>
+            <v-toolbar-title>{{t('CheckIn/In_Queue')}}</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-app-bar>
 
@@ -97,7 +97,7 @@
             color="primary"
             dark
           >
-            <v-toolbar-title>VIRHEET</v-toolbar-title>
+            <v-toolbar-title>{{t('CheckIn/Errors')}}</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-app-bar>
 

@@ -1,0 +1,3 @@
+[submodule "programs/lainuri-ui/gosquared-flags"]
+	path = programs/lainuri-ui/gosquared-flags
+	url = https://github.com/gosquared/flags.git

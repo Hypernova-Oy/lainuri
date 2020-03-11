@@ -6,5 +6,12 @@ module.exports = {
     "watchOptions": {
       "poll": true
     }
+  },
+  configureWebpack: {
+    module: {
+      rules: [
+        { test: /globalize/, parser: { amd: false } }
+      ]
+    }
   }
 }

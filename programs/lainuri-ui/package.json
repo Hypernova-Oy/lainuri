@@ -10,10 +10,14 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
+    "cldr-data": "^36.0.0",
     "core-js": "^3.4.4",
+    "globalize": "^1.4.2",
+    "iana-tz-data": "^2019.1.0",
     "moment": "^2.24.0",
     "serve": "^11.3.0",
     "vue": "^2.6.11",
+    "vue-globalize": "^0.2.2",
     "vue-material": "^1.0.0-beta-11",
     "vuetify": "^2.2.4",
     "winston": "^3.2.1"

@@ -45,23 +45,29 @@
         <v-card-text v-text="item_bib.item_barcode"></v-card-text>
       </span>
       <v-overlay absolute :value="overlay"
-        v-if="exception_summary"
+        v-if="Object.keys(item_bib.states).length"
       >
         <v-card-text>
-          {{exception_summary}}
+          <ul>
+            <li v-for="(i18n_key) in Object.keys(item_bib.states)"
+                :key="i18n_key"
+            >
+              {{t('Exception/'+i18n_key)}}
+            </li>
+          </ul>
         </v-card-text>
       </v-overlay>
     </v-card>
 </template>
 
 <script>
-
 import {ItemBib} from '../item_bib.js'
 import {Status} from '../lainuri_events.js'
-import {translate_exception} from '../exception.js'
 
 export default {
-  name: 'CheckOut',
+  name: 'ItemCard',
+  components: {
+  },
   props: {
     item_bib: ItemBib,
   },
@@ -73,14 +79,6 @@ export default {
   }),
   created: function () {
 
-  },
-  computed: {
-    exception_summary: function () {
-      let e_str = '';
-      if (this.item_bib.states_check_in) e_str += translate_exception(this.item_bib.states_check_in);
-      if (this.item_bib.states_set_tag_alarm) e_str += translate_exception(this.item_bib.states_set_tag_alarm);
-      return e_str;
-    },
   },
 }
 </script>

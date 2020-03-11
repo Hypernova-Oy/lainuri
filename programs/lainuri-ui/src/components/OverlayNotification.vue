@@ -3,12 +3,12 @@
     ripple
     raised
     v-bind:class="{
-      error: item_bib.status === 'failed' || item_bib.status === 'error',
+      error: item_bib.status === Status.ERROR,
     }"
     @click="$emit('close_notification')"
     style="padding: 20px;"
   >
-    <h1 v-if="mode === 'checkin'">LAITA HYLLYYN OIKEALLA</h1>
+    <h1 v-if="mode === 'checkin'">{{t('CheckIn/Place_to_bin_1')}}</h1>
     <h1 v-if="mode === 'checkout'">LAINAAMINEN EPÄONNISTUI</h1>
     <ItemCard :item_bib="item_bib"/>
     <v-img
@@ -22,6 +22,7 @@
 </template>
 
 <script>
+import {Status} from '../lainuri_events.js'
 import ItemCard from '../components/ItemCard.vue'
 
 export default {
@@ -34,6 +35,8 @@ export default {
     mode: String,
   },
   data: () => ({
+    // Include imports
+    Status: Status,
   }),
   created: function () {
   },

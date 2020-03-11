@@ -1,5 +1,6 @@
 'use strict'
 
+import {translate_exception} from './exception.js'
 import {Status} from './lainuri_events';
 
 /**
@@ -17,6 +18,7 @@ export class ItemBib {
 
   /** Summary of all other transaction step statuses */
   status = Status.NOT_SET
+  states = {}
   status_check_in = Status.NOT_SET;
   states_check_in = {};
   status_check_out = Status.NOT_SET;
@@ -62,6 +64,7 @@ export class ItemBib {
 
   flush_statuses() {
     this.status = Status.NOT_SET
+    this.states = {}
     this.status_check_in = Status.NOT_SET;
     this.states_check_in = {};
     this.status_check_out = Status.NOT_SET;
@@ -77,6 +80,16 @@ export class ItemBib {
     else if (this.status_check_in === Status.SUCCESS && this.status_set_tag_alarm === Status.SUCCESS) this.status = Status.SUCCESS;
     else if (this.status_check_in === Status.NOT_SET || this.status_set_tag_alarm === Status.NOT_SET) this.status = Status.NOT_SET;
     else this.status = Status.ERROR
+
+    this.states = translate_exception(this.states_check_in,this.states_check_out,this.states_set_tag_alarm);
+
     return this.status
+  }
+
+  has_exception() {
+    if (Object.keys(this.states_check_in).length || Object.keys(this.states_check_out).length || Object.keys(this.set_status_set_tag_alarm).length) {
+      return true
+    }
+    return false
   }
 }
