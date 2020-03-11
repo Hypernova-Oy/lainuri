@@ -167,7 +167,7 @@ def start():
     log.info("RFID reader is disabled by config")
 
   if get_config('devices.barcode-reader.enabled'):
-    barcode_reader = lainuri.barcode_reader.BarcodeReader()
+    barcode_reader = lainuri.barcode_reader.get_BarcodeReader()
     barcode_reader.start_polling_barcodes(handle_barcode_read)
   else:
     log.info("WGC300 reader is disabled by config")

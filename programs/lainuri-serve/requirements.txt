@@ -4,6 +4,7 @@ coloredlogs
 jinja2
 lxml
 pytest
+pytest-catchlog
 pytest_subtests
 pyusb
 pyyaml

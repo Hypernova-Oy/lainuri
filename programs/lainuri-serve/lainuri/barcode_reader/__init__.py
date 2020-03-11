@@ -5,6 +5,8 @@ log = logging.getLogger(__name__)
 import serial
 import time
 import _thread as thread
+import threading
+import traceback
 import json
 import importlib
 
@@ -16,6 +18,7 @@ import lainuri.barcode_reader.model.WGI3220USB as WGI3220USB
 class BarcodeReader():
   def __init__(self):
     self.model = get_config('devices.barcode-reader.model')
+    self.barcode_polling_thread_stop_polling = False
 
     try:
       self.config_module = importlib.import_module(f'.{self.model}', 'lainuri.barcode_reader.model')
@@ -87,14 +90,36 @@ class BarcodeReader():
     Forks a thread to poll the serial connection for barcodes.
     Turns the read barcodes into push notifications.
     """
-    thread.start_new_thread(self.polling_barcodes_thread, (handler, True))
+    self.barcode_polling_thread_stop_polling = False
+    self.barcode_polling_thread = threading.Thread(name="barcode_polling_thread", target=self.polling_barcodes_thread, args=(handler, True))
+    self.barcode_polling_thread.start()
+    return self.barcode_polling_thread
+
+  def stop_polling_barcodes(self):
+    """
+    Stops only after one more barcode is read
+    """
+    self.barcode_polling_thread_stop_polling = True
 
   def polling_barcodes_thread(self, handler, dummy):
     log.info("Barcodes polling starting")
 
     while(1):
-      barcode = self.read_barcode_blocking()
-      if (barcode):
-        handler(barcode)
+      if self.barcode_polling_thread_stop_polling == True:
+        self.barcode_polling_thread_stop_polling = False
+        exit()
 
-    log.info(f"Terminating WGC300 thread")
+      try:
+        barcode = self.read_barcode_blocking()
+        if (barcode):
+          handler(barcode)
+      except Exception as e:
+        log.error(f"Polling barcodes received an exception='{type(e)}'\n{traceback.format_exc()}")
+
+    log.info(f"Terminating barcode polling thread")
+
+barcode_reader_singleton = None
+def get_BarcodeReader() -> BarcodeReader:
+  global barcode_reader_singleton
+  if not barcode_reader_singleton: barcode_reader_singleton = BarcodeReader()
+  return barcode_reader_singleton
