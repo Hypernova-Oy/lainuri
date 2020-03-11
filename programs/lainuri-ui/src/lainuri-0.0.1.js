@@ -27,7 +27,7 @@ function ParseEventFromWebsocketMessage(raw_data, sender = undefined, recipient 
   let event = data.event;
   let event_class = eventname_to_eventclass[event];
   if (! event_class) {throw new Error(`Event '${event}' doesn't map to a event class`)}
-    let event_id = data.event_id;
+  let event_id = data.event_id;
   if (! event_id) { throw new Error(`Event '${raw_data}' is missing event_id!`) }
 
   let instance_data = [sender, recipient, event_id];

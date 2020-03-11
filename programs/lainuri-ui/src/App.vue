@@ -57,7 +57,10 @@
     </div>
     <v-container fluid max-height="800">
       <StatusBar :status="status"/>
-      <Exception v-if="exceptions.length" :exception="exceptions[0]" v-on:exception_close="exceptions.shift()"/>
+      <Exception v-if="exceptions.length"
+        :exception="exceptions[0]" :exceptions_count="exceptions.length"
+        v-on:exception_close="exceptions.shift()"
+      />
       <MainMenuView v-if="app_mode === 'mode_main_menu'"
         :rfid_tags_present="rfid_tags_present"
         v-on:exception="show_exception"
@@ -271,8 +274,8 @@ export default {
     stop_checking_in: function () {
       this.enter_main_menu();
     },
-    show_exception: function (exception) {
-      this.$data.exceptions.push(exception);
+    show_exception: function (event) {
+      this.$data.exceptions.push(event);
     },
     set_language: function (lang_2_char) {
       this.$setLocale(lang_2_char)

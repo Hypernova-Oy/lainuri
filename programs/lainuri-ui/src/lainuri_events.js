@@ -36,7 +36,7 @@ class LEvent {
   }
   validate_params() {
     this.constructor.serializable_attributes.forEach((attribute_name) => {
-      if (!(this[attribute_name] || this[attribute_name] === 0)) {
+      if (!(this[attribute_name]) && (this[attribute_name] === undefined || this[attribute_name] === null)) {
         this.throw_missing_attribute(attribute_name)
       }
     });
@@ -283,7 +283,7 @@ class LEPrintRequest extends LEvent {
 class LEPrintResponse extends LEvent {
   static event = 'print-response'
 
-  static serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'status']
+  static serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'status', 'states']
   receipt_type;
   items;
   user_barcode;
@@ -411,7 +411,7 @@ class LEUserLoggingIn extends LEvent {
 class LEUserLoginComplete extends LEvent {
   static event = 'user-login-complete';
 
-  static serializable_attributes = ['firstname', 'surname', 'user_barcode'];
+  static serializable_attributes = ['firstname', 'surname', 'user_barcode', 'status', 'states'];
   firstname;
   surname;
   user_barcode;

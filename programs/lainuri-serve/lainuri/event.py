@@ -389,7 +389,7 @@ class LEUserLoginComplete(LEvent):
   event = 'user-login-complete'
   default_recipient = 'client'
 
-  serializable_attributes = ['firstname', 'surname', 'user_barcode', 'states', 'status']
+  serializable_attributes = ['firstname', 'surname', 'user_barcode', 'status', 'states']
   firstname = ''
   surname = ''
   user_barcode = ''

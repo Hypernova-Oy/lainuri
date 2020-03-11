@@ -40,9 +40,12 @@
         ></v-progress-circular>
       </v-img>
       <span class="itemcard-content">
-        <v-card-title v-text="item_bib.title || '...'"></v-card-title>
-        <v-card-subtitle><div>{{item_bib.author || 'x'}}</div><div>{{item_bib.edition || 'x'}}</div></v-card-subtitle>
-        <v-card-text v-text="item_bib.item_barcode"></v-card-text>
+        <v-card-text class="v-title-fix" v-text="item_bib.title || '...'"></v-card-text>
+        <v-card-subtitle>
+          <div>{{item_bib.author || 'x'}}</div>
+          <div>{{item_bib.edition || 'x'}}</div>
+          <div>{{item_bib.item_barcode}}</div>
+        </v-card-subtitle>
       </span>
       <v-overlay absolute :value="overlay"
         v-if="Object.keys(item_bib.states).length"
@@ -78,7 +81,6 @@ export default {
     overlay: true,
   }),
   created: function () {
-
   },
 }
 </script>
@@ -89,7 +91,7 @@ export default {
   height: 350px;
 }
 .itemcard-content {
-  white-space: nowrap;
+  white-space: wrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -100,5 +102,10 @@ export default {
   position: absolute;
   top: 25%;
   left: 20%;
+}
+.v-title-fix {
+  font-size: 1.24rem;
+  overflow: hidden;
+  padding-bottom: 0px;
 }
 </style>

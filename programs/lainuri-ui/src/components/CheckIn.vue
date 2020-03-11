@@ -56,7 +56,7 @@
         </v-card>
       </v-col>
 
-      <v-col v-if="show_rfid_tags_present_column"
+      <v-col v-if="rfid_tags_present_filtered"
         :cols="column_width"
       >
         <v-card
@@ -74,12 +74,12 @@
           <v-container class="item_scrollview">
             <v-row dense>
               <v-col
-                v-for="(item_bib) in rfid_tags_present"
+                v-for="(item_bib) in rfid_tags_present_filtered"
                 :key="item_bib.item_barcode"
                 align="center"
                 justify="center"
               >
-                <ItemCard v-if="item_bib.status !== Status.ERROR && item_bib.status !== Status.SUCCESS" v-bind:key="item_bib.item_barcode" :item_bib="item_bib"/>
+                <ItemCard v-bind:key="item_bib.item_barcode" :item_bib="item_bib"/>
               </v-col>
             </v-row>
           </v-container>
@@ -109,7 +109,7 @@
                 align="center"
                 justify="center"
               >
-                <ItemCard v-bind:key="item_bib.item_barcode" :item_bib="item"/>
+                <ItemCard v-bind:key="item_bib.item_barcode" :item_bib="item_bib"/>
               </v-col>
             </v-row>
           </v-container>
@@ -135,12 +135,12 @@ import ItemCard from '../components/ItemCard.vue'
 import OverlayNotification from '../components/OverlayNotification.vue'
 import PrintNotification from '../components/PrintNotification.vue'
 
-import {find_tag_by_key, push_if_not_exists, splice_bib_item_from_array} from '../helpers'
+import {find_tag_by_key} from '../helpers'
 import {ItemBib} from '../item_bib'
-import {lainuri_set_vue, lainuri_ws} from '../lainuri'
+import {lainuri_ws} from '../lainuri'
 import {Status, LERFIDTagsNew, LECheckIn, LECheckInComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
 
-let emited = 0
+
 export default {
   name: 'CheckIn',
   components: {
@@ -189,13 +189,8 @@ export default {
     this.items_checked_in_successfully = {}
   },
   computed: {
-    show_rfid_tags_present_column: function () {
-      for (let item_bib in this.rfid_tags_present.values()) {
-        if (! [Status.SUCCESS, Status.ERROR].includes(item_bib.status)) {
-          return true
-        }
-      }
-      return false
+    rfid_tags_present_filtered: function () {
+      return this.rfid_tags_present.filter((item_bib) => [Status.PENDING, Status.NOT_SET].includes(item_bib.status))
     },
     column_width: function () {
       let visible_columns = 0;
@@ -207,12 +202,9 @@ export default {
         visible_columns++;
         console.log(`column_width():> this.items_checked_in_successfully visible`)
       }
-      for (let item_bib in this.rfid_tags_present.values()) {
-        if (! [Status.SUCCESS, Status.ERROR].includes(ItemBib.prototype.get_status_summary.apply(item_bib))) {
-          visible_columns++;
-          console.log(`column_width():> this.rfid_tags_present visible`)
-          break
-        }
+      if (this.rfid_tags_present_filtered) {
+        visible_columns++;
+        console.log(`column_width():> this.rfid_tags_present visible`)
       }
       return (12 / visible_columns);
     }
@@ -220,6 +212,7 @@ export default {
   methods: {
     start_or_continue_transaction: function (tag) {
       console.log(`[${this.$options.name}]:> start_or_continue_transaction():> tag='${tag}'`)
+      if (!tag.item_barcode) return;
       let item_bib = this.$data.transactions[tag.item_barcode]
       if (!item_bib) {
         console.log(`[${this.$options.name}]:> item_barcode='${tag.item_barcode}', starting check-in transaction`)
@@ -242,12 +235,12 @@ export default {
       }
     },
     stop_checking_in: function () {
-      console.log(`[${this.$options.name}]:> Stopped checking out`);
+      console.log(`[${this.$options.name}]:> Stopped checking in`);
       this.$data.user = {};
       this.$emit('stop_checking_in');
     },
     stop_checkin_in_and_get_receipt: function () {
-      console.log(`[${this.$options.name}]:> Stopping checking out and getting a receipt`);
+      console.log(`[${this.$options.name}]:> Stopping checking in and getting a receipt`);
       this.print_receipt();
       //this.stop_checking_in(); // The kill signal is given when the receipt printing confirmation is received from the server
     },
@@ -258,13 +251,13 @@ export default {
       }
     },
     check_in_item: function (item_bib, delay) {
-      console.log(`[${this.$options.name}]:> Checking out item '${item_bib.item_barcode}'`);
+      console.log(`[${this.$options.name}]:> Checking in item '${item_bib.item_barcode}'`);
       if (! [Status.PENDING, Status.SUCCESS].includes(item_bib.status_check_in)) {
         ItemBib.prototype.set_status_check_in.call(item_bib, Status.PENDING)
         lainuri_ws.dispatch_event(new LECheckIn(item_bib.item_barcode, item_bib.tag_type, 'client', 'server'))
       }
       else {
-        console.error(`[${this.$options.name}]:> Checking out item '${item_bib.item_barcode}', but it is already being checked out?`);
+        console.error(`[${this.$options.name}]:> Checking in item '${item_bib.item_barcode}', but it is already being checked in?`);
       }
     },
     check_in_complete: function (event) {
