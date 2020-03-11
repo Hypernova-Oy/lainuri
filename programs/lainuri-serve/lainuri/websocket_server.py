@@ -20,6 +20,7 @@ import lainuri.rfid_reader
 import lainuri.barcode_reader
 
 ## Import all handlers, because the handle_events_loop dynamically invokes them
+import lainuri.websocket_handlers.auth
 import lainuri.websocket_handlers.checkin
 import lainuri.websocket_handlers.checkout
 import lainuri.websocket_handlers.config
@@ -79,7 +80,7 @@ def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
 
   # Messages from the server to the UI
   elif event.recipient == 'client' or (not(event.recipient) and event.default_recipient == 'client'):
-    if event.event in ['user-login-complete']:
+    if event.event in ['user-login-complete'] and event.status == Status.SUCCESS:
       set_state('get_items')
     message_clients(event)
 
@@ -166,11 +167,7 @@ def start():
   else:
     log.info("RFID reader is disabled by config")
 
-  if get_config('devices.barcode-reader.enabled'):
-    barcode_reader = lainuri.barcode_reader.get_BarcodeReader()
-    barcode_reader.start_polling_barcodes(handle_barcode_read)
-  else:
-    log.info("WGC300 reader is disabled by config")
+  start_barcode_reader()
 
   thread.start_new_thread(handle_events_loop, ())
 
@@ -180,48 +177,18 @@ def start():
   server = WebSocketServer(hostname, port, SimpleChat)
   server.serve_forever()
 
+def start_barcode_reader():
+  if get_config('devices.barcode-reader.enabled'):
+    barcode_reader = lainuri.barcode_reader.get_BarcodeReader()
+    barcode_reader.start_polling_barcodes(handle_barcode_read)
+    return barcode_reader
+  else:
+    log.info("WGC300 reader is disabled by config")
+  return None
+
 def handle_barcode_read(barcode: str):
   if (lainuri.websocket_server.state == 'user-logging-in'):
-    lainuri.websocket_server.login_user(barcode)
+    lainuri.websocket_handlers.auth.login_user(barcode)
   else:
     lainuri.event_queue.push_event(lainuri.event.LEBarcodeRead(barcode))
 
-def login_user(user_barcode: str):
-  borrower = None
-  try:
-    borrower = koha_api.get_borrower(user_barcode=user_barcode)
-    if koha_api.authenticate_user(user_barcode=user_barcode):
-      lainuri.event_queue.push_event(
-        lainuri.event.LEUserLoginComplete(
-          firstname=borrower['firstname'],
-          surname=borrower['surname'],
-          user_barcode=borrower['cardnumber'],
-          status=Status.SUCCESS,
-        )
-      )
-    else:
-      raise Exception("Login failed! koha_api should throw an Exception instead!")
-  except exception_ils.InvalidUser as e:
-    lainuri.event_queue.push_event(lainuri.event.LEUserLoginComplete(
-      firstname=borrower['firstname'] if borrower else '',
-      surname=borrower['surname'] if borrower else '',
-      user_barcode=borrower['cardnumber'] if borrower else user_barcode,
-      status=Status.ERROR,
-      states={'exception': str(e)},
-    ))
-  except NoResults as e:
-    lainuri.event_queue.push_event(lainuri.event.LEUserLoginComplete(
-      firstname=borrower['firstname'] if borrower else '',
-      surname=borrower['surname'] if borrower else '',
-      user_barcode=borrower['cardnumber'] if borrower else user_barcode,
-      status=Status.ERROR,
-      states={'exception': str(e)},
-    ))
-  except Exception as e:
-    lainuri.event_queue.push_event(lainuri.event.LEUserLoginComplete(
-      firstname=borrower['firstname'] if borrower else '',
-      surname=borrower['surname'] if borrower else '',
-      user_barcode=borrower['cardnumber'] if borrower else user_barcode,
-      status=Status.ERROR,
-      states={'exception': str(e)},
-    ))

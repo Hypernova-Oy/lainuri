@@ -114,7 +114,7 @@ class BarcodeReader():
         if (barcode):
           handler(barcode)
       except Exception as e:
-        log.error(f"Polling barcodes received an exception='{type(e)}'\n{traceback.format_exc()}")
+        log.error(f"Polling barcodes received an exception='{type(e)}'\n{traceback.format_exc()}") # The prefix text is used to find caught exceptions!
 
     log.info(f"Terminating barcode polling thread")
 
