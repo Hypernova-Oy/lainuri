@@ -86,7 +86,7 @@ class Lainuri {
     }
     this.ws.onmessage = (event) => {
       try {
-        console.log("Lainuri - ws.onmessage()", event);
+        //console.log("Lainuri - ws.onmessage()", event);
         this.dispatch_event(ParseEventFromWebsocketMessage(event.data, 'server', 'client'));
       }
       catch(e) {
@@ -155,14 +155,14 @@ class Lainuri {
     if (this.listeners[event.event]) {
       this.listeners[event.event].forEach(listener => {
         dispatched_times++;
-        console.log(`dispatch_event():> Receiving '${event.event}'`)
+        if (event.event != 'log-received' && event.event != 'log-send') console.log(`dispatch_event():> Receiving '${event.event}'`);
         listener.handler.call(listener.component, event);
       });
     }
     if (event.recipient === 'server' || (! event.recipient && event.default_dispatch === 'server')) {
       dispatched_times++;
       let payload = event.serialize_for_ws();
-      console.log(`dispatch_event():> Sending '${payload}'`)
+      if (event.event != 'log-received' && event.event != 'log-send') console.log(`dispatch_event():> Sending '${payload}'`);
       this.ws.send(payload);
     }
     if (! dispatched_times) {

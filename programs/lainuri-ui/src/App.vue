@@ -82,12 +82,11 @@
       color="blue-grey"
       class="white--text"
     >
-      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git RTTTL
+      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git <span class="footer-tech-name" @click="repl_active = true">RTTTL</span>
       <v-spacer></v-spacer>
       <span>&copy; 2020</span>
     </v-footer>
 
-    <v-btn dark @click="repl_active = true">Open REPL</v-btn>
     <v-snackbar
       v-model="repl_active"
       :timeout="0"
@@ -99,6 +98,7 @@
         v-model="repl"
         clearable="true"
         outlined="true"
+        dark
       ></v-textarea>
       <v-btn
         color="red"
@@ -119,6 +119,9 @@
 </template>
 
 <script>
+import {get_logger} from './logger'
+let log = get_logger('App.vue');
+
 import Globalize from 'globalize'
 
 import BottomMenu from './components/BottomMenu.vue'
@@ -134,6 +137,7 @@ import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
 import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
+
 
 let shared = {
   item_barcode: '167N00000111',
@@ -157,35 +161,35 @@ export default {
   },
   created: function () {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
+      log.info(`Event '${LERFIDTagsNew.name}' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
       event.tags_new.forEach((item_bib) => {
         this.rfid_tags_present.push(new ItemBib(item_bib));
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsLost, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsLost.name}' received. Lost RFID tags (${event.tags_lost.length}):`, event.tags_lost, event.tags_present);
+      log.info(`Event '${LERFIDTagsLost.name}' received. Lost RFID tags (${event.tags_lost.length}):`, event.tags_lost, event.tags_present);
       event.tags_lost.forEach((item_bib) => {
         splice_bib_item_from_array(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode);
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsPresent, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsPresent.name}' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
+      log.info(`Event '${LERFIDTagsPresent.name}' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
       this.rfid_tags_present = event.tags_present.reduce((reducer, elem) => {reducer.push(new ItemBib(elem)); return reducer}, []);
     });
     lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LEServerStatusResponse.name}' received.`);
+      log.info(`Event '${LEServerStatusResponse.name}' received.`);
     });
     lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LEServerConnected.name}' received.`);
+      log.info(`Event '${LEServerConnected.name}' received.`);
       this.$data.status.server_off = false;
     });
     lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LEServerDisconnected.name}' received.`);
+      log.info(`Event '${LEServerDisconnected.name}' received.`);
       this.$data.status.server_off = true;
     });
     if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
-        console.log(`[${this.$options.name}]:> PRESEEDING!! Received '${LEServerConnected.name}'`);
+        log.info(`PRESEEDING!! Received '${LEServerConnected.name}'`);
         window.setTimeout(() => lainuri_ws.dispatch_event(
           new LEUserLoginComplete('Olli-Antti', 'Kivilahti', '2600104874', Status.SUCCESS, {}, 'server', 'client')
         ), 4000);
@@ -194,11 +198,11 @@ export default {
   },
 
   mounted: function () {
-    console.log(`[${this.$options.name}]:> - mounted()`);
+    log.info('mounted()');
     try {
       start_ws();
     } catch (e) {
-      console.error(`[${this.$options.name}]:> start_ws() :> ${e}`);
+      log.fatal(`start_ws() :> ${e}`);
     }
   },
 
@@ -256,11 +260,11 @@ export default {
   methods: {
     enter_checkout_mode: function () {
       this.app_mode = 'mode_checkout';
-      console.log(`[${this.$options.name}]:> Entering 'mode_checkout'`);
+      log.info(`Entering 'mode_checkout'`);
     },
     enter_checkin_mode: function () {
       this.app_mode = 'mode_checkin';
-      console.log(`[${this.$options.name}]:> Entering 'mode_checkin'`);
+      log.info(`Entering 'mode_checkin'`);
     },
     enter_main_menu: function () {
       this.app_mode = 'mode_main_menu';
@@ -341,5 +345,7 @@ button {
   bottom: 10px;
   left: 50px;
 }
-
+.footer-tech-name {
+  padding-left: 5px;
+}
 </style>

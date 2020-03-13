@@ -50,13 +50,10 @@ const classes = {
  * @returns {Map of i18n_keys}
  */
 export function translate_exception(...args) {
-  console.log(args)
   let trans_states = {}
   for (let arg_i in args) {
     let states = args[arg_i]
-    console.log('states', states)
     for (let key in states) {
-      console.log('key', key)
       if (key === 'exception') {
         let i18n_key = cast_exception(states[key])
         trans_states[i18n_key] = true

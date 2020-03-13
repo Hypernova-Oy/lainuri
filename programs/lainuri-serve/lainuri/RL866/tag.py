@@ -127,16 +127,20 @@ class Tag():
 
   def iso25680_get_primary_item_identifier(self):
 
-    if self._primary_item_identifier:
+    if self._primary_item_identifier != None:
       return self._primary_item_identifier
 
-    self.dob = self.get_data_object_format_implementation()(
-      afi=self.afi(),
-      dsfid=self.dsfid(),
-      block_size=self.block_size(),
-      memory_capacity_blocks=self.memory_capacity_blocks(),
-      tag_memory=self.tag_memory()
-    )
+    try:
+      self.dob = self.get_data_object_format_implementation()(
+        afi=self.afi(),
+        dsfid=self.dsfid(),
+        block_size=self.block_size(),
+        memory_capacity_blocks=self.memory_capacity_blocks(),
+        tag_memory=self.tag_memory()
+      )
 
-    self._primary_item_identifier = self.dob.get_primary_item_identifier()
+      self._primary_item_identifier = self.dob.get_primary_item_identifier()
+    except Exception as e:
+      log.exception(e)
+      self._primary_item_identifier = ''
     return self._primary_item_identifier

@@ -1,11 +1,11 @@
 import {Lainuri} from './lainuri-0.0.1'
-import {LEvent,
-  LEBarcodeRead, LERingtonePlay, LERingtonePlayComplete,
-  LEConfigGetpublic, LEConfigGetpublic_Response,
-  LEConfigWrite,
-  LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort,
-  LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LEServerConnected, LEServerStatusRequest, LEException,
-  LETestMockDevices} from './lainuri_events'
+import {LERingtonePlay, LERingtonePlayComplete,
+  LEConfigWrite, LEUserLoggingIn,
+  LEServerConnected, LEServerStatusRequest, LEException,
+  LELogSend, LELogReceived} from './lainuri_events'
+
+import {logger_manager} from './logger'
+let log = logger_manager.getLogger('lainuri.js');
 
 // Keep track of active pending events that need to be canceled.
 let events = {};
@@ -17,40 +17,23 @@ let interval_server_status_polling = 0;
 
 function start_ws () {
   lainuri_ws.attach_event_listener(LEException, this, function(event) {
-    console.log(`Event '${LEException.name}' received!`, event, event.exception);
-
-    if (events[event.event_id]) {
-      // If this exception-event is for the "ringtone playing" -event, we can notify the UI that the event
-      // has failed.
-      if (event.event_id.indexOf(LERingtonePlayComplete.event)) {
-        document.getElementById('rtttl_console').innerHTML(event.message);
-      }
-    }
+    if (log.isTraceEnabled()) log.trace(`Event '${LEException.name}' received!`, event, event.exception);
   });
   lainuri_ws.attach_event_listener(LERingtonePlay, this, function(event) {
-    console.log(`Event '${LERingtonePlay.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event '${LERingtonePlay.name}' triggered.`);
   });
   lainuri_ws.attach_event_listener(LERingtonePlayComplete, this, function(event) {
-    console.log(`Event '${LERingtonePlayComplete.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event '${LERingtonePlayComplete.name}' triggered.`);
     document.getElementById('rtttl_console').innerHTML("Finished playing: " + event.message);
   });
   lainuri_ws.attach_event_listener(LEConfigWrite, this, function(event) {
-    console.log(`Event '${LEConfigWrite.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event '${LEConfigWrite.name}' triggered.`);
+  });
+  lainuri_ws.attach_event_listener(LELogReceived, this, function(event) {
+    if (log.isTraceEnabled()) log.trace(`Event '${LELogReceived.name}' triggered.`);
   });
   lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
-    console.log(`Event '${LEServerConnected.name}' triggered.`);
-/*
-    lainuri_ws.dispatch_event(
-      //new LERingtonePlay('success', undefined, 'client', 'server')
-      new LERingtonePlay(undefined, 'ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5', 'client', 'server')
-    );
-    lainuri_ws.dispatch_event(
-      new LEConfigWrite('missing.variable', 'bad-value', 'client', 'server')
-    );
-    lainuri_ws.dispatch_event(
-      new LETestMockDevices()
-    );
-*/
+    if (log.isTraceEnabled()) log.trace(`Event '${LEServerConnected.name}' triggered.`);
   });
 
   lainuri_ws.open_websocket_connection();
@@ -60,6 +43,17 @@ function start_ws () {
       new LEServerStatusRequest()
     ), 30000);
   }
+
+  logger_manager.setWebsocketHandlers((logging_event, formatted_message) => {
+    lainuri_ws.dispatch_event(
+      new LELogSend(
+        logging_event.level.name,
+        logging_event.logger.name,
+        logging_event.timeStampInMilliseconds,
+        formatted_message,
+      ),
+    );
+  });
 }
 
 

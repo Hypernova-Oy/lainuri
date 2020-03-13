@@ -2,6 +2,8 @@
 
 version: 1
 formatters:
+  raw:
+    format: '%(message)s'
   simple:
     format: '%(asctime)s %(name)s [%(levelname)s] %(message)s'
   colored:
@@ -21,7 +23,16 @@ handlers:
     formatter: colored
     filename: {lainuri_log_dir}/scraper.log
     when: 'D'
+  external_log:
+    class: logging.handlers.TimedRotatingFileHandler
+    formatter: raw
+    filename: {lainuri_log_dir}/external.log
+    when: 'D'
 loggers:
+  lainuri.websocket_handlers.logging_external:
+    level: DEBUG
+    handlers: [external_log]
+    propagate: no
   lainuri.scraping:
     level: DEBUG
     handlers: [scraper]

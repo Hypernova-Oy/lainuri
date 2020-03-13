@@ -24,6 +24,7 @@ import lainuri.websocket_handlers.auth
 import lainuri.websocket_handlers.checkin
 import lainuri.websocket_handlers.checkout
 import lainuri.websocket_handlers.config
+import lainuri.websocket_handlers.logging
 import lainuri.websocket_handlers.printer
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.status
@@ -58,7 +59,7 @@ def handle_events_loop():
 
 def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
   event = lainuri.event_queue.pop_event(timeout=timeout)
-  log.info(f"Handling event '{event.event_id or ''}':\n  '{event.__dict__}'")
+  if type(event) != lainuri.event.LELogSend and type(event) != lainuri.event.LELogReceived: log.info(f"Handling event {event.to_string()}")
 
   # Messages originating from the Lainuri UI
   if event.recipient == 'server' or (not(event.recipient) and event.default_recipient == 'server'):
@@ -93,7 +94,7 @@ def message_clients(event: lainuri.event.LEvent):
   for client in clients:
     if (event.recipient and event.recipient == client) or (not(event.recipient) and not(client == event.client)):
       payload = event.serialized or event.serialize_ws()
-      log.info(f"Message to client '{client.address}': '{payload}'")
+      if type(event) != lainuri.event.LELogSend and type(event) != lainuri.event.LELogReceived: log.info(f"Message to client '{client.address}': '{payload}'")
       client.send_message(payload)
 
 def register_client(event):

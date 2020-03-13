@@ -7,6 +7,7 @@ import vuetify from './plugins/vuetify';
 
 import VueGlobalize from 'vue-globalize';
 import {i18n_messages} from './i18n'
+
 var Globalize = require( "globalize" );
 
 Globalize.load(

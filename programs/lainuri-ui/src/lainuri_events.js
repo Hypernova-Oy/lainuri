@@ -262,6 +262,41 @@ class LEConfigWrite extends LEvent {
     this.validate_params()
   }
 }
+class LELogSend extends LEvent {
+  static event = 'log-send'
+  default_dispatch = 'server'
+
+  static serializable_attributes = ['level', 'logger_name', 'milliseconds', 'log_entry']
+  level;
+  logger_name;
+  milliseconds;
+  log_entry;
+
+  constructor(level, logger_name, milliseconds, log_entry, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.level = level;
+    this.logger_name = logger_name;
+    this.milliseconds = milliseconds;
+    this.log_entry = log_entry;
+    this.construct(sender, recipient);
+    this.validate_params();
+  }
+}
+class LELogReceived extends LEvent {
+  static event = 'log-received'
+
+  static serializable_attributes = ['status', 'states']
+  states;
+  status = Status.NOT_SET
+
+  constructor(status, states, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.states = states
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
 class LEPrintRequest extends LEvent {
   static event = 'print-request'
   default_dispatch = 'server'
@@ -477,5 +512,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
+  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
 }

@@ -68,7 +68,7 @@
         </v-card>
       </v-col>
 
-      <v-col v-if="rfid_tags_present_filtered"
+      <v-col v-if="rfid_tags_present_filtered.length"
         :cols="column_width"
       >
         <v-card
@@ -144,6 +144,9 @@
 </template>
 
 <script>
+import {get_logger} from '../logger'
+let log = get_logger('CheckOut.vue');
+
 import ItemCard from '../components/ItemCard.vue'
 import OverlayNotification from '../components/OverlayNotification.vue'
 import PrintNotification from '../components/PrintNotification.vue'
@@ -168,13 +171,13 @@ export default {
     send_user_logging_in();
 
     lainuri_ws.attach_event_listener(LEUserLoginComplete, this, (event) => {
-      console.log(`[${this.$options.name}]:> Received event '${LEUserLoginComplete.name}'`);
+      log.info(`Received event '${LEUserLoginComplete.name}'`);
       if (event.status === Status.SUCCESS) {
         if (! this.is_user_logged_in) {
           this.user_login_success(event);
         }
         else {
-          console.error(`User '${this.$data.user.user_barcode}' already logged in? Login attempt from user '${event.user_barcode}'`);
+          log.error(`User '${this.$data.user.user_barcode}' already logged in? Login attempt from user '${event.user_barcode}'`);
         }
       }
       else {
@@ -182,41 +185,41 @@ export default {
       }
     });
     lainuri_ws.attach_event_listener(LECheckOutComplete, this, function(event) {
-      console.log(`[${this.$options.name}]:> Received event '${LECheckOutComplete.name}' for barcode='${event.item_barcode}'`);
+      log.info(`Received event '${LECheckOutComplete.name}' for barcode='${event.item_barcode}'`);
       this.check_out_complete(event);
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
+      log.info(`Event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
       if (this.is_user_logged_in) {
-        this.start_or_continue_transaction(event.tag)
+        this.start_or_continue_transaction(new ItemBib(event.tag))
       }
       else {
-        console.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}', but no user logged in?`);
+        log.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}', but no user logged in?`);
       }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
+      log.info(`Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
       if (this.is_user_logged_in) {
         event.tags_new.forEach((item_bib) => {
-          let tags_present_item_bib = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
-          if (! tags_present_item_bib) {
-            console.error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}')`);
+          let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
+          if (! tags_present_item_bib_and_i) {
+            throw new Error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
           }
-          this.start_or_continue_transaction(tags_present_item_bib);
+          this.start_or_continue_transaction(tags_present_item_bib_and_i[0]);
         });
       }
       else {
-        console.log(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}' triggered. User not logged in yet.`);
+        log.info(`Event '${LERFIDTagsNew.name}' triggered. User not logged in yet.`);
       }
     });
     lainuri_ws.attach_event_listener(LESetTagAlarmComplete, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LESetTagAlarmComplete.name}' for item_barcode='${event.item_barcode}'`);
+      log.info(`Event '${LESetTagAlarmComplete.name}' for item_barcode='${event.item_barcode}'`);
       this.set_rfid_tag_alarm_complete(event);
     });
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
-      console.log(`[${this.$options.name}]:> Event '${LEPrintResponse.name}'`);
+      log.info(`Event '${LEPrintResponse.name}'`);
       if (this.receipt_printing) {this.print_receipt_complete(event);}
-      else {console.error(`Received event '${LEPrintResponse.name}' but not printing a receipt. User race condition maybe?`)}
+      else {log.error(`Received event '${LEPrintResponse.name}' but not printing a receipt. User race condition maybe?`)}
     });
   },
   beforeDestroy: function () {
@@ -229,21 +232,21 @@ export default {
       return (this.$data.user.user_barcode) ? true : false;
     },
     rfid_tags_present_filtered: function () {
-      return this.rfid_tags_present.filter((item_bib) => [Status.PENDING, Status.NOT_SET].includes(item_bib.status))
+      return this.rfid_tags_present.filter((item_bib) => [Status.PENDING, Status.NOT_SET].includes(item_bib.status_check_out))
     },
     column_width: function () {
       let visible_columns = 0;
       if (Object.keys(this.items_checked_out_failed).length) {
         visible_columns++;
-        console.log(`column_width():> this.items_checked_out_failed visible`)
+        log.trace('column_width():> this.items_checked_out_failed visible')
       }
       if (Object.keys(this.items_checked_out_successfully).length) {
         visible_columns++;
-        console.log(`column_width():> this.items_checked_out_successfully visible`)
+        log.trace('column_width():> this.items_checked_out_successfully visible')
       }
-      if (this.rfid_tags_present_filtered) {
+      if (this.rfid_tags_present_filtered.length) {
         visible_columns++;
-        console.log(`column_width():> this.rfid_tags_present visible`)
+        log.trace('column_width():> this.rfid_tags_present visible')
       }
       return (12 / visible_columns);
     }
@@ -259,63 +262,72 @@ export default {
       this.start_transactions();
     },
     abort_user_login: function () {
-      console.log("abort_user_login in CheckOut");
+      log.info("abort_user_login in CheckOut");
       lainuri_ws.dispatch_event(new LEUserLoginAbort('client', 'server'));
       this.stop_checking_out();
     },
     start_or_continue_transaction: function (tag) {
-      console.log(`[${this.$options.name}]:> start_or_continue_transaction():> tag='${tag}'`)
+      log.info('start_or_continue_transaction():> tag=', tag)
       if (!tag.item_barcode) return;
       let item_bib = this.$data.transactions[tag.item_barcode]
       if (!item_bib) {
-        console.log(`[${this.$options.name}]:> item_barcode='${tag.item_barcode}', starting check-out transaction`)
+        log.info(`start_or_continue_transaction():> item_barcode='${tag.item_barcode}', starting check-out transaction`)
         this.$data.transactions[tag.item_barcode] = tag
         this.check_out_item(tag);
       }
       else {
-        console.log(`[${this.$options.name}]:> item_barcode='${tag.item_barcode}', resuming check-out transaction`)
-        if (tag.tag_type === 'rfid') {
-          item_bib.tag_type = tag.tag_type; // The same item can be identified via barcode reader or the rfid reader. RFID is the dominant detection method and if rfid is used, the transaction has more steps.
+        log.info(`start_or_continue_transaction():> item_barcode='${tag.item_barcode}', resuming check-out transaction`)
+        if (item_bib.tag_type === 'barcode' && tag.tag_type === 'rfid') {
+          // The same item can be identified via barcode reader or the rfid reader. RFID is the dominant detection method and if rfid is used, the transaction has more steps.
+          // Here we upgrade an existing transaction to 'rfid'
+          item_bib.tag_type = tag.tag_type;
+          let new_rfid_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
+          this.rfid_tags_present[ new_rfid_item_bib_and_i[1] ] = item_bib;
         }
         if (item_bib.status_check_out === Status.NOT_SET || ! [Status.ERROR, Status.SUCCESS, Status.PENDING].includes(item_bib.status_check_out)) {
-          console.log(`[${this.$options.name}]:> item_barcode='${item_bib.item_barcode}' status_check_out='${item_bib.status_check_out}', resuming check-out transaction - do check-out`)
+          log.info(`start_or_continue_transaction():> item_barcode='${item_bib.item_barcode}' status_check_out='${item_bib.status_check_out}', resuming check-out transaction - do check-out`)
           this.check_out_item(item_bib);
         }
-        else if (tag.tag_type === 'rfid' && item_bib.status_set_tag_alarm === Status.NOT_SET || ! [Status.SUCCESS, Status.PENDING].includes(item_bib.status_set_tag_alarm)) {
-          console.log(`[${this.$options.name}]:> item_barcode='${item_bib.item_barcode}' set_rfid_tag_alarm='${item_bib.status_set_tag_alarm}', resuming check-out transaction - set rfid tag security status`)
+        else if (item_bib.tag_type === 'rfid' &&
+                 item_bib.status_check_out === Status.SUCCESS &&
+                 (item_bib.status_set_tag_alarm === Status.NOT_SET || ! [Status.SUCCESS, Status.PENDING].includes(item_bib.status_set_tag_alarm))) {
+          log.info(`start_or_continue_transaction():> item_barcode='${item_bib.item_barcode}' set_rfid_tag_alarm='${item_bib.status_set_tag_alarm}', resuming check-out transaction - set rfid tag security status`)
           this.set_rfid_tag_alarm(item_bib)
         }
       }
     },
     stop_checking_out: function () {
-      console.log(`[${this.$options.name}]:> Stopped checking out`);
+      log.info(`Stopped checking out`);
       this.$data.user = {};
       this.$emit('stop_checking_out');
     },
     stop_checkin_out_and_get_receipt: function () {
-      console.log(`[${this.$options.name}]:> Stopping checking out and getting a receipt`);
+      log.info(`Stopping checking out and getting a receipt`);
       this.print_receipt();
       //this.stop_checking_out(); // The kill signal is given when the receipt printing confirmation is received from the server
     },
     start_transactions: function (event) {
-      console.log(`[${this.$options.name}]:> Started transactions. Items present '${this.rfid_tags_present.length}'`);
+      log.info(`Started transactions. Items present '${this.rfid_tags_present.length}'`);
       for (let i in this.rfid_tags_present) {
         this.start_or_continue_transaction(this.rfid_tags_present[i]);
       }
     },
     check_out_item: function (item_bib, delay) {
-      console.log(`[${this.$options.name}]:> Checking out item '${item_bib.item_barcode}'`);
+      log.info(`Checking out item '${item_bib.item_barcode}'`);
       if (! [Status.PENDING, Status.SUCCESS].includes(item_bib.status_check_out)) {
         ItemBib.prototype.set_status_check_out.call(item_bib, Status.PENDING)
         lainuri_ws.dispatch_event(new LECheckOut(item_bib.item_barcode, this.$data.user.user_barcode, item_bib.tag_type, 'client', 'server'))
       }
       else {
-        console.error(`[${this.$options.name}]:> Checking out item '${item_bib.item_barcode}', but it is already being checked out?`);
+        log.error(`Checking out item '${item_bib.item_barcode}', but it is already being checked out?`);
       }
     },
     check_out_complete: function (event) {
       let item_bib = this.transactions[event.item_barcode]
-      if (!item_bib) throw new Error(`Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+      if (!item_bib) {
+        log.fatal(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`)
+        throw new Error(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+      }
 
       ItemBib.prototype.set_status_check_out.call(item_bib, event.status, event.states)
 
@@ -339,18 +351,21 @@ export default {
       }
     },
     set_rfid_tag_alarm: function (item_bib) {
-      console.log(`[${this.$options.name}]:> set_rfid_tag_alarm. item_barcode='${item_bib.item_barcode}'`);
+      log.info(`set_rfid_tag_alarm. item_barcode='${item_bib.item_barcode}'`);
       if (! [Status.PENDING, Status.SUCCESS].includes(item_bib.status_set_tag_alarm)) {
         ItemBib.prototype.set_status_set_tag_alarm.call(item_bib, Status.PENDING)
         lainuri_ws.dispatch_event(new LESetTagAlarm(item_bib.item_barcode, false, 'client', 'server'))
       }
       else {
-        console.error(`[${this.$options.name}]:> set_rfid_tag_alarm. item_barcode '${item_bib.item_barcode}', but it is already being set?`);
+        log.error(`set_rfid_tag_alarm. item_barcode '${item_bib.item_barcode}', but it is already being set?`);
       }
     },
     set_rfid_tag_alarm_complete: function (event) {
       let item_bib = this.transactions[event.item_barcode]
-      if (!item_bib) throw new Error(`Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+      if (!item_bib) {
+        log.fatal(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`)
+        throw new Error(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+      }
 
       ItemBib.prototype.set_status_set_tag_alarm.call(item_bib, event.status, event.states)
       if (event.status !== Status.SUCCESS) {
@@ -358,7 +373,7 @@ export default {
       }
     },
     print_receipt: function () {
-      console.log("Printing receipt");
+      log.info("Printing receipt");
       this.$data.receipt_printing = true;
       lainuri_ws.dispatch_event(
         new LEPrintRequest(
@@ -376,7 +391,7 @@ export default {
       this.stop_checking_out();
     },
     close_notification: function () {
-      console.log("Closing notification");
+      log.info("Closing notification");
       this.$data.overlay_notifications.shift();
     },
   },

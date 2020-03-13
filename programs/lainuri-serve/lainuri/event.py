@@ -37,12 +37,6 @@ class LEvent():
         msg[att] = getattr(self, att)
       self.message = msg
 
-    print(json.dumps({
-      'event': self.event,
-      'message': self.message,
-      'event_id': self.event_id,
-    }))
-
     return json.dumps({
       'event': self.event,
       'message': self.message,
@@ -57,6 +51,9 @@ class LEvent():
   def throw_missing_attribute(self, attribute_name: str):
     class_name = type(self)
     raise Exception(f"{class_name}():> Missing attribute '{attribute_name}'")
+
+  def to_string(self):
+    return f"event_id='{self.event_id}' " + str({key: getattr(self, key) for key in self.serializable_attributes})
 
 class LECheckOut(LEvent):
   event = 'check-out'
@@ -260,6 +257,35 @@ class LEConfigWriteResponse(LEvent):
     self.old_value = old_value
     message = {key: getattr(self, key) for key in self.serializable_attributes}
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LELogSend(LEvent):
+  event = 'log-send'
+  default_handler = 'lainuri.websocket_handlers.logging.write_external_log'
+  default_recipient = 'server'
+
+  serializable_attributes = ['level', 'logger_name', 'milliseconds', 'log_entry']
+
+  def __init__(self, level, logger_name, milliseconds, log_entry, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.level = level
+    self.logger_name = logger_name
+    self.milliseconds = milliseconds
+    self.log_entry = log_entry
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LELogReceived(LEvent):
+  event = 'log-received'
+  default_recipient = 'client'
+
+  serializable_attributes = ['status', 'states']
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, status, states, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LEPrintRequest(LEvent):
@@ -475,6 +501,8 @@ def parseEventFromWebsocketMessage(raw_data: str, client: WebSocket):
   if serializable_attributes:
     parameters = {attr: data['message'].get(attr, None) for attr in serializable_attributes}
   try:
-    return event_class(**parameters, **instance_data)
+    event = event_class(**parameters, **instance_data)
+    event.message = raw_data
+    return event
   except Exception as e:
     raise type(e)(f"Creating event '{event_class}' with parameters '{parameters}' instance_data '{instance_data}' failed:\n" + traceback.format_exc())
