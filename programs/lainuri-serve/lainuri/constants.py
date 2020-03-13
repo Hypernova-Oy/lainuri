@@ -3,4 +3,5 @@
 class Status():
   SUCCESS = 'SUCCESS'
   ERROR = 'ERROR'
+  PENDING = 'PENDING'
   NOT_SET = 'NOT_SET'

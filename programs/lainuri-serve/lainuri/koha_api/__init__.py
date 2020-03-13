@@ -8,14 +8,18 @@ from lainuri.constants import Status
 import lainuri.exception as exception
 import lainuri.exception.ils as exception_ils
 
+import lainuri.websocket_handlers.status
+
 from bs4 import BeautifulSoup
 import bs4
 import functools
 import json
 from pprint import pprint
 import re
+import time
 import traceback
-from urllib3 import PoolManager, HTTPResponse
+import urllib3
+import urllib3.exceptions
 
 
 class KohaAPI():
@@ -35,12 +39,37 @@ class KohaAPI():
 
   def __init__(self):
     self.koha_baseurl = get_config('koha.baseurl')
-    self.http = PoolManager()
+    self.http = urllib3.PoolManager(
+      timeout=urllib3.Timeout(connect=get_config('server.timeout_request_connect_ms')/1000, read=get_config('server.timeout_request_read_ms')/1000),
+      retries=False,
+    )
 
-  def _scrape_log_header(self, r: HTTPResponse):
+  def _request(self, method, url, fields=None, headers=None):
+    try:
+      for i in range(1,4):
+        r = self.http.request(
+          method,
+          url,
+          fields,
+          headers,
+        )
+        lainuri.websocket_handlers.status.set_ils_connection_status(Status.SUCCESS)
+        return r
+    except Exception as e:
+      if isinstance(e, urllib3.exceptions.NewConnectionError):
+        lainuri.websocket_handlers.status.set_ils_connection_status(Status.ERROR)
+        time.sleep(1)
+      elif isinstance(e, urllib3.exceptions.ConnectTimeoutError):
+        lainuri.websocket_handlers.status.set_ils_connection_status(Status.PENDING)
+        time.sleep(1)
+      else:
+        lainuri.websocket_handlers.status.set_ils_connection_status(Status.ERROR)
+        raise e
+
+  def _scrape_log_header(self, r: urllib3.HTTPResponse):
     return f"event_id='{self.current_event_id}' status='{r.status} url='{r.geturl() or self.current_request_url}"
 
-  def _receive_json(self, r: HTTPResponse):
+  def _receive_json(self, r: urllib3.HTTPResponse):
     data = r.data.decode('utf-8')
     log_scrape.info(self._scrape_log_header(r) + "\n" + data)
     payload = json.loads(data)
@@ -48,7 +77,7 @@ class KohaAPI():
     self._maybe_missing_permission(payload)
     return payload
 
-  def _receive_html(self, r: HTTPResponse) -> (BeautifulSoup, list, list):
+  def _receive_html(self, r: urllib3.HTTPResponse) -> (BeautifulSoup, list, list):
     data = r.data.decode('utf-8')
     try:
       soup = BeautifulSoup(data, features="html.parser")
@@ -90,7 +119,7 @@ class KohaAPI():
         raise Exception(f"Lainuri device is missing permission '{payload.get('required_permissions')}'. Lainuri needs these permissions to access Koha: '{self.required_permissions}'")
 
   def authenticated(self):
-    r = self.http.request(
+    r = self.request(
       'GET',
       self.koha_baseurl+'/api/v1/auth/session',
       headers = {

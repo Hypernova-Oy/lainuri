@@ -181,11 +181,11 @@ export default {
     });
     lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
       log.info(`Event '${LEServerConnected.name}' received.`);
-      this.$data.status.server_off = false;
+      this.$data.status.server_connected = Status.SUCCESS;
     });
     lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
       log.info(`Event '${LEServerDisconnected.name}' received.`);
-      this.$data.status.server_off = true;
+      this.$data.status.server_connected = Status.ERROR;
     });
     if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
@@ -243,13 +243,14 @@ export default {
       bottom_bar_view_config: false,
 
       status: {
-        server_off: false,
-        printer_off: false,
-        printer_paper_low: false,
-        printer_paper_out: false,
-        printer_receipt_not_torn: false,
-        rfid_reader_off: false,
-        barcode_reader_off: false,
+        server_connected: Status.ERROR,
+        printer_off: Status.SUCCESS,
+        printer_paper_low: Status.SUCCESS,
+        printer_paper_out: Status.SUCCESS,
+        printer_receipt_not_torn: Status.SUCCESS,
+        rfid_reader_off: Status.SUCCESS,
+        barcode_reader_off: Status.SUCCESS,
+        ils_connection_status: Status.SUCCESS,
       },
 
       repl_active: false,

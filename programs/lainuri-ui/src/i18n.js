@@ -42,6 +42,16 @@ const i18n_messages = {
     PrintNotification: {
       Take_the_receipt: "Take the receipt",
     },
+    StatusBar: {
+      Lainuri_server_connection_lost: "Lainuri",
+      Printer_off: "Printer",
+      Printer_paper_runout: "Paper out",
+      Printer_paper_low: "Paper low",
+      Printer_receipt_not_torn: "Receipt",
+      RFID_reader_off: "RFID",
+      Barcode_reader_off: "Barcode",
+      ILS_connection_lost: "ILS lost",
+    },
   },
   fi: {
     App: {
@@ -84,6 +94,16 @@ const i18n_messages = {
     },
     PrintNotification: {
       Take_the_receipt: "Ota kuitti",
+    },
+    StatusBar: {
+      Lainuri_server_connection_lost: "Bäkkärivirhe",
+      Printer_off: "Tulostin",
+      Printer_paper_runout: "Paperi loppu",
+      Printer_paper_low: "Paperi vähissä",
+      Printer_receipt_not_torn: "Kuitti",
+      RFID_reader_off: "RFID",
+      Barcode_reader_off: "Viivakoodi",
+      ILS_connection_lost: "Kirjastojärjestelmä hävisi",
     },
   },
   se: {
@@ -128,6 +148,16 @@ const i18n_messages = {
     PrintNotification: {
       Take_the_receipt: "Ta kvittot",
     },
+    StatusBar: {
+      Lainuri_server_connection_lost: "Servern förlorad",
+      Printer_off: "Skrivaren av",
+      Printer_paper_runout: "Papper sprang ut",
+      Printer_paper_low: "Papper låg",
+      Printer_receipt_not_torn: "Kvitto kvar",
+      RFID_reader_off: "RFID av",
+      Barcode_reader_off: "Streckkod av",
+      ILS_connection_lost: "ILS förlorade",
+    },
   },
   ru: {
     App: {
@@ -170,6 +200,16 @@ const i18n_messages = {
     },
     PrintNotification: {
       Take_the_receipt: "Возьмите квитанцию",
+    },
+    StatusBar: {
+      Lainuri_server_connection_lost: "Сервер потерян",
+      Printer_off: "Принтер выключен",
+      Printer_paper_runout: "Бумага закончилась",
+      Printer_paper_low: "Бумага низкая",
+      Printer_receipt_not_torn: "Квитанция слева",
+      RFID_reader_off: "RFID выключен",
+      Barcode_reader_off: "Штрих-код выключен",
+      ILS_connection_lost: "ILS потерял",
     },
   },
 };

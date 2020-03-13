@@ -382,19 +382,20 @@ class LEServerStatusResponse(LEvent):
   event = 'server-status-response'
   default_recipient = 'client'
 
-  serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status']
-  barcode_reader_status = {}
-  thermal_printer_status = {}
-  rfid_reader_status = {}
-  touch_screen_status = {}
+  serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status', 'ils_connection_status']
+  barcode_reader_status = Status.NOT_SET
+  thermal_printer_status = Status.NOT_SET
+  rfid_reader_status = Status.NOT_SET
+  touch_screen_status = Status.NOT_SET
+  ils_connection_status = Status.NOT_SET
 
-  def __init__(self, barcode_reader_status: dict, thermal_printer_status: dict, rfid_reader_status: dict, touch_screen_status: dict, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, barcode_reader_status: Status, thermal_printer_status: Status, rfid_reader_status: Status, touch_screen_status: Status, ils_connection_status: Status, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode_reader_status = barcode_reader_status
     self.thermal_printer_status = thermal_printer_status
     self.rfid_reader_status = rfid_reader_status
     self.touch_screen_status = touch_screen_status
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.ils_connection_status = ils_connection_status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LEUserLoggingIn(LEvent):

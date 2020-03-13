@@ -30,3 +30,5 @@ ringtones:
 server:
   hostname: localhost
   port: 53153
+  timeout_request_connect_ms: 1000
+  timeout_request_read_ms: 11000
