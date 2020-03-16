@@ -1,29 +1,24 @@
 // rfid.py
 class RFIDException extends Error {
 }
-
 class RFIDCommand extends RFIDException {
 }
-
 class TagNotDetected extends RFIDException {
 }
-
 class GateSecurityStatusVerification extends RFIDException {
 }
 
 // ils.py
 class ILSException extends Error {
 }
-
 class InvalidUser extends ILSException {
 }
-
 class NoUser extends ILSException {
 }
-
 class NoItem extends ILSException {
 }
-
+class NoItemIdentifier extends ILSException {
+}
 
 
 
@@ -38,6 +33,7 @@ const classes = {
   InvalidUser,
   NoUser,
   NoItem,
+  NoItemIdentifier,
 
   not_checked_out: 'not_checked_out',
   return_to_another_branch: 'return_to_another_branch',

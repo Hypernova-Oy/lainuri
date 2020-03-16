@@ -28,20 +28,22 @@ export class ItemBib {
 
   constructor(item_barcode_or_tag, author, title, edition, book_cover_url) {
     if (typeof(item_barcode_or_tag) === String) {
-      this.item_barcode = item_barcode_or_tag
-      this.author = author
-      this.title = title
-      this.edition = edition
-      this.book_cover_url = book_cover_url
+      throw Error(`Passed a String '${item_barcode_or_tag}' instead of a tag-object!`)
     }
     else {
       let tag = item_barcode_or_tag
       this.item_barcode = tag.item_barcode
+      this.serial_number = tag.serial_number
       this.author = tag.author
       this.title = tag.title
       this.edition = tag.edition
       this.book_cover_url = tag.book_cover_url
       this.tag_type = tag.tag_type || this.tag_type
+
+      if (tag.status === Status.ERROR) {
+        this.status = tag.status;
+        this.states = translate_exception(tag.states);
+      }
     }
   }
 

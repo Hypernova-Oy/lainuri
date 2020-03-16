@@ -444,6 +444,7 @@ def get_fleshed_item_record(barcode):
   log.info(f"Get fleshed item record: barcode='{barcode}'")
   exception = None
   try:
+    if not barcode: raise exception_ils.NoItemIdentifier()
     item = koha_api.get_item(barcode)
     payload = koha_api.get_record(item['biblionumber'])
     record = MARCRecord(payload)
@@ -454,17 +455,20 @@ def get_fleshed_item_record(barcode):
       'book_cover_url': record.book_cover_url(),
       'edition': record.edition(),
       'item_barcode': barcode,
+      'status': Status.SUCCESS,
     }
   except Exception as e:
     exception = {
-      'type': str(type(e)),
-      'message': str(e),
+      'type': type(e).__name__,
       'trace': traceback.format_exc(),
     }
 
   return {
     'item_barcode': barcode,
-    'exception': exception,
+    'status': Status.ERROR,
+    'states': {
+      'exception': exception,
+    },
   }
 
 

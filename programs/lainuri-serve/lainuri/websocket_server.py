@@ -102,7 +102,7 @@ def register_client(event):
   global clients
   clients.append(event.client)
 
-  lainuri.event_queue.push_event(lainuri.event.LERFIDTagsPresent(tags_present=lainuri.rfid_reader.get_current_inventory_status()))
+  lainuri.websocket_handlers.status.get_rfid_tags_present(event)
 
   lainuri.websocket_handlers.config.get_public_configs()
 

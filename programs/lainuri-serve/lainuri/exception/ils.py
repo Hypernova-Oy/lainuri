@@ -11,3 +11,6 @@ class NoUser(lainuri.exception.ILS):
 class NoItem(lainuri.exception.ILS):
   def __init__(self, id: str):
     self.id = id
+
+class NoItemIdentifier(lainuri.exception.ILS):
+  pass

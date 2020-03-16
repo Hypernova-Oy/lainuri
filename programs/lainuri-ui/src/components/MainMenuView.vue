@@ -17,12 +17,12 @@
     <v-container class="item_scrollview">
       <v-row dense>
         <v-col
-          v-for="(item) in rfid_tags_present"
-          :key="item.item_barcode"
+          v-for="(item_bib) in rfid_tags_present"
+          :key="item_bib.item_barcode || item_bib.serial_number"
           align="center"
           justify="center"
         >
-          <ItemCard v-bind:key="item.item_barcode" :item_bib="item"/>
+          <ItemCard v-bind:key="item_bib.item_barcode || item_bib.serial_number" :item_bib="item_bib"/>
         </v-col>
       </v-row>
     </v-container>

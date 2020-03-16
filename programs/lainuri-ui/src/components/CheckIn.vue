@@ -56,7 +56,7 @@
         </v-card>
       </v-col>
 
-      <v-col v-if="rfid_tags_present_filtered.length"
+      <v-col v-if="Object.keys(transactions_queue).length"
         :cols="column_width"
       >
         <v-card
@@ -74,8 +74,8 @@
           <v-container class="item_scrollview">
             <v-row dense>
               <v-col
-                v-for="(item_bib) in rfid_tags_present_filtered"
-                :key="item_bib.item_barcode"
+                v-for="(item_bib) in transactions_queue"
+                :key="item_bib.item_barcode || item_bib.serial_number"
                 align="center"
                 justify="center"
               >
@@ -165,13 +165,13 @@ export default {
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       log.info(`Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
-      event.tags_new.forEach((item_bib) => {
+      for (let item_bib of event.tags_new) {
         let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
         if (! tags_present_item_bib_and_i) {
           throw new Error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
         }
         this.start_or_continue_transaction(tags_present_item_bib_and_i[0]);
-      });
+      }
     });
     lainuri_ws.attach_event_listener(LESetTagAlarmComplete, this, function(event) {
       log.info(`Event '${LESetTagAlarmComplete.name}' for item_barcode='${event.item_barcode}'`);
@@ -192,8 +192,21 @@ export default {
     this.items_checked_in_successfully = {}
   },
   computed: {
-    rfid_tags_present_filtered: function () {
-      return this.rfid_tags_present.filter((item_bib) => [Status.PENDING, Status.NOT_SET].includes(item_bib.status_check_in))
+    transactions_queue: function () {
+      let filtered_statuses = [Status.PENDING, Status.NOT_SET]
+
+      let rfid_tags_filtered = {}
+      for (let item_bib of this.rfid_tags_present) {
+        if (filtered_statuses.includes(item_bib.status_check_in)) rfid_tags_filtered[item_bib.item_barcode] = item_bib;
+      }
+
+      for (let item_bib of Object.values(this.transactions)) {
+        if (!(this.rfid_tags_present[item_bib.item_barcode]) && filtered_statuses.includes(item_bib.status_check_in)) {
+          rfid_tags_filtered[item_bib.item_barcode] = item_bib
+        }
+      }
+      console.log(rfid_tags_filtered)
+      return rfid_tags_filtered
     },
     column_width: function () {
       let visible_columns = 0;
@@ -205,9 +218,9 @@ export default {
         visible_columns++;
         log.trace('column_width():> this.items_checked_in_successfully visible')
       }
-      if (this.rfid_tags_present_filtered.length) {
+      if (Object.keys(this.transactions_queue).length) {
         visible_columns++;
-        log.trace('column_width():> this.rfid_tags_present visible')
+        log.trace('column_width():> this.transactions_queue visible')
       }
       return (12 / visible_columns);
     }
@@ -215,11 +228,15 @@ export default {
   methods: {
     start_or_continue_transaction: function (tag) {
       log.info('start_or_continue_transaction():> tag=', tag);
-      if (!tag.item_barcode) return;
+      if (!tag.item_barcode) {
+        //this.check_in_failed(tag, {exception: {type: 'NoItemIdentifier'}})
+        //this.$emit('exception', { type: 'NoItemIdentifier'})
+        return;
+      }
       let item_bib = this.$data.transactions[tag.item_barcode]
       if (!item_bib) {
         log.info(`start_or_continue_transaction():> item_barcode='${tag.item_barcode}', starting check-in transaction`)
-        this.$data.transactions[tag.item_barcode] = tag
+        this.$set(this.$data.transactions, tag.item_barcode, tag)
         this.check_in_item(tag);
       }
       else {
@@ -276,25 +293,29 @@ export default {
         throw new Error(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
       }
 
-      ItemBib.prototype.set_status_check_in.call(item_bib, event.status, event.states)
-
-      if (item_bib.status_check_in === Status.SUCCESS) {
-        this.items_checked_in_successfully[item_bib.item_barcode] = item_bib;
-        delete this.items_checked_in_failed[item_bib.item_barcode]
+      if (event.status === Status.SUCCESS) {
+        this.check_in_succeeded(item_bib, event.states)
       }
       else {
-        this.items_checked_in_failed[item_bib.item_barcode] = item_bib;
-        delete this.items_checked_in_successfully[item_bib.item_barcode]
+        this.check_in_failed(item_bib, event.states)
       }
 
       if (Object.keys(item_bib.states_check_in).length) {
         this.overlay_notifications.push(item_bib);
       }
+    },
+    check_in_failed: function (item_bib, states) {
+      ItemBib.prototype.set_status_check_in.call(item_bib, Status.ERROR, states)
+      this.items_checked_in_failed[item_bib.item_barcode] = item_bib;
+      delete this.items_checked_in_successfully[item_bib.item_barcode]
+    },
+    check_in_succeeded: function (item_bib, states) {
+      ItemBib.prototype.set_status_check_in.call(item_bib, Status.SUCCESS, states)
+      this.items_checked_in_successfully[item_bib.item_barcode] = item_bib;
+      delete this.items_checked_in_failed[item_bib.item_barcode]
 
-      if (item_bib.status_check_in === Status.SUCCESS) {
-        if (item_bib.tag_type === 'rfid' && item_bib.status_set_tag_alarm === Status.NOT_SET) {
-          this.set_rfid_tag_alarm(item_bib)
-        }
+      if (item_bib.tag_type === 'rfid' && item_bib.status_set_tag_alarm === Status.NOT_SET) {
+        this.set_rfid_tag_alarm(item_bib)
       }
     },
     set_rfid_tag_alarm: function (item_bib) {

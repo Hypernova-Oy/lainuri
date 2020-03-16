@@ -358,6 +358,16 @@ class LERFIDTagsNew(LEvent):
     super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
+class LERFIDTagsPresentRequest(LEvent):
+  event = 'rfid-tags-present-request'
+  default_handler = 'lainuri.websocket_handlers.status.get_rfid_tags_present'
+  default_recipient = 'server'
+
+  serializable_attributes = []
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
 class LERFIDTagsPresent(LEvent):
   event = 'rfid-tags-present'
   default_recipient = 'client'

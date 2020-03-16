@@ -368,6 +368,17 @@ class LERFIDTagsLost extends LEvent {
     this.validate_params()
   }
 }
+class LERFIDTagsPresentRequest extends LEvent {
+  static event = 'rfid-tags-present-request';
+  default_dispatch = 'server';
+
+  static serializable_attributes = [];
+
+  constructor(sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.construct(sender, recipient);
+  }
+}
 class LERFIDTagsPresent extends LEvent {
   static event = 'rfid-tags-present';
 
@@ -514,5 +525,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
+  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
 }

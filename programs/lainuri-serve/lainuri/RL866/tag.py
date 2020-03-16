@@ -101,6 +101,7 @@ class Tag():
     return {
       'tag_type': 'rfid',
       'tag_model': self.get_tag_type(),
+      'serial_number': self.serial_number(),
     }
 
 

@@ -1,6 +1,5 @@
 <template>
   <v-card
-    ripple
     raised
     v-bind:class="{
       error: item_bib.status === Status.ERROR,

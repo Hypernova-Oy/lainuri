@@ -136,7 +136,7 @@ import StatusBar from './components/StatusBar.vue'
 import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
-import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
+import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
 
 
 let shared = {
@@ -269,9 +269,8 @@ export default {
     },
     enter_main_menu: function () {
       this.app_mode = 'mode_main_menu';
-      this.rfid_tags_present.forEach(bib_item => {
-        ItemBib.prototype.flush_statuses.call(bib_item)
-      });
+      this.rfid_tags_present = [];
+      lainuri_ws.dispatch_event(new LERFIDTagsPresentRequest());
     },
     stop_checking_out: function () {
       this.enter_main_menu();
