@@ -46,7 +46,9 @@ def get_public_configs() -> dict:
   Whitelist the configs that can be exposed to the UI
   """
   return {
-    'ringtones': c['ringtones'],
+    'use_bookcovers': get_config('ui.use_bookcovers'),
+    'default_language': get_config('ui.default_language').lower(),
+    'dateformat': get_config('dateformat'),
   }
 
 def write_config(variable: str, new_value: str) -> dict:

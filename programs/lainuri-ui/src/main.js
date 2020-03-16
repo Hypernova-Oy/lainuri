@@ -7,9 +7,7 @@ import vuetify from './plugins/vuetify';
 
 import VueGlobalize from 'vue-globalize';
 import {i18n_messages} from './i18n'
-
 var Globalize = require( "globalize" );
-
 Globalize.load(
 //  require( "cldr-data/main/en/ca-gregorian" ),
   require( "cldr-data/supplemental/likelySubtags" ),
@@ -27,20 +25,17 @@ Vue.use(VueGlobalize, {
       callback(new Globalize(locale));
   }
 });
+import AppConfig from './AppConfig.js'
+Vue.use(AppConfig)
 
-let test = 0;
-if (test) {
-  run_test_suite();
-}
-else {
 
-  Vue.config.productionTip = false
+//run_test_suite();
+Vue.config.productionTip = false
 
-  let vue = new Vue({
-    vuetify,
-    render: h => h(App)
-  });
-  vue.$setLocale('en')
-  vue.$mount('#app')
 
-}
+let vue = new Vue({
+  vuetify,
+  render: h => h(App)
+});
+vue.$setLocale('en')
+vue.$mount('#app')

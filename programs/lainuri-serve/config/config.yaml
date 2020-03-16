@@ -1,3 +1,5 @@
+---
+
 dateformat: '%d.%m.%Y'
 devices:
   barcode-reader:
@@ -32,3 +34,7 @@ server:
   port: 53153
   timeout_request_connect_ms: 1000
   timeout_request_read_ms: 11000
+ui:
+  default_language: fi
+  use_bookcovers: true
+

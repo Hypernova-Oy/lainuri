@@ -96,8 +96,8 @@
         label="REPL here"
         placeholder="This is evaled in the context of the 'App.vue'-component"
         v-model="repl"
-        clearable="true"
-        outlined="true"
+        clearable
+        outlined
         dark
       ></v-textarea>
       <v-btn
@@ -136,7 +136,7 @@ import StatusBar from './components/StatusBar.vue'
 import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
-import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
+import {Status, LEConfigGetpublic_Response, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
 
 
 let shared = {
@@ -260,15 +260,17 @@ export default {
   // define methods under the `methods` object
   methods: {
     enter_checkout_mode: function () {
-      this.app_mode = 'mode_checkout';
       log.info(`Entering 'mode_checkout'`);
+      this.app_mode = 'mode_checkout';
     },
     enter_checkin_mode: function () {
-      this.app_mode = 'mode_checkin';
       log.info(`Entering 'mode_checkin'`);
+      this.app_mode = 'mode_checkin';
     },
     enter_main_menu: function () {
+      log.info(`Entering 'mode_main_menu'`);
       this.app_mode = 'mode_main_menu';
+      // Flush RFID tags present from the Lainuri-server
       this.rfid_tags_present = [];
       lainuri_ws.dispatch_event(new LERFIDTagsPresentRequest());
     },
@@ -281,11 +283,6 @@ export default {
     show_exception: function (event) {
       this.$data.exceptions.push(event);
     },
-    set_language: function (lang_2_char) {
-      this.$setLocale(lang_2_char)
-      this.$data.active_language_2_char = lang_2_char
-    },
-
 
     repl_execute: function () {
       let resp = eval(this.$data.repl);

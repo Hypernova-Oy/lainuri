@@ -10,43 +10,45 @@
       class="itemcard"
       @click="overlay = !overlay"
     >
-      <v-icon v-if="item_bib.tag_type === 'rfid'"                                         >mdi-access-point</v-icon>
-      <v-icon v-else-if="item_bib.tag_type === 'barcode'"                                 >mdi-barcode</v-icon>
-      <!-- Render transaction step status icons here -->
-      <v-icon v-if="item_bib.status_check_in === Status.SUCCESS"       color="success darken-2"    >mdi-login</v-icon>
-      <v-icon v-else-if="item_bib.status_check_in === Status.PENDING"  color="yellow darken-2"     >mdi-login</v-icon>
-      <v-icon v-else-if="item_bib.status_check_in === Status.ERROR"    color="error darken-2"      >mdi-login</v-icon>
-      <v-icon v-if="item_bib.status_check_out === Status.SUCCESS"      color="success darken-2"    >mdi-logout</v-icon>
-      <v-icon v-else-if="item_bib.status_check_out === Status.PENDING" color="yellow darken-2"     >mdi-logout</v-icon>
-      <v-icon v-else-if="item_bib.status_check_out === Status.ERROR"   color="error darken-2"      >mdi-logout</v-icon>
-      <v-icon v-if="item_bib.status_set_tag_alarm === Status.SUCCESS"  color="success darken-2"    >mdi-alarm-light-outline</v-icon>
-      <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.PENDING" color="yellow darken-2" >mdi-alarm-light-outline</v-icon>
-      <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.ERROR" color="error darken-2"    >mdi-alarm-light-outline</v-icon>
+      <div class="iconosphere">
+        <v-icon v-if="item_bib.tag_type === 'rfid'"                                         >mdi-access-point</v-icon>
+        <v-icon v-else-if="item_bib.tag_type === 'barcode'"                                 >mdi-barcode</v-icon>
+        <!-- Render transaction step status icons here -->
+        <v-icon v-if="item_bib.status_check_in === Status.SUCCESS"       color="success darken-2"    >mdi-login</v-icon>
+        <v-icon v-else-if="item_bib.status_check_in === Status.PENDING"  color="yellow darken-2"     >mdi-login</v-icon>
+        <v-icon v-else-if="item_bib.status_check_in === Status.ERROR"    color="error darken-2"      >mdi-login</v-icon>
+        <v-icon v-if="item_bib.status_check_out === Status.SUCCESS"      color="success darken-2"    >mdi-logout</v-icon>
+        <v-icon v-else-if="item_bib.status_check_out === Status.PENDING" color="yellow darken-2"     >mdi-logout</v-icon>
+        <v-icon v-else-if="item_bib.status_check_out === Status.ERROR"   color="error darken-2"      >mdi-logout</v-icon>
+        <v-icon v-if="item_bib.status_set_tag_alarm === Status.SUCCESS"  color="success darken-2"    >mdi-alarm-light-outline</v-icon>
+        <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.PENDING" color="yellow darken-2" >mdi-alarm-light-outline</v-icon>
+        <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.ERROR" color="error darken-2"    >mdi-alarm-light-outline</v-icon>
+      </div>
 
+      <v-progress-circular
+        v-if="item_bib.status === Status.PENDING"
+        class="progress"
+        size="150"
+        width="25"
+        color="primary"
+        indeterminate
+      ></v-progress-circular>
       <v-img
+        v-if="$appConfig.use_bookcovers"
         :src="item_bib.book_cover_url || 'image-placeholder.png'"
         contain
         height="50%"
         class="white--text align-end"
         gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
-      >
-        <v-progress-circular
-          v-if="item_bib.status === Status.PENDING"
-          class="progress"
-          size="150"
-          width="25"
-          color="primary"
-          indeterminate
-        ></v-progress-circular>
-      </v-img>
-      <span class="itemcard-content">
+      ></v-img>
+      <div class="itemcard-content">
         <v-card-text class="v-title-fix" v-text="item_bib.title || '...'"></v-card-text>
         <v-card-subtitle>
           <div>{{item_bib.author || 'x'}}</div>
           <div>{{item_bib.edition || 'x'}}</div>
           <div>{{item_bib.item_barcode}}</div>
         </v-card-subtitle>
-      </span>
+      </div>
       <v-overlay absolute :value="overlay"
         v-if="Object.keys(item_bib.states).length"
       >
@@ -88,9 +90,16 @@ export default {
 <style scoped>
 .itemcard {
   width: 240px;
-  height: 350px;
+/*  height: 350px;*/
+}
+.itemcard .iconosphere {
+  max-height: 24px;
+}
+.itemcard .v-image {
+  max-height: 170px;
 }
 .itemcard-content {
+  max-height: 156px;
   white-space: wrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -100,7 +109,7 @@ export default {
 }
 .progress {
   position: absolute;
-  top: 25%;
+  top: 20%;
   left: 20%;
 }
 .v-title-fix {

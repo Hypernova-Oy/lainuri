@@ -15,7 +15,7 @@
       <v-list-item
         v-for="(lang) in enabled_languages"
         :key="lang"
-        @click="set_language(lang)"
+        @click="set_lo(lang)"
       >
         <v-img
           :key="lang"
@@ -30,13 +30,16 @@
 export default {
   name: 'LanguagePicker',
   data: () => ({
-    active_language_2_char: 'en',
     enabled_languages: ['fi', 'en', 'ru', 'se'],
   }),
+  computed: {
+    active_language_2_char: function () {
+      return this.$appConfig.default_language.substring(0,2);
+    }
+  },
   methods: {
-    set_language: function (lang_2_char) {
-      this.$setLocale(lang_2_char)
-      this.$data.active_language_2_char = lang_2_char
+    set_lo: function (lang_2_char) {
+      this.$appConfigSetLocale(lang_2_char);
     },
   }
 }
