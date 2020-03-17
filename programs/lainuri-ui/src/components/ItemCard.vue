@@ -27,7 +27,7 @@
 
       <v-img
         v-if="$appConfig.use_bookcovers"
-        :src="item_bib.book_cover_url || 'image-placeholder.png'"
+        :src="item_bib.book_cover_url || 'images/bookcover-placeholder.png'"
         contain
         height="50%"
         class="white--text align-end"
