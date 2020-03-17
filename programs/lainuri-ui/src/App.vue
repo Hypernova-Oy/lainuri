@@ -295,11 +295,29 @@ export default {
 </script>
 
 <style>
-body {
-/*  height: 1920px;
-  width: 1080px;*/
-  /*overflow: hidden;*/
+html {
+  scrollbar-width: none;
 }
+html::-webkit-scrollbar {
+  display: none;
+}
+body {
+  height: 1920px;
+  width: 1080px;
+  scrollbar-width: none;
+}
+body::-webkit-scrollbar {
+  display: none;
+}
+#app {
+  height: 100%;
+  width: 100%;
+  scrollbar-width: none;
+}
+#app::-webkit-scrollbar {
+  display: none;
+}
+
 
 .item_scrollview {
   max-height: 1500px;
