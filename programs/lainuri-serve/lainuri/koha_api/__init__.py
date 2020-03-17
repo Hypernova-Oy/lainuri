@@ -158,7 +158,7 @@ class KohaAPI():
     if not userid or user_barcode:
       raise Exception("Mandatory parameter 'userid' or 'user_barcode' is missing!")
     fields = {
-      'password': get_config('koha.password'),
+      'password': password,
     }
     if userid: fields['userid'] = userid
     if user_barcode: fields['user_barcode'] = user_barcode
@@ -253,7 +253,7 @@ class KohaAPI():
         'barcode': barcode
       },
       headers = {
-        'Cookie': f'CGISESSID={self.sessionid}',
+        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage=en',
       },
     )
 
@@ -305,7 +305,7 @@ class KohaAPI():
         'debt_confirmed': 0,
       },
       headers = {
-        'Cookie': f'CGISESSID={self.sessionid}',
+        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage=en',
       },
     )
     (soup, alerts, messages) = self._receive_html(r)
