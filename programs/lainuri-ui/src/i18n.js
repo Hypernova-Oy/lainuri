@@ -24,6 +24,7 @@ const i18n_messages = {
       In_Queue: "In queue",
       Errors: "Errors",
       Check_out_failed: "Checkout failed",
+      'Be_advised!': "Be advised!",
     },
     Exception: {
       RFIDCommand: "Place the item on the reader, setting security gate status failed",
@@ -33,15 +34,20 @@ const i18n_messages = {
       NoUser: "Unknown user",
       NoItem: "Unknown item",
       NoItemIdentifier: "Unknown item is missing identifier",
-      not_checked_out: "Not checked out?",
-      return_to_another_branch: "To transport",
-      needs_confirmation: "Cannot be loaned here",
     },
     MainMenuView: {
       RFID_tags_found: "RFID Tags found",
     },
     PrintNotification: {
       Take_the_receipt: "Take the receipt",
+    },
+    State: {
+      not_checked_out: "Not checked out?",
+      return_to_another_branch: "To transport",
+      needs_confirmation: "Cannot be loaned here",
+
+      'Checkout::Renew': "Already checked out for you",
+      'Item::CheckedOut': "Item was already checked out by somebody else",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Lainuri",
@@ -78,6 +84,7 @@ const i18n_messages = {
       In_Queue: "Jonossa",
       Errors: "Virheet",
       Check_out_failed: "Lainaaminen epäonnistui",
+      'Be_advised!': "Huomioikaa!",
     },
     Exception: {
       RFIDCommand: "Laita nide lukijalle, hälyttimen asettaminen epäonnistui!",
@@ -87,15 +94,20 @@ const i18n_messages = {
       NoUser: "Tuntematon käyttäjä",
       NoItem: "Tuntematon nide",
       NoItemIdentifier: "Tuntematon nide ilman tunnistetta",
-      not_checked_out: "Ei lainattu?",
-      return_to_another_branch: "Lähtee kuljetukseen",
-      needs_confirmation: "Ei voida lainata tässä",
     },
     MainMenuView: {
       RFID_tags_found: "RFID tägit löydetty",
     },
     PrintNotification: {
       Take_the_receipt: "Ota kuitti",
+    },
+    State: {
+      not_checked_out: "Ei lainattu?",
+      return_to_another_branch: "Lähtee kuljetukseen",
+      needs_confirmation: "Ei voida lainata tässä",
+
+      'Checkout::Renew': "Jo lainassa teillä",
+      'Item::CheckedOut': "Tämä nide on jo lainassa jollakulla muulla",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Bäkkärivirhe",
@@ -132,6 +144,7 @@ const i18n_messages = {
       In_Queue: "I kö",
       Errors: "Misstag",
       Check_out_failed: "Utcheckning misslyckas",
+      'Be_advised!': "Rådas!",
     },
     Exception: {
       RFIDCommand: "Placera objektet på läsaren och ställa in säkerhetsgrindens status misslyckades",
@@ -141,15 +154,20 @@ const i18n_messages = {
       NoUser: "Okänd användare",
       NoItem: "Okänd artikel",
       NoItemIdentifier: "Okänt objekt saknas ID",
-      not_checked_out: "Inte utcheckad?",
-      return_to_another_branch: "Att transportera",
-      needs_confirmation: "Kan inte lånas här",
     },
     MainMenuView: {
       RFID_tags_found: "RFID-taggar hittade",
     },
     PrintNotification: {
       Take_the_receipt: "Ta kvittot",
+    },
+    State: {
+      not_checked_out: "Inte utcheckad?",
+      return_to_another_branch: "Att transportera",
+      needs_confirmation: "Kan inte lånas här",
+
+      'Checkout::Renew': "Har redan checkat ut för dig",
+      'Item::CheckedOut': "Varan har redan checkats ut av någon annan",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Servern förlorad",
@@ -186,6 +204,7 @@ const i18n_messages = {
       In_Queue: "Ваши чеки",
       Errors: "ошибки",
       Check_out_failed: "Не удалось оформить заказ",
+      Be_advised: "Быть посоветованным",
     },
     Exception: {
       RFIDCommand: "Поместите элемент в считыватель, установка состояния ворот безопасности не удалась",
@@ -195,15 +214,20 @@ const i18n_messages = {
       NoUser: "Неизвестный пользователь",
       NoItem: "Неизвестный предмет",
       NoItemIdentifier: "Неизвестный предмет отсутствует идентификатор",
-      not_checked_out: "Не проверено",
-      return_to_another_branch: "Для транзита",
-      needs_confirmation: "Здесь нельзя одолжить",
     },
     MainMenuView: {
       RFID_tags_found: "RFID метки найдены",
     },
     PrintNotification: {
       Take_the_receipt: "Возьмите квитанцию",
+    },
+    State: {
+      not_checked_out: "Не проверено",
+      return_to_another_branch: "Для транзита",
+      needs_confirmation: "Здесь нельзя одолжить",
+
+      'Checkout::Renew': "Уже проверил для вас",
+      'Item::CheckedOut': "Товар уже был проверен кем-то другим",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Сервер потерян",

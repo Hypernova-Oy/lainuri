@@ -116,9 +116,9 @@ def test_checkout_rfid_via_event_queue(subtests):
     assert event == lainuri.event_queue.history[6]
     assert type(event) == le.LECheckOutComplete
 
-  with subtests.test("And the event failed due to item already checked out, needs_confirmation"):
-    assert event.states == {'needs_confirmation': 1}
-    assert event.status == Status.ERROR
+  with subtests.test("And the event succeeded due to item already checked out, but doesn't renew"):
+    assert event.states == {"Checkout::Renew": True}
+    assert event.status == Status.SUCCESS
 
 
 

@@ -51,11 +51,11 @@ export function translate_exception(...args) {
     let states = args[arg_i]
     for (let key in states) {
       if (key === 'exception') {
-        let i18n_key = cast_exception(states[key])
+        let i18n_key = 'Exception/'+cast_exception(states[key])
         trans_states[i18n_key] = true
       }
       else {
-        trans_states[key] = true
+        trans_states['State/'+key] = true
       }
     }
   }

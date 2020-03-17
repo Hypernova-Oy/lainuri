@@ -1,6 +1,6 @@
 <template>
   <v-container centered>
-    <v-card ripple raised>
+    <v-card raised>
       <v-row>
         <v-col>
           <v-card-title v-if="! is_user_logged_in">{{t('CheckOut/Read_library_card')}}</v-card-title>

@@ -16,6 +16,9 @@ import lainuri.rfid_reader as rfid
 
 
 def checkout(event):
+  availability = None
+  status = None
+  states = None
   try:
     # Get the borrower
     borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
@@ -33,33 +36,37 @@ def checkout(event):
           user_barcode=borrower['cardnumber'],
           tag_type=event.tag_type,
           status=Status.ERROR,
-          states=availability
+          states=_merge_availability_to_states(availability, {})
         )
       )
       return
-
-    # Checkout to Koha
-    (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
-    if status != Status.SUCCESS:
-      lainuri.event_queue.push_event(
-        lainuri.event.LECheckOutComplete(
-          item_barcode=event.item_barcode,
-          user_barcode=borrower['cardnumber'],
-          tag_type=event.tag_type,
-          status=status,
-          states=states,
+    # if availability.confirmations?.Checkout::Renew
+    if availability.get('confirmations', {}).get("Checkout::Renew", None) != None: # Sorry for Pythonisms
+      #Skip renewing the Item because it is already checked out to this patron
+      status = Status.SUCCESS if availability['available'] else Status.ERROR
+      states = {}
+    else:
+      # Checkout to Koha
+      (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
+      if status != Status.SUCCESS:
+        lainuri.event_queue.push_event(
+          lainuri.event.LECheckOutComplete(
+            item_barcode=event.item_barcode,
+            user_barcode=borrower['cardnumber'],
+            tag_type=event.tag_type,
+            status=status,
+            states=_merge_availability_to_states(availability, states),
+          )
         )
-      )
-      return
+        return
 
-    # Send a notification to the UI
     lainuri.event_queue.push_event(
       lainuri.event.LECheckOutComplete(
         item_barcode=event.item_barcode,
         user_barcode=borrower['cardnumber'],
         tag_type=event.tag_type,
         status=status,
-        states=states,
+        states=_merge_availability_to_states(availability, states),
       )
     )
 
@@ -70,11 +77,23 @@ def checkout(event):
         user_barcode=event.user_barcode,
         tag_type=event.tag_type,
         status=Status.ERROR,
-        states={'exception': {
+        states=_merge_availability_to_states(availability or {}, {'exception': {
           'type': type(e).__name__,
           'trace': traceback.format_exc()}
-        },
+        }),
       )
     )
     return
 
+def _merge_availability_to_states(availability, states):
+  merged = {}
+  if availability.get('confirmations', None):
+    for v in availability['confirmations']:
+      merged[v] = True
+  if availability.get('notes', None):
+    for v in availability['notes']:
+      merged[v] = True
+  if availability.get('unavailabilities', None):
+    for v in availability['unavailabilities']:
+      merged[v] = True
+  return {**states, **merged}

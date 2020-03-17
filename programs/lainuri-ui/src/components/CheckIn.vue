@@ -1,6 +1,6 @@
 <template>
   <v-container centered>
-    <v-card ripple raised>
+    <v-card raised>
       <v-row>
         <v-col>
           <v-card-title>{{t('CheckIn/Checking_in')}}</v-card-title>

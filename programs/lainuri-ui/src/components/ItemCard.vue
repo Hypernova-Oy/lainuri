@@ -25,14 +25,6 @@
         <v-icon v-else-if="item_bib.status_set_tag_alarm === Status.ERROR" color="error darken-2"    >mdi-alarm-light-outline</v-icon>
       </div>
 
-      <v-progress-circular
-        v-if="item_bib.status === Status.PENDING"
-        class="progress"
-        size="150"
-        width="25"
-        color="primary"
-        indeterminate
-      ></v-progress-circular>
       <v-img
         v-if="$appConfig.use_bookcovers"
         :src="item_bib.book_cover_url || 'image-placeholder.png'"
@@ -49,15 +41,23 @@
           <div>{{item_bib.item_barcode}}</div>
         </v-card-subtitle>
       </div>
+      <v-progress-circular
+        v-if="item_bib.status === Status.PENDING"
+        class="progress"
+        size="150"
+        width="25"
+        color="primary"
+        indeterminate
+      ></v-progress-circular>
       <v-overlay absolute :value="overlay"
         v-if="Object.keys(item_bib.states).length"
       >
-        <v-card-text>
+        <v-card-text class="item-states">
           <ul>
             <li v-for="(i18n_key) in Object.keys(item_bib.states)"
                 :key="i18n_key"
             >
-              {{t('Exception/'+i18n_key)}}
+              {{t(i18n_key)}}
             </li>
           </ul>
         </v-card-text>
@@ -96,9 +96,11 @@ export default {
   max-height: 24px;
 }
 .itemcard .v-image {
+  height: 170px;
   max-height: 170px;
 }
 .itemcard-content {
+  height: 156px;
   max-height: 156px;
   white-space: wrap;
   overflow: hidden;
@@ -106,6 +108,10 @@ export default {
 }
 .itemcard-content .v-card__title {
   overflow: hidden;
+}
+.itemcard .item-states {
+  font-size: 1.4em;
+  /*font-weight: bold;*/
 }
 .progress {
   position: absolute;

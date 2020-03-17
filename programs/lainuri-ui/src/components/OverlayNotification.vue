@@ -8,7 +8,8 @@
     style="padding: 20px;"
   >
     <h1 v-if="mode === 'checkin'">{{t('CheckIn/Place_to_bin_1')}}</h1>
-    <h1 v-if="mode === 'checkout'">{{t('CheckOut/Check_out_failed')}}</h1>
+    <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.ERROR">{{t('CheckOut/Check_out_failed')}}</h1>
+    <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.SUCCESS">{{t('CheckOut/Be_advised!')}}</h1>
     <ItemCard :item_bib="item_bib"/>
     <v-img
       v-if="mode === 'checkin'"

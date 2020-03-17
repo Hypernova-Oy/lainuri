@@ -51,8 +51,10 @@
 
     </v-app-bar>
     <div id="app-bar-spacer-helper"
-      v-if="app_mode === 'mode_main_menu'"
-      style="height: 336px;"
+      v-bind:class="{
+        main_menu_view: app_mode === 'mode_main_menu',
+        other_view: app_mode !== 'mode_main_menu',
+      }"
     >
     </div>
     <v-container fluid max-height="800">
@@ -294,8 +296,9 @@ export default {
 
 <style>
 body {
-  height: 1920px;
-  width: 1080px;
+/*  height: 1920px;
+  width: 1080px;*/
+  /*overflow: hidden;*/
 }
 
 .item_scrollview {
@@ -309,9 +312,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
   border-color: #2c3e50;
   border-width: 5px;
+}
+#app-bar-spacer-helper.main_menu_view {
+  height: 400px;
+}
+#app-bar-spacer-helper.other_view {
+  height: 54px;
 }
 
 #checkout_mode_button {
