@@ -1,3 +1,6 @@
+class ConnectTimeoutError extends Error {
+}
+
 // rfid.py
 class RFIDException extends Error {
 }
@@ -34,10 +37,7 @@ const classes = {
   NoUser,
   NoItem,
   NoItemIdentifier,
-
-  not_checked_out: 'not_checked_out',
-  return_to_another_branch: 'return_to_another_branch',
-  needs_confirmation: 'needs_confirmation',
+  ConnectTimeoutError,
 }
 
 /**

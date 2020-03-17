@@ -20,6 +20,7 @@ const i18n_messages = {
     },
     CheckOut: {
       Checking_out: "Checking out",
+      Place_items_on_the_reader_and_read_barcodes: "Place items on the reader platform or read barcodes",
       Read_library_card: "Read libary card",
       "Hi_user!": "Hi {user}!",
       Return: "Return",
@@ -32,6 +33,7 @@ const i18n_messages = {
       'Be_advised!': "Be advised!",
     },
     Exception: {
+      ConnectionTimeoutError: "Connection to the library system temporarily failed. Please try again.",
       RFIDCommand: "Place the item on the reader, setting security gate status failed",
       TagNotDetected: "Place the item on the reader, setting security gate status failed",
       GateSecurityStatusVerification: "Place the item on the reader, setting security gate status failed",
@@ -85,6 +87,7 @@ const i18n_messages = {
     },
     CheckOut: {
       Checking_out: "Lainataan",
+      Place_items_on_the_reader_and_read_barcodes: "Aseta niteet lukulevylle tai lue viivakoodeja",
       Read_library_card: "Lue kirjastokortti",
       "Hi_user!": "Moi {user}!",
       Return: "Palaa",
@@ -97,6 +100,7 @@ const i18n_messages = {
       'Be_advised!': "Huomioikaa!",
     },
     Exception: {
+      ConnectionTimeoutError: "Yhteys kirjastojärjestelmään epäonnistui. Yritä uudelleen.",
       RFIDCommand: "Laita nide lukijalle, hälyttimen asettaminen epäonnistui!",
       TagNotDetected: "Laita nide lukijalle, hälyttimen asettaminen epäonnistui!",
       GateSecurityStatusVerification: "Laita nide lukijalle, hälyttimen asettaminen epäonnistui!",
@@ -152,6 +156,7 @@ const i18n_messages = {
       Checking_out: "Checkar ut",
       Read_library_card: "Läs bibliotekskortet",
       "Hi_user!": "Hej {user}!",
+      Place_items_on_the_reader_and_read_barcodes: "Placera artiklar på läsarplattformen eller läs streckkoder",
       Return: "Återvända",
       Stop: "Sluta",
       "Stop+Receipt": "Sluta + Kvitto",
@@ -162,6 +167,7 @@ const i18n_messages = {
       'Be_advised!': "Rådas!",
     },
     Exception: {
+      ConnectionTimeoutError: "Anslutningen till bibliotekssystemet misslyckades tillfälligt. Var god försök igen.",
       RFIDCommand: "Placera objektet på läsaren och ställa in säkerhetsgrindens status misslyckades",
       TagNotDetected: "Placera objektet på läsaren och ställa in säkerhetsgrindens status misslyckades",
       GateSecurityStatusVerification: "Placera objektet på läsaren och ställa in säkerhetsgrindens status misslyckades",
@@ -200,7 +206,7 @@ const i18n_messages = {
 */
   ru: {
     App: {
-      Check_in: "возвращение",
+      Check_in: "Возвращение",
       Check_out: "одолжить",
     },
     CheckIn: {
@@ -215,6 +221,7 @@ const i18n_messages = {
     },
     CheckOut: {
       Checking_out: "Проверка",
+      Place_items_on_the_reader_and_read_barcodes: "Размещайте предметы на платформе считывателя или считывайте штрих-коды",
       Read_library_card: "Читать библиотечную карточку",
       "Hi_user!": "Здравствуй {user}!",
       Return: "Возвращение",
@@ -227,6 +234,7 @@ const i18n_messages = {
       Be_advised: "Быть посоветованным",
     },
     Exception: {
+      ConnectionTimeoutError: "Подключение к библиотечной системе временно не удалось. Пожалуйста, попробуйте еще раз.",
       RFIDCommand: "Поместите элемент в считыватель, установка состояния ворот безопасности не удалась",
       TagNotDetected: "Поместите элемент в считыватель, установка состояния ворот безопасности не удалась",
       GateSecurityStatusVerification: "Поместите элемент в считыватель, установка состояния ворот безопасности не удалась",

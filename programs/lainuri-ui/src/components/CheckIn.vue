@@ -4,6 +4,10 @@
       <v-row>
         <v-col>
           <v-card-title>{{t('CheckIn/Place_items_on_the_reader_and_read_barcodes')}}</v-card-title>
+          <v-progress-linear
+            indeterminate
+            color="yellow darken-2"
+          ></v-progress-linear>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -257,6 +261,10 @@ export default {
                  (item_bib.status_set_tag_alarm === Status.NOT_SET || ! [Status.SUCCESS, Status.PENDING].includes(item_bib.status_set_tag_alarm))) {
           log.info(`start_or_continue_transaction():> item_barcode='${item_bib.item_barcode}' set_rfid_tag_alarm='${item_bib.status_set_tag_alarm}', resuming check-in transaction - set rfid tag security status`)
           this.set_rfid_tag_alarm(item_bib)
+        }
+        else {
+          log.debug(`Hiding tag item_barcode='${tag.item_barcode}' because it has been completely handled`)
+          tag.status_check_in = Status.ERROR; // Hide the tag from the pending queue if there is nothing left to do.
         }
       }
     },

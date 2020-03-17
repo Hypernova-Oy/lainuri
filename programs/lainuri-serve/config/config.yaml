@@ -14,7 +14,7 @@ devices:
     - '!class': ISO28560_3_Object
       dsfid: 0
     password: ''
-    polling_interval: 1
+    polling_interval: 0.25
   ringtone-player:
     enabled: false
   thermal-printer:
