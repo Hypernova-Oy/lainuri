@@ -178,7 +178,7 @@ export default {
     send_user_logging_in();
 
     lainuri_ws.attach_event_listener(LEUserLoginComplete, this, (event) => {
-      log.info(`Received event '${LEUserLoginComplete.name}'`);
+      log.info(`Received event 'LEUserLoginComplete'`);
       if (event.status === Status.SUCCESS) {
         if (! this.is_user_logged_in) {
           this.user_login_success(event);
@@ -192,41 +192,41 @@ export default {
       }
     });
     lainuri_ws.attach_event_listener(LECheckOutComplete, this, function(event) {
-      log.info(`Received event '${LECheckOutComplete.name}' for barcode='${event.item_barcode}'`);
+      log.info(`Received event 'LECheckOutComplete' for barcode='${event.item_barcode}'`);
       this.check_out_complete(event);
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-      log.info(`Event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
+      log.info(`Event 'LEBarcodeRead' for barcode='${event.barcode}'`);
       if (this.is_user_logged_in) {
         this.start_or_continue_transaction(new ItemBib(event.tag))
       }
       else {
-        log.error(`Received event '${LEBarcodeRead.name}' for barcode='${event.barcode}', but no user logged in?`);
+        log.error(`Received event 'LEBarcodeRead' for barcode='${event.barcode}', but no user logged in?`);
       }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      log.info(`Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
+      log.info(`Event 'LERFIDTagsNew' triggered. New RFID tags:`, event.tags_new);
       if (this.is_user_logged_in) {
         for (let item_bib of event.tags_new) {
           let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
           if (! tags_present_item_bib_and_i) {
-            throw new Error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
+            throw new Error(`[${this.$options.name}]:> Event 'LERFIDTagsNew':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
           }
           this.start_or_continue_transaction(tags_present_item_bib_and_i[0]);
         }
       }
       else {
-        log.info(`Event '${LERFIDTagsNew.name}' triggered. User not logged in yet.`);
+        log.info(`Event 'LERFIDTagsNew' triggered. User not logged in yet.`);
       }
     });
     lainuri_ws.attach_event_listener(LESetTagAlarmComplete, this, function(event) {
-      log.info(`Event '${LESetTagAlarmComplete.name}' for item_barcode='${event.item_barcode}'`);
+      log.info(`Event 'LESetTagAlarmComplete' for item_barcode='${event.item_barcode}'`);
       this.set_rfid_tag_alarm_complete(event);
     });
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
-      log.info(`Event '${LEPrintResponse.name}'`);
+      log.info(`Event 'LEPrintResponse'`);
       if (this.receipt_printing) {this.print_receipt_complete(event);}
-      else {log.error(`Received event '${LEPrintResponse.name}' but not printing a receipt. User race condition maybe?`)}
+      else {log.error(`Received event 'LEPrintResponse' but not printing a receipt. User race condition maybe?`)}
     });
   },
   beforeDestroy: function () {
@@ -435,71 +435,12 @@ export default {
     transactions: {}, // key is item_barcode
     user: Object,
     overlay_notifications: [],
-
     items_checked_out_successfully: {},
     items_checked_out_failed: {},
-
-    /*items_checked_out_successfully: [
-      {
-        item_barcode: '167N00000123',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'success',
-      },
-    ],
-    items_checked_out_failed: [
-      {
-        item_barcode: '167N00000001',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-        exception: 'Not available for anything',
-      },
-      {
-        item_barcode: '167N00000111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-        exception: 'Not available for anything',
-      },
-      {
-        item_barcode: '167N00000321',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-        exception: 'Not available for anything',
-      },
-      {
-        item_barcode: '167N00333111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-        exception: 'Not available for anything',
-      },
-      {
-        item_barcode: '167N00333001',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },
-      {
-        item_barcode: '167N00223111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },],*/
   }),
 }
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 /*.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
   font-size: 1.3em;

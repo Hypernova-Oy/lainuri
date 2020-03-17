@@ -162,35 +162,35 @@ export default {
   },
   created: function () {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      log.info(`Event '${LERFIDTagsNew.name}' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
+      log.info(`Event 'LERFIDTagsNew' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
       event.tags_new.forEach((item_bib) => {
         this.rfid_tags_present.push(new ItemBib(item_bib));
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsLost, this, function(event) {
-      log.info(`Event '${LERFIDTagsLost.name}' received. Lost RFID tags (${event.tags_lost.length}):`, event.tags_lost, event.tags_present);
+      log.info(`Event 'LERFIDTagsLost' received. Lost RFID tags (${event.tags_lost.length}):`, event.tags_lost, event.tags_present);
       event.tags_lost.forEach((item_bib) => {
         splice_bib_item_from_array(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode);
       });
     });
     lainuri_ws.attach_event_listener(LERFIDTagsPresent, this, function(event) {
-      log.info(`Event '${LERFIDTagsPresent.name}' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
+      log.info(`Event 'LERFIDTagsPresent' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
       this.rfid_tags_present = event.tags_present.reduce((reducer, elem) => {reducer.push(new ItemBib(elem)); return reducer}, []);
     });
     lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
-      log.info(`Event '${LEServerStatusResponse.name}' received.`);
+      log.info(`Event 'LEServerStatusResponse' received.`);
     });
     lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
-      log.info(`Event '${LEServerConnected.name}' received.`);
+      log.info(`Event 'LEServerConnected' received.`);
       this.$data.status.server_connected = Status.SUCCESS;
     });
     lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
-      log.info(`Event '${LEServerDisconnected.name}' received.`);
+      log.info(`Event 'LEServerDisconnected' received.`);
       this.$data.status.server_connected = Status.ERROR;
     });
     if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
-        log.info(`PRESEEDING!! Received '${LEServerConnected.name}'`);
+        log.info(`PRESEEDING!! Received 'LEServerConnected'`);
         window.setTimeout(() => lainuri_ws.dispatch_event(
           new LEUserLoginComplete('Olli-Antti', 'Kivilahti', '2600104874', Status.SUCCESS, {}, 'server', 'client')
         ), 4000);

@@ -17,23 +17,23 @@ let interval_server_status_polling = 0;
 
 function start_ws () {
   lainuri_ws.attach_event_listener(LEException, this, function(event) {
-    if (log.isTraceEnabled()) log.trace(`Event '${LEException.name}' received!`, event, event.exception);
+    if (log.isTraceEnabled()) log.trace(`Event 'LEException' received!`, event, event.exception);
   });
   lainuri_ws.attach_event_listener(LERingtonePlay, this, function(event) {
-    if (log.isTraceEnabled()) log.trace(`Event '${LERingtonePlay.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event 'LERingtonePlay' triggered.`);
   });
   lainuri_ws.attach_event_listener(LERingtonePlayComplete, this, function(event) {
-    if (log.isTraceEnabled()) log.trace(`Event '${LERingtonePlayComplete.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event 'LERingtonePlayComplete' triggered.`);
     document.getElementById('rtttl_console').innerHTML("Finished playing: " + event.message);
   });
   lainuri_ws.attach_event_listener(LEConfigWrite, this, function(event) {
-    if (log.isTraceEnabled()) log.trace(`Event '${LEConfigWrite.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event 'LEConfigWrite' triggered.`);
   });
   lainuri_ws.attach_event_listener(LELogReceived, this, function(event) {
-    if (log.isTraceEnabled()) log.trace(`Event '${LELogReceived.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event 'LELogReceived' triggered.`);
   });
   lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
-    if (log.isTraceEnabled()) log.trace(`Event '${LEServerConnected.name}' triggered.`);
+    if (log.isTraceEnabled()) log.trace(`Event 'LEServerConnected' triggered.`);
   });
 
   lainuri_ws.open_websocket_connection();

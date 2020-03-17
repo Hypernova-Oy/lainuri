@@ -12,7 +12,7 @@ export default function (Vue) {
     name: 'AppConfig',
     created: function () {
       lainuri_ws.attach_event_listener(LEConfigGetpublic_Response, this, function(event) {
-        log.info(`Event '${LEConfigGetpublic_Response.name}' received.`);
+        log.info(`Event 'LEConfigGetpublic_Response' received.`);
         this.handle_new_app_configuration(event.config)
       });
     },

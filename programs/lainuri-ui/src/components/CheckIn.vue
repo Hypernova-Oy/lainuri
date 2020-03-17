@@ -160,31 +160,32 @@ export default {
   },
   created: function () {
     lainuri_ws.attach_event_listener(LECheckInComplete, this, function(event) {
-      log.info(`Event '${LECheckInComplete.name}' for barcode='${event.item_barcode}'`);
+      log.info(`Event 'LECheckInComplete' for barcode='${event.item_barcode}'`);
       this.check_in_complete(event);
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-      log.info(`Event '${LEBarcodeRead.name}' for barcode='${event.barcode}'`);
+      log.info(`Event 'LEBarcodeRead' for barcode='${event.barcode}'`);
       this.start_or_continue_transaction(new ItemBib(event.tag))
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      log.info(`Event '${LERFIDTagsNew.name}' triggered. New RFID tags:`, event.tags_new);
+      log.info(`Event 'LERFIDTagsNew' triggered. New RFID tags:`, event.tags_new);
       for (let item_bib of event.tags_new) {
         let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
         if (! tags_present_item_bib_and_i) {
-          throw new Error(`[${this.$options.name}]:> Event '${LERFIDTagsNew.name}':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
+          log.fatal(`[CheckIn.vue]:> Event 'LERFIDTagsNew':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
+          throw new Error(`[CheckIn.vue]:> Event 'LERFIDTagsNew':> New item '${item_bib.item_barcode}' detected, but it is not in the this.$props.rfid_tags_present -list (length='${this.rfid_tags_present.length}') Main listener for new RFID tags should update the prop.`);
         }
         this.start_or_continue_transaction(tags_present_item_bib_and_i[0]);
       }
     });
     lainuri_ws.attach_event_listener(LESetTagAlarmComplete, this, function(event) {
-      log.info(`Event '${LESetTagAlarmComplete.name}' for item_barcode='${event.item_barcode}'`);
+      log.info(`Event 'LESetTagAlarmComplete' for item_barcode='${event.item_barcode}'`);
       this.set_rfid_tag_alarm_complete(event);
     });
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
-      log.info(`Event '${LEPrintResponse.name}'`);
+      log.info(`Event 'LEPrintResponse'`);
       if (this.receipt_printing) {this.print_receipt_complete(event);}
-      else {console.error(`Received event '${LEPrintResponse.name}' but not printing a receipt. User race condition maybe?`)}
+      else {log.error(`Received event 'LEPrintResponse' but not printing a receipt. User race condition maybe?`)}
     });
   },
   mounted: function () {
@@ -209,7 +210,6 @@ export default {
           rfid_tags_filtered[item_bib.item_barcode] = item_bib
         }
       }
-      console.log(rfid_tags_filtered)
       return rfid_tags_filtered
     },
     column_width: function () {
@@ -269,7 +269,7 @@ export default {
       }
     },
     stop_checking_in: function () {
-      console.log(`[${this.$options.name}]:> Stopped checking in`);
+      log.info(`Stopped checking in`);
       this.$data.user = {};
       this.$emit('stop_checking_in');
     },
@@ -377,79 +377,9 @@ export default {
 
     receipt_printing: false,
     transactions: {}, // key is item_barcode
-    overlay_notifications: [
-/*      {
-        item_barcode: '167N00770111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-        states: {
-          no_item: '167N00770111',
-        },
-      },
-      {
-        item_barcode: '167N00770111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'success',
-        states: {
-          not_checked_out: '1',
-        },
-      },*/
-    ],
+    overlay_notifications: [],
     items_checked_in_successfully: {},
-/*      {
-        item_barcode: '167N00770111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'success',
-      },*/
     items_checked_in_failed: {},
-/*      {
-        item_barcode: '167N00660001',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },
-      {
-        item_barcode: '167N00550111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },
-      {
-        item_barcode: '167N00440001',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },
-      {
-        item_barcode: '167N00110111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },
-      {
-        item_barcode: '167N00220001',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Grenades for Dummies',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },
-      {
-        item_barcode: '167N00330111',
-        book_cover_url: 'https://i0.wp.com/www.lesliejonesbooks.com/wp-content/uploads/2017/01/cropped-FavIcon.jpg?fit=200%2C200&ssl=1',
-        title: 'Dummies for Grenades',
-        author: 'Olli-Antti Kivilahti',
-        status: 'error',
-      },*/
   }),
 }
 </script>
