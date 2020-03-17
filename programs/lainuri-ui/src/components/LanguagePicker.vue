@@ -5,6 +5,8 @@
         <v-img
           :alt="active_language_2_char" :src="'images/flags/64/'+active_language_2_char.toUpperCase()+'.png'"
           v-on="on"
+          width="128px"
+          height="128px"
         />
         <v-icon x-large dark class="lang-menu-dropdown-icon">
           mdi-dots-vertical
@@ -46,5 +48,12 @@ export default {
 </script>
 
 <style scoped>
-
+.lang-menu-open-container {
+  position: relative;
+}
+.lang-menu-open-container .lang-menu-dropdown-icon {
+  position: absolute;
+  bottom: 42px;
+  left: 114px;
+}
 </style>

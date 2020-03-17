@@ -1,9 +1,9 @@
 <template>
   <v-container centered>
-    <v-card raised>
+    <v-card raised class="subspace-navigation">
       <v-row>
         <v-col>
-          <v-card-title>{{t('CheckIn/Checking_in')}}</v-card-title>
+          <v-card-title>{{t('CheckIn/Place_items_on_the_reader_and_read_barcodes')}}</v-card-title>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -448,5 +448,10 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
+/*.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
+  font-size: 1.3em;
+}*/
+.subspace-navigation .v-card__actions {
+  height: 100%;
+}
 </style>

@@ -1,4 +1,7 @@
 const i18n_messages = {
+/*
+  ENGLISH-ENGLISH
+*/
   en: {
     RFID_tags_found: "RFID Tags found",
     App: {
@@ -7,6 +10,7 @@ const i18n_messages = {
     },
     CheckIn: {
       Checking_in: "Checking in",
+      Place_items_on_the_reader_and_read_barcodes: "Place items on the reader platform or read barcodes",
       Stop: "Stop",
       "Stop+Receipt": "Stop + Receipt",
       Your_Check_ins: "Your returns",
@@ -15,6 +19,7 @@ const i18n_messages = {
       Place_to_bin_1: "Place to bin 1",
     },
     CheckOut: {
+      Checking_out: "Checking out",
       Read_library_card: "Read libary card",
       "Hi_user!": "Hi {user}!",
       Return: "Return",
@@ -60,6 +65,9 @@ const i18n_messages = {
       ILS_connection_lost: "ILS lost",
     },
   },
+/*
+  FINNISH-FINNISH
+*/
   fi: {
     App: {
       Check_in: "Palauta",
@@ -67,6 +75,7 @@ const i18n_messages = {
     },
     CheckIn: {
       Checking_in: "Palautetaan",
+      Place_items_on_the_reader_and_read_barcodes: "Aseta niteet lukulevylle tai lue viivakoodeja",
       Stop: "Lopeta",
       "Stop+Receipt": "Lopeta + Kuitti",
       Your_Check_ins: "Palautuksesi",
@@ -75,6 +84,7 @@ const i18n_messages = {
       Place_to_bin_1: "Aseta lokeroon 1",
     },
     CheckOut: {
+      Checking_out: "Lainataan",
       Read_library_card: "Lue kirjastokortti",
       "Hi_user!": "Moi {user}!",
       Return: "Palaa",
@@ -120,6 +130,9 @@ const i18n_messages = {
       ILS_connection_lost: "Kirjastojärjestelmä hävisi",
     },
   },
+/*
+  SWEDISH-SWEDISH
+*/
   se: {
     App: {
       Check_in: "Kolla in",
@@ -127,6 +140,7 @@ const i18n_messages = {
     },
     CheckIn: {
       Checking_in: "Checka in",
+      Place_items_on_the_reader_and_read_barcodes: "Placera artiklar på läsarplattformen eller läs streckkoder",
       Stop: "Sluta",
       "Stop+Receipt": "Sluta + Kvitto",
       Your_Check_ins: "Dina checkins",
@@ -135,6 +149,7 @@ const i18n_messages = {
       Place_to_bin_1: "Plats till fack 1",
     },
     CheckOut: {
+      Checking_out: "Checkar ut",
       Read_library_card: "Läs bibliotekskortet",
       "Hi_user!": "Hej {user}!",
       Return: "Återvända",
@@ -180,6 +195,9 @@ const i18n_messages = {
       ILS_connection_lost: "ILS förlorade",
     },
   },
+/*
+  RUSSIAN-RUSSIAN
+*/
   ru: {
     App: {
       Check_in: "возвращение",
@@ -187,6 +205,7 @@ const i18n_messages = {
     },
     CheckIn: {
       Checking_in: "Регистрация в",
+      Place_items_on_the_reader_and_read_barcodes: "Размещайте предметы на платформе считывателя или считывайте штрих-коды",
       Stop: "Стоп",
       "Stop+Receipt": "Стоп + Чек",
       Your_Check_ins: "Ваши возвращения",
@@ -195,6 +214,7 @@ const i18n_messages = {
       Place_to_bin_1: "Поместите в корзину 1",
     },
     CheckOut: {
+      Checking_out: "Проверка",
       Read_library_card: "Читать библиотечную карточку",
       "Hi_user!": "Здравствуй {user}!",
       Return: "Возвращение",

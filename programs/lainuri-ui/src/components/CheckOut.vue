@@ -1,6 +1,6 @@
 <template>
   <v-container centered>
-    <v-card raised>
+    <v-card raised class="subspace-navigation">
       <v-row>
         <v-col>
           <v-card-title v-if="! is_user_logged_in">{{t('CheckOut/Read_library_card')}}</v-card-title>
@@ -490,5 +490,10 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-
+/*.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
+  font-size: 1.3em;
+}*/
+.subspace-navigation .v-card__actions {
+  height: 100%;
+}
 </style>

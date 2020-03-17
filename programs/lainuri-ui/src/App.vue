@@ -1,11 +1,11 @@
 <template>
   <v-app>
 
-    <v-app-bar
+    <v-app-bar class="app-navigation-bar"
       app
       color="primary"
       dark
-      :height="app_mode !== 'mode_main_menu' ? 64 : 400"
+      :height="app_mode !== 'mode_main_menu' ? 96 : 400"
     >
       <div class="align-center">
         <v-img
@@ -31,23 +31,22 @@
 
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkout'"
         id="checkout_mode_button"
-        :width="app_mode === 'mode_checkout' ? 800 : 350"
+        :width="app_mode === 'mode_checkout' ? 770 : 325"
         hover   color="secondary" dark x-large
         v-on:click="enter_checkout_mode"
-      ><h1>{{t('App/Check_out')}}</h1></v-btn>
+      ><h1>{{(app_mode === 'mode_main_menu') ? t('App/Check_out') : t('CheckOut/Checking_out')}}</h1></v-btn>
+      <v-spacer></v-spacer>
       <v-btn v-if="app_mode === 'mode_main_menu' || app_mode === 'mode_checkin'"
         id="checkin_mode_button"
-        :width="app_mode === 'mode_checkin' ? 800 : 350"
+        :width="app_mode === 'mode_checkin' ? 770 : 325"
         :color="app_mode === 'mode_checkin' ? 'secondary' : 'primary'"
         hover dark x-large
         v-on:click="enter_checkin_mode"
-      ><h1>{{t('App/Check_in')}}</h1></v-btn>
+      ><h1>{{(app_mode === 'mode_main_menu') ? t('App/Check_in') : t('CheckIn/Checking_in')}}</h1></v-btn>
 
       <v-spacer></v-spacer>
 
-      <v-col cols="1">
-        <LanguagePicker/>
-      </v-col>
+      <LanguagePicker/>
 
     </v-app-bar>
     <div id="app-bar-spacer-helper"
@@ -323,6 +322,9 @@ body::-webkit-scrollbar {
   max-height: 1500px;
   overflow: auto;
 }
+.v-card__title {
+  word-break: normal;
+}
 
 #app {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
@@ -337,14 +339,17 @@ body::-webkit-scrollbar {
   height: 400px;
 }
 #app-bar-spacer-helper.other_view {
-  height: 54px;
+  height: 86px;
 }
 
-#checkout_mode_button {
+.app-navigation-bar button.v-size--x-large {
+  font-size: 1.3em;
+}
+.app-navigation-bar #checkout_mode_button {
   height: 100%;
 }
 
-#checkin_mode_button {
+.app-navigation-bar #checkin_mode_button {
   height: 100%;
 }
 
@@ -360,14 +365,6 @@ button {
   background: rgba(#000, .06);
 }
 
-.lang-menu-open-container {
-  position: relative;
-}
-.lang-menu-open-container .lang-menu-dropdown-icon {
-  position: absolute;
-  bottom: 10px;
-  left: 50px;
-}
 .footer-tech-name {
   padding-left: 5px;
 }
