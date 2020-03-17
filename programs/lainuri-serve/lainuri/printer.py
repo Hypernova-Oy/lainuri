@@ -64,14 +64,15 @@ def print_thermal_receipt(byttes: bytes):
   else:
     log.info(f"Thermal printer is disabled from configuration.")
 
-def get_sheet_check_in(items: list) -> str:
+def get_sheet(receipt_template: str, items: list, borrower: dict) -> str:
   template = open(
-    os.environ.get('LAINURI_CONF_DIR')+'/templates/check_in.j2',
+    os.environ.get('LAINURI_CONF_DIR')+'/'+receipt_template,
     'r',
   ).read()
   tm = Template(template)
 
   return tm.render(
     items=items,
+    borrower=borrower,
     today=datetime.today().strftime(get_config('dateformat'))
   )

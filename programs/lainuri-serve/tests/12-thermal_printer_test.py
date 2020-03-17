@@ -29,8 +29,8 @@ items = [
 
 def test_print_template_check_in():
   global items
-  event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
-  printable_sheet = lp.get_sheet_check_in(event.items)
+  event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items, locale='en')
+  printable_sheet = lp.get_sheet('/templates/check_in.j2', items=event.items, borrower={})
   assert lp.print_html(printable_sheet)
 
 def test_print_koha_api():
@@ -38,7 +38,7 @@ def test_print_koha_api():
 
   lainuri.koha_api.koha_api.authenticate()
 
-  event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good'))
+  event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good', locale='en'))
   assert lainuri.websocket_server.handle_one_event(5) == event
 
   response_event = lainuri.websocket_server.handle_one_event(5)
@@ -54,7 +54,7 @@ def test_print_exception_bad_cli_command():
   lainuri.printer.cli_print_command = ['lp-not-exists']
 
   event = lainuri.event_queue.push_event(
-    lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
+    lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items, locale='en')
   )
   assert lainuri.websocket_server.handle_one_event(5) == event
   assert lainuri.event_queue.history[0] == event

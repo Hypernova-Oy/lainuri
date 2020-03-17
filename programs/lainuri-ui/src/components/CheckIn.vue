@@ -355,6 +355,7 @@ export default {
         new LEPrintRequest(
           'check-in',
           Object.values(this.$data.items_checked_in_successfully),
+          this.$appConfig.default_language,
           {},
         ),
       );

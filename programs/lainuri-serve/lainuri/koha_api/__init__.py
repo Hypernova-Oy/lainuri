@@ -338,14 +338,16 @@ class KohaAPI():
 
     return None
 
-  def receipt(self, borrowernumber) -> str:
-    log.info(f"Receipt: borrowernumber='{borrowernumber}'")
-    prnt = 'qslip'
+  def receipt(self, borrowernumber, slip_type, locale) -> str:
+    log.info(f"Receipt: borrowernumber='{borrowernumber}' slip_type='{slip_type}' locale='{locale}'")
+    if slip_type not in ['qslip','checkinslip']:
+      raise TypeError(f"Receipt:> borrowernumber='{borrowernumber}' slip_type='{slip_type}' locale='{locale}' has invalid slip_type. Allowed values ['qslip','checkinslip']")
+
     r = self.http.request(
       'GET',
-      self.koha_baseurl + f'/cgi-bin/koha/members/printslip.pl?borrowernumber={borrowernumber}&print={prnt}',
+      self.koha_baseurl + f'/cgi-bin/koha/members/printslip.pl?borrowernumber={borrowernumber}&print={slip_type}',
       headers = {
-        'Cookie': f'CGISESSID={self.sessionid}',
+        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={locale}',
       },
     )
     (soup, alerts, messages) = self._receive_html(r)

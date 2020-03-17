@@ -20,6 +20,8 @@ devices:
   thermal-printer:
     enabled: true
     font-size: 12px
+    check-in-receipt: /templates/check_in.j2 # Need to implement check-in login to get borrowernumber of the user. This might be undesirable.
+    check-out-receipt: koha
 koha:
   api_memoize_cache_size: 8
   baseurl: https://demo1.intra.koha-helsinki-2.hypernova.fi
@@ -32,7 +34,7 @@ ringtones:
 server:
   hostname: localhost
   port: 53153
-  timeout_request_connect_ms: 1000
+  timeout_request_connect_ms: 2500
   timeout_request_read_ms: 11000
 ui:
   default_language: fi

@@ -301,16 +301,18 @@ class LEPrintRequest extends LEvent {
   static event = 'print-request'
   default_dispatch = 'server'
 
-  static serializable_attributes = ['receipt_type', 'items', 'user_barcode']
+  static serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'locale']
   receipt_type;
   items;
   user_barcode;
+  locale;
 
-  constructor(receipt_type, items, user_barcode, sender, recipient, event_id = undefined) {
+  constructor(receipt_type, items, user_barcode, locale, sender, recipient, event_id = undefined) {
     super(event_id);
     this.receipt_type = receipt_type;
     this.items = items
     this.user_barcode = user_barcode
+    this.locale = locale
     this.construct(sender, recipient);
     this.validate_params()
   }
@@ -318,20 +320,22 @@ class LEPrintRequest extends LEvent {
 class LEPrintResponse extends LEvent {
   static event = 'print-response'
 
-  static serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'status', 'states']
+  static serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'locale', 'status', 'states']
   receipt_type;
   items;
   user_barcode;
   printable_sheet;
+  locale;
   states;
   status = Status.NOT_SET
 
-  constructor(receipt_type, items, user_barcode, printable_sheet, status, states, sender, recipient, event_id = undefined) {
+  constructor(receipt_type, items, user_barcode, printable_sheet, locale, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.receipt_type = receipt_type
     this.items = items
     this.user_barcode = user_barcode
     this.printable_sheet = printable_sheet
+    this.locale = locale
     this.states = states
     this.status = status
     this.construct(sender, recipient);
