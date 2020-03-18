@@ -4,9 +4,9 @@ Description=Lainuri backend services
 [Service]
 Type=idle
 User=root
-Environment="LAINURI_CONF_DIR=/etc/lainuri-serve/"
-Environment="LAINURI_LOG_DIR=/var/log/lainuri-serve/"
-Environment="PYTHONPATH='.'"
+Environment=LAINURI_CONF_DIR=/etc/lainuri-serve/
+Environment=LAINURI_LOG_DIR=/var/log/lainuri-serve/
+Environment=PYTHONPATH='.:./lib/iso15692:./lib/iso28560'
 WorkingDirectory=/opt/lainuri/programs/lainuri-serve/
 ExecStart=/usr/bin/python3 -m lainuri
 
