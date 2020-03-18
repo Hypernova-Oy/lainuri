@@ -19,7 +19,10 @@ devices:
     enabled: false
   thermal-printer:
     enabled: true
-    font-size: 12px
+    css: # These are injected to the body's css stylings
+      font-size: 12px
+      font-family: Quicksand, sans-serif !important
+    css_string: '' # This is a full css-document that overloads other css-directives
     check-in-receipt: /templates/check_in.j2 # Need to implement check-in login to get borrowernumber of the user. This might be undesirable.
     check-out-receipt: koha
 koha:
