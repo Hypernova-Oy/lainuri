@@ -18,7 +18,7 @@ def print_receipt(event):
   try:
 
     if event.receipt_type == 'check-out':
-      receipt_template = get_config('devices.thermal-printer.check-in-receipt')
+      receipt_template = get_config('devices.thermal-printer.check-out-receipt')
 
       borrower = koha_api.get_borrower(event.user_barcode)
 

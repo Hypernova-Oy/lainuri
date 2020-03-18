@@ -395,8 +395,8 @@ export default {
     set_rfid_tag_alarm_complete: function (event) {
       let item_bib = this.transactions[event.item_barcode]
       if (!item_bib) {
-        log.fatal(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`)
-        throw new Error(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
+        log.fatal(`set_rfid_tag_alarm_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`)
+        throw new Error(`set_rfid_tag_alarm_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
       }
 
       ItemBib.prototype.set_status_set_tag_alarm.call(item_bib, event.status, event.states)
@@ -412,6 +412,7 @@ export default {
           'check-out',
           Object.values(this.$data.items_checked_out_successfully),
           this.$data.user.user_barcode,
+          this.$appConfig.default_language,
         ),
       );
     },
