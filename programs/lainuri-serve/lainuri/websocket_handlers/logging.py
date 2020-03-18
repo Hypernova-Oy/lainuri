@@ -28,12 +28,12 @@ def write_external_log(event: lainuri.event.LELogSend):
     #  )
     #)
   except Exception as e:
-    #lainuri.event_queue.push_event(
-    log.error(lainuri.event.LELogReceived(
+    error_event = lainuri.event.LELogReceived(
       status=Status.ERROR,
       states={'exception': {
         'type': type(e).__name__,
         'trace': traceback.format_exc()}
       },
-    ).serialize_ws())
-    #)
+    )
+    #lainuri.event_queue.push_event(error_event)
+    raise e

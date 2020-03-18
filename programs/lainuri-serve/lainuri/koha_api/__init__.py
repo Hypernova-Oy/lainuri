@@ -119,7 +119,7 @@ class KohaAPI():
         raise Exception(f"Lainuri device is missing permission '{payload.get('required_permissions')}'. Lainuri needs these permissions to access Koha: '{self.required_permissions}'")
 
   def authenticated(self):
-    r = self.request(
+    r = self.http.request(
       'GET',
       self.koha_baseurl+'/api/v1/auth/session',
       headers = {

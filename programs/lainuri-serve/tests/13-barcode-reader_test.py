@@ -35,6 +35,7 @@ def mock_read_one_barcode_generator():
   return read_barcode_blocking
 
 def test_barcode_reader_polling_loop(subtests, caplog):
+  assert lainuri.event_queue.flush_all()
   barcode_blocking_read_mock = None
   patcher = None
   thread = None
