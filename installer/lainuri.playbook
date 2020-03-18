@@ -71,7 +71,7 @@
     - name: Configure LXDE autostart to trigger our startup script
       lineinfile:
         path:   /etc/xdg/lxsession/LXDE-pi/autostart
-        regexp: /home/pi/lainuri-config-display.sh
+        regexp: /opt/lainuri-config-display.sh
         line:   /bin/bash /opt/lainuri-config-display.sh # {{ansible_managed}}
       notify: Restart raspberry pi
 
@@ -88,6 +88,9 @@
             SCREEN_MARGIN_TOP=${GEOMETRY[3]}
 
             LAINURI_UI_URL="http://localhost:5000"
+
+            USE_FIREFOX="USE_FIREFOX"
+            USE_CHROMIUM=""
             CHROMIUM_CACHE_DIR="/home/pi/lainuri-chromium-cache"
 
             ## Rotate the display to correct orientation
@@ -106,9 +109,15 @@
             xset -dpms
             xset s noblank
 
-
-            mkdir "$CHROMIUM_CACHE_DIR"
-            DISPLAY=:0 /usr/bin/chromium-browser
+            if [ -n "$USE_FIREFOX" ]; then # Start with Firefox
+              DISPLAY=:0 /usr/bin/iceweasel --safe-mode --no-remote --private-window $LAINURI_UI_URL &
+              sleep 5
+              DISPLAY=:0 xdotool search --sync "Firefox Safe Mode" && DISPLAY=:0 xdotool key Return
+              sleep 5
+              DISPLAY=:0 xdotool search --sync "Mozilla Firefox" && DISPLAY=:0 xdotool key F11
+            elif [-n "$USE_CHROMIUM" ]; then # Start with chromium-browser (Has an unresolved issue with "update failed"-popup notifications)
+              mkdir "$CHROMIUM_CACHE_DIR"
+              DISPLAY=:0 /usr/bin/chromium-browser
                           --disable-features=TranslateUI \
                           --disable-infobars --disable-pinch \
                           --disable-restore-session-state \
@@ -118,6 +127,7 @@
                           --noerrdialogs --no-first-run --no-touch-pinch --window-position=0,0 \
                           --window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT} \
                           $LAINURI_UI_URL
+            fi
 
         backup: yes
       notify: Restart raspberry pi
