@@ -67,6 +67,8 @@
         name:
           - xinput-calibrator
           - matchbox-keyboard
+          - iceweasel # chromium-browser has unresolved issues with automatic upgrade failed popup
+          - xdotool
 
     - name: Configure LXDE autostart to trigger our startup script
       lineinfile:
