@@ -19,12 +19,19 @@ def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
   css_dict: Overload config.yaml's 'devices.thermal-printer.css' with this. Mostly useful for testing.
   """
   log.debug(f"print_html text='{html_text}'")
+  print_thermal_receipt(
+    prepare_weasy_doc(html_text=html_text, page_increment=page_increment, css_dict=css_dict).write_pdf()
+  )
+  return 1
+
+def prepare_weasy_doc(html_text: str, page_increment: int = 10, css_dict: dict = None):
+  doc = None
   start_time = time.time()
 
   weasy_html = HTML(string=html_text)
 
-  pages = 100
-  heigth = 25 # Keep looping to find the correct page size to fit all the content
+  pages = 256
+  heigth = 20 # Keep looping to find the correct page size to fit all the content
   i = 0
   while pages != 1:
     i += 1
@@ -32,7 +39,6 @@ def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
       body {\
         width: 72mm;\
         font-size: 12px;\
-        border: solid 2px;\
         margin: 0px;\
         padding: 0px;\
       }\
@@ -49,17 +55,15 @@ def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
     )
     pages = len(doc.pages)
 
+    # Simple heuristics to quickly detect the proper document length
     old_height = heigth
-    if i == 1: heigth = heigth * pages
+    if i == 1: heigth = heigth * (pages*0.9 if pages > 2 else pages)
     else: heigth = heigth + (page_increment * (pages-1))
     log.debug(f"Sampling to fit content on one document: i='{i}', old_height='{old_height}', pages='{pages}', new height='{heigth}'")
 
   end_time = time.time()
   log.info(f"print_html():> pages='{len(doc.pages)}', page_increment='{page_increment}px', html processing runtime='{end_time - start_time}s' iterations='{i}' page0='{doc.pages and doc.pages[0].__dict__}'")
-
-  print_thermal_receipt(doc.write_pdf())
-
-  return 1
+  return doc
 
 def format_css_rules_from_config(css_dict: dict = None):
   if not css_dict: css_dict = get_config('devices.thermal-printer.css')
@@ -78,7 +82,7 @@ def print_thermal_receipt(byttes: bytes):
   global cli_print_command
   ## Save to log the receipt document
   open(
-    os.environ.get('LAINURI_LOG_DIR')+'receipt'+datetime.today().isoformat()+'.pdf',
+    os.environ.get('LAINURI_LOG_DIR')+'/receipt.'+datetime.today().isoformat()+'.pdf',
     'wb',
   ).write(byttes)
 

@@ -9,6 +9,9 @@ import lainuri.event_queue
 import lainuri.koha_api
 import lainuri.printer as lp
 
+from datetime import datetime
+import os
+
 poem = """
 <body>
   <h4>{{today}} {{header or footer}}</h4>
@@ -142,19 +145,24 @@ def tezt_print_fonts():
     'Noto Mono', 'Noto Sans', 'Noto Sans Display', 'Noto Sans Mono', 'Noto Serif Display',
     'Piboto', 'Piboto Condensed', 'Piboto Light', 'Piboto Thin', 'PibotoLt',
     'Quicksand', 'Quicksand Light', 'Quicksand Medium']:
-    assert lp.print_html(
-      lp.render_jinja2_template(receipt_template=poem, items=[], borrower={}, header=None, footer='font-family:'+font_family),
-      page_increment=10,
-      css_dict={
-        'font-family': f"{font_family} !important"
-      }
+    assert open(
+      os.environ.get('LAINURI_LOG_DIR')+'/receipt.'+font_family.replace(' ', '_')+'.'+datetime.today().isoformat()+'.pdf',
+      'wb',
+    ).write(
+      lp.prepare_weasy_doc(
+        lp.render_jinja2_template(receipt_template=poem, items=[], borrower={}, header=None, footer='font-family:'+font_family),
+        page_increment=10,
+        css_dict={
+          'font-family': f"{font_family} !important"
+        }
+      ).write_pdf()
     )
 
 def test_format_css_rules_from_config():
   assert lp.format_css_rules_from_config() == [
     "body {\n"+\
     "  font-size: 12px;\n"+\
-    "  font-family: Noto Sans, sans-serif !important;\n"+\
+    "  font-family: Quicksand, sans-serif !important;\n"+\
     "}\n"
   ]
 
