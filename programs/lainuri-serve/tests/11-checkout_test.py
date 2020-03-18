@@ -49,6 +49,7 @@ def test_checkout_barcode_via_event_queue(subtests):
     event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[3]
     assert type(event) == le.LECheckOutComplete
+    assert event.states == {}
     assert event.item_barcode == good_item_barcode
     assert event.status == Status.SUCCESS
 
@@ -102,6 +103,7 @@ def test_checkout_rfid_via_event_queue(subtests):
   with subtests.test("Then a LECheckOutComplete-event is dispatched"):
     event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[4]
+    assert event.states == {}
     assert type(event) == le.LECheckOutComplete
     assert event.status == Status.SUCCESS
 

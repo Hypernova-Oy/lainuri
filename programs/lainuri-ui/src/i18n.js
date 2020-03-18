@@ -52,6 +52,8 @@ const i18n_messages = {
       not_checked_out: "Not checked out?",
       return_to_another_branch: "To transport",
       needs_confirmation: "Cannot be loaned here",
+      outstanding_fines: "Found outstanding fines",
+      checkout_impossible: "Check out is impossible!",
 
       'Checkout::Renew': "Already checked out for you",
       'Item::CheckedOut': "Item was already checked out by somebody else",
@@ -119,6 +121,8 @@ const i18n_messages = {
       not_checked_out: "Ei lainattu?",
       return_to_another_branch: "Lähtee kuljetukseen",
       needs_confirmation: "Ei voida lainata tässä",
+      outstanding_fines: "Maksamattomia maksuja",
+      checkout_impossible: "Lainaaminen mahdotonta",
 
       'Checkout::Renew': "Jo lainassa teillä",
       'Item::CheckedOut': "Tämä nide on jo lainassa jollakulla muulla",
@@ -186,6 +190,8 @@ const i18n_messages = {
       not_checked_out: "Inte utcheckad?",
       return_to_another_branch: "Att transportera",
       needs_confirmation: "Kan inte lånas här",
+      outstanding_fines: "Hittade utestående böter",
+      checkout_impossible: "Kolla ut är omöjligt",
 
       'Checkout::Renew': "Har redan checkat ut för dig",
       'Item::CheckedOut': "Varan har redan checkats ut av någon annan",
@@ -253,6 +259,8 @@ const i18n_messages = {
       not_checked_out: "Не проверено",
       return_to_another_branch: "Для транзита",
       needs_confirmation: "Здесь нельзя одолжить",
+      outstanding_fines: "Нашел выдающиеся штрафы",
+      checkout_impossible: "Проверить невозможно",
 
       'Checkout::Renew': "Уже проверил для вас",
       'Item::CheckedOut': "Товар уже был проверен кем-то другим",

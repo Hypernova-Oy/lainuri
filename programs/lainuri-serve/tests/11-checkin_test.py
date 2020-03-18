@@ -34,8 +34,8 @@ def test_checkin_barcode_via_event_queue(subtests):
     assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LECheckInComplete
     assert event.item_barcode == good_item_barcode
-    assert event.status == Status.SUCCESS
     assert event.states == {'not_checked_out': 1, 'return_to_another_branch': 'Centerville'}
+    assert event.status == Status.SUCCESS
 
 
 

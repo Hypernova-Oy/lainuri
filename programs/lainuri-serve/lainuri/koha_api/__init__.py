@@ -260,22 +260,32 @@ class KohaAPI():
     (soup, alerts, messages) = self._receive_html(r)
 
     states = {}
+    status = None
     alerts = [a for a in alerts if not self.checkin_has_status(a, states, barcode)]
     messages = [a for a in messages if not self.checkin_has_status(a, states, barcode)]
 
+    # Check if the checkin actually went through in Koha, this is indicated by the #checkedintable contents
+    # The alerts and messages don't have a clear status indication of success or failure.
+    checked_in_barcode_cells = soup.select('table#checkedintable tr td.ci-barcode') # Thank you Koha for tagging UI elements
+    for cell in checked_in_barcode_cells:
+      if barcode in str(cell):
+        status = Status.SUCCESS
+        break
+    if not status: status = Status.ERROR
+
     if (alerts or messages):
       states['unhandled'] = [*(alerts or []), *(messages or [])]
-      states['status'] = Status.ERROR
-    if states.get('status', None) != Status.ERROR:
-      states['status'] = Status.SUCCESS
-    log.info(f"Checkin barcode='{barcode}' with states='{states}'")
-    return (states.pop('status'), states)
+    if states.get('status', None):
+      status = states.pop('status')
+    log.info(f"Checkin complete: item_barcode='{barcode}' with status='{status}' states='{states}'")
+    return (status, states)
 
   def checkin_has_status(self, message, states, barcode):
     m_not_checked_out = re.compile('Not checked out', re.S | re.M)
     match = m_not_checked_out.search(message)
     if match:
-      states['not_checked_out'] = 1
+      states['not_checked_out'] = True
+      states['status'] = Status.SUCCESS # If the item is not checked out, it wont be registered as a checkin in the table#checkedintable
       return 'not_checked_out'
 
     m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+?)\n', re.S | re.M)
@@ -288,6 +298,11 @@ class KohaAPI():
     match = m_no_item.search(message)
     if match:
       raise exception_ils.NoItem(barcode)
+
+    m_fines = re.compile('Patron has outstanding fines of (?P<fine_amount>\d+[.,]?\d*)\.')
+    match = m_fines.search(message)
+    if match:
+      states['outstanding_fines'] = match.group('fine_amount')
 
     return None
 
@@ -314,25 +329,34 @@ class KohaAPI():
     alerts = [a for a in alerts if not self.checkout_has_status(a, states)]
     messages = [a for a in messages if not self.checkout_has_status(a, states)]
 
+    # Check if the checkout actually went through in Koha, this is possibly indicated by the <div class="lastchecked">
+    # The alerts and messages don't have a clear status indication of success or failure.
+    lastchecked_elem = soup.select('div.lastchecked')
+    for cell in lastchecked_elem:
+      if barcode in str(cell):
+        status = Status.SUCCESS
+        break
+    if not status: status = Status.ERROR
+
     if (alerts or messages):
       states['unhandled'] = [*(alerts or []), *(messages or [])]
-      states['status'] = Status.ERROR
-    if states.get('status', None) != Status.ERROR:
-      states['status'] = Status.SUCCESS
-    log.info(f"Checkout complete: barcode='{barcode}' borrowernumber='{borrowernumber}' with states='{states}'")
-    return (states.pop('status'), states)
+    if states.get('status', None):
+      status = states.pop('status')
+    log.info(f"Checkout complete: item_barcode='{barcode}' borrowernumber='{borrowernumber}' with states='{states}'")
+    return (status, states)
 
   def checkout_has_status(self, message, states):
-    m_not_checked_out = re.compile('Not checked out', re.S | re.M | re.I)
+    m_not_checked_out = re.compile('id="circ_impossible"', re.S | re.M | re.I)
     match = m_not_checked_out.search(message)
     if match:
-      states['not_checked_out'] = 1
+      states['checkout_impossible'] = True
+      states['status'] = Status.ERROR
       return 'not_checked_out'
 
-    m_needsconfirmation = re.compile('circ_needsconfirmation', re.S | re.M | re.I)
+    m_needsconfirmation = re.compile('id="circ_needsconfirmation"', re.S | re.M | re.I)
     match = m_needsconfirmation.search(message)
     if match:
-      states['needs_confirmation'] = 1
+      states['needs_confirmation'] = True
       states['status'] = Status.ERROR
       return 'needs_confirmation'
 
