@@ -23,16 +23,18 @@ export default function (Vue) {
     data: function () {
       return {
         app_config: {
-          default_language: 'en',
-          use_bookcovers: true,
-          dateformat: '%d.%m.%Y',
+          'ui.images': {},
+          'ui.use_bookcovers': true,
+          'i18n.default_locale': 'en',
+          'i18n.enabled_locales': ['en'],
+          'i18n.messages': {},
         },
       }
     },
     methods: {
       handle_new_app_configuration: function (app_config) {
         log.debug('New configuration', app_config);
-        if (this.$data.app_config.default_language !== app_config.default_language) this.set_locale(app_config.default_language);
+        if (this.$data.app_config['ui.default_locale'] !== app_config['ui.default_locale']) this.set_locale(app_config['ui.default_locale']);
         this.$data.app_config = app_config
         Vue.prototype.$appConfig = this.$data.app_config // Trigger global reactivity
       },
@@ -40,7 +42,8 @@ export default function (Vue) {
         log.info(`New language '${lang_2_char}'`)
         lang_2_char = lang_2_char.substring(0,2)
         this.$setLocale(lang_2_char)
-        this.$data.app_config.default_language = lang_2_char
+        this.$data.app_config['ui.default_locale'] = lang_2_char
+        return lang_2_char
       },
     }
   });

@@ -31,8 +31,7 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
 
   with subtests.test("Given a rfid reader which has RFID tags in reading radius"):
     rfid_reader = rfid.get_rfid_reader()
-    assert len(rfid_reader.do_inventory().tags_present) > 0
-    assert type(lainuri.websocket_server.handle_one_event(5)) == lainuri.event.LERFIDTagsNew
+    assert len(rfid_reader.do_inventory(no_events=True).tags_present) > 0
 
   with subtests.test("And a RFID tag"):
     tags_present = rfid.get_current_inventory_status()
@@ -49,7 +48,7 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
 
   with subtests.test("Then a response event is generated"):
     event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[2]
+    assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LESetTagAlarmComplete
     assert event.status == Status.SUCCESS
     assert event.on == True
@@ -67,7 +66,7 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
 
   with subtests.test("Then a response-event is dispatched"):
     event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[4]
+    assert event == lainuri.event_queue.history[3]
     assert type(event) == le.LESetTagAlarmComplete
     assert event.status == Status.SUCCESS
     assert event.on == False
@@ -101,11 +100,11 @@ def test_set_gate_security_status_for_failing_command(subtests):
 
   assert lainuri.event_queue.flush_all()
 
-  patched_handle_retriable_exception = unittest.mock.patch('lainuri.rfid_reader._handle_retriable_exception', side_effect=lainuri.rfid_reader._handle_retriable_exception);
+  patched_handle_retriable_exception = unittest.mock.patch('lainuri.rfid_reader._handle_retriable_exception', side_effect=lainuri.rfid_reader._handle_retriable_exception)
   mock_handle_retriable_exception = patched_handle_retriable_exception.start()
 
   patched_set_tag_gate_alarm_eas = unittest.mock.patch(
-    'lainuri.rfid_reader._set_tag_gate_alarm_eas',
+    'lainuri.rfid_reader._set_tag_gate_alarm_afi',
     side_effect=lainuri.rfid_reader.exception_rfid.RFIDCommand('test-command','mocked test rfid command execution to fail'))
   mock_set_tag_gate_alarm_eas = patched_set_tag_gate_alarm_eas.start()
 
@@ -133,8 +132,8 @@ def test_set_gate_security_status_for_failing_command(subtests):
     assert type(event) == le.LESetTagAlarmComplete
 
   with subtests.test("And the event status is ERROR with expected exception"):
-    assert event.status == Status.ERROR
     assert event.states['exception']['type'] == exception_rfid.RFIDCommand.__name__
+    assert event.status == Status.ERROR
 
   with subtests.test("And the operation was retried until failure"):
     assert mock_handle_retriable_exception.call_count == 3

@@ -125,6 +125,19 @@ class LECheckInComplete(LEvent):
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
+class LELocaleSet(LEvent):
+  event = 'locale-set'
+  default_handler = 'lainuri.websocket_handlers.locale.set_locale'
+  default_recipient = 'client'
+
+  serializable_attributes = ['locale_code']
+  locale_code = ''
+
+  def __init__(self, locale_code: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.locale_code = locale_code
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
 class LESetTagAlarm(LEvent):
   event = 'set-tag-alarm'
   default_handler = 'lainuri.websocket_handlers.tag_alarm.set_tag_alarm'
@@ -293,38 +306,34 @@ class LEPrintRequest(LEvent):
   default_handler = 'lainuri.websocket_handlers.printer.print_receipt'
   default_recipient = 'server'
 
-  serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'locale']
+  serializable_attributes = ['receipt_type', 'items', 'user_barcode']
   receipt_type = ''
   items = []
   user_barcode = ''
-  locale = 'en'
 
-  def __init__(self, receipt_type: str, items: list, user_barcode: str, locale: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, receipt_type: str, items: list, user_barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.receipt_type = receipt_type
     self.items = items
     self.user_barcode = user_barcode
-    self.locale = locale
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEPrintResponse(LEvent):
   event = 'print-response'
   default_recipient = 'client'
 
-  serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'locale', 'states', 'status']
+  serializable_attributes = ['receipt_type', 'items', 'user_barcode', 'printable_sheet', 'states', 'status']
   receipt_type = ''
   items = []
   user_barcode = ''
   printable_sheet = ''
-  locale = 'en'
   states = {}
   status = Status.NOT_SET
 
-  def __init__(self, receipt_type: str, items: list, user_barcode: str, printable_sheet: str, locale: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, receipt_type: str, items: list, user_barcode: str, printable_sheet: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.receipt_type = receipt_type
     self.items = items
     self.user_barcode = user_barcode
     self.printable_sheet = printable_sheet
-    self.locale = locale
     self.states = states
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)

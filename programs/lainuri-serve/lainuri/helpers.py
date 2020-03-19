@@ -1,11 +1,19 @@
-#from lainuri.config import get_config # This causes circular import
-from lainuri.logging_context import logging
-log = logging.getLogger(__name__)
+"""
+Generic small utility helpers.
+DO NOT import ANY lainuri.* MODULES HERE!
+THIS IS imported TO lainuri.config AND THAT WOULD CAUSE GRIEVOUS CIRCULAR DEPENDENCY LOADING ISSUES
+"""
 
 from typing import Any, List
 import glob
+import json
 import math
-import re, subprocess
+import os
+import pathlib
+import pwd
+import re
+import subprocess
+import yaml
 
 def _two_way_link_dict(d) -> dict:
   tmp = dict()
@@ -103,7 +111,6 @@ def find_dev_path(usb_vendor, usb_model) -> str:
   tty_lookalikes = glob.glob('/dev/ttyACM*')
   for tty_dev_path in tty_lookalikes:
     dev_info = _parse_udevadm_info(tty_dev_path)
-    log.debug(f"dev_info='{dev_info}'")
     if dev_info['vendor_id'].upper() == usb_vendor.upper() and dev_info['model_id'].upper() == usb_model.upper():
       return tty_dev_path
   raise Exception(f"No device vendor='{usb_vendor}' model='{usb_model}' found in '{tty_lookalikes}'")
@@ -123,3 +130,21 @@ def _parse_udevadm_info(dev_path: str) -> dict:
       'model_id':  match.group('model_id'),
     }
   raise Exception(f"Couldn't parse udevadm info '{dev_info}'")
+
+def get_system_context():
+  return {
+    'cwd': pathlib.Path.cwd(),
+    'pwd': pwd.getpwuid(os.getuid()),
+    'lainuri_sources_path': get_lainuri_sources_Path(),
+  }
+
+def get_lainuri_sources_Path() -> pathlib.Path:
+  return (pathlib.Path(__file__) / '..' / '..').resolve()
+
+def slurp_json(path: str):
+  with open(path, 'r', encoding='UTF-8') as f:
+    return json.loads(f.read())
+
+def slurp_yaml(path: str):
+  with open(path, 'r', encoding='UTF-8') as f:
+    return yaml.safe_load(f.read())

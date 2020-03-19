@@ -2,6 +2,7 @@ beautifulsoup4
 colorlog
 coloredlogs
 jinja2
+jsonschema
 lxml
 pytest
 pytest_subtests

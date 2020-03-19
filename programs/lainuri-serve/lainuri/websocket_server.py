@@ -14,6 +14,7 @@ import lainuri.helpers
 import lainuri.event
 import lainuri.event_queue
 from lainuri.koha_api import koha_api
+import lainuri.locale
 from lainuri.exception import NoResults
 import lainuri.exception.ils as exception_ils
 import lainuri.rfid_reader
@@ -24,6 +25,7 @@ import lainuri.websocket_handlers.auth
 import lainuri.websocket_handlers.checkin
 import lainuri.websocket_handlers.checkout
 import lainuri.websocket_handlers.config
+import lainuri.websocket_handlers.locale
 import lainuri.websocket_handlers.logging
 import lainuri.websocket_handlers.printer
 import lainuri.websocket_handlers.ringtone
@@ -157,6 +159,8 @@ class SimpleChat(WebSocket):
 
 def start():
 
+  lainuri.locale.verify_locales_installed()
+
   # Other devices need data from the Koha API, so we need to make sure we have a working connection before
   # letting device threads to fork.
   if koha_api:
@@ -192,4 +196,3 @@ def handle_barcode_read(barcode: str):
     lainuri.websocket_handlers.auth.login_user(barcode)
   else:
     lainuri.event_queue.push_event(lainuri.event.LEBarcodeRead(barcode))
-

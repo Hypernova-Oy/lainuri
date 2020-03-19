@@ -9,7 +9,6 @@ import lainuri.websocket_server
 import lainuri.koha_api
 from lainuri.constants import Status
 import lainuri.event as le
-import lainuri.rfid_reader as rfid
 
 
 good_item_barcode = '1620154429'
@@ -34,9 +33,8 @@ def test_checkin_barcode_via_event_queue(subtests):
     assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LECheckInComplete
     assert event.item_barcode == good_item_barcode
-    assert event.states == {'not_checked_out': 1, 'return_to_another_branch': 'Centerville'}
+    assert event.states['return_to_another_branch'] == 'Centerville'
     assert event.status == Status.SUCCESS
-
 
 
 def test_checkin_exception_item_not_found(subtests):

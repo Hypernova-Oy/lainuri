@@ -30,18 +30,17 @@ def test_rfid_reader_get_tag_inventory_via_event_queue(subtests):
 
   with subtests.test("And a rfid reader which has RFID tags in reading radius"):
     rfid_reader = rfid.get_rfid_reader()
-    assert len(rfid_reader.do_inventory().tags_present) > 0
-    assert type(lainuri.websocket_server.handle_one_event(5)) == lainuri.event.LERFIDTagsNew
+    assert len(rfid_reader.do_inventory(no_events=True).tags_present) > 0
 
   with subtests.test("When inventory of RFID tags present is requested"):
     event = le.LERFIDTagsPresentRequest()
     lainuri.event_queue.push_event(event)
     assert lainuri.websocket_server.handle_one_event(5) == event
-    assert event == lainuri.event_queue.history[1]
+    assert event == lainuri.event_queue.history[0]
 
   with subtests.test("Then a response event is generated"):
     event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[2]
+    assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LERFIDTagsPresent
     assert getattr(event.message['tags_present'][0], 'states', None) == None
     assert event.message['tags_present'][0]['status'] == Status.SUCCESS
@@ -60,6 +59,5 @@ def test_get_public_config(subtests):
     event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LEConfigGetpublic_Response
-    assert event.config['default_language']
-    assert event.config['use_bookcovers']
-    assert event.config['dateformat']
+    assert event.config['i18n.default_locale']
+    assert event.config['ui.use_bookcovers']

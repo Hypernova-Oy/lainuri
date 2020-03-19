@@ -141,7 +141,7 @@ const i18n_messages = {
 /*
   SWEDISH-SWEDISH
 */
-  se: {
+  sv: {
     App: {
       Check_in: "Kolla in",
       Check_out: "Kolla upp",

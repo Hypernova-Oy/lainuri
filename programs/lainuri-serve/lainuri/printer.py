@@ -4,6 +4,7 @@ log = logging.getLogger(__name__)
 
 from jinja2 import Template
 from datetime import datetime
+import locale
 import os
 import time
 import traceback
@@ -107,7 +108,7 @@ def render_jinja2_template(receipt_template: str, items: list, borrower: dict, h
   return Template(receipt_template).render(
     items=items,
     borrower=borrower,
-    today=datetime.today().strftime(get_config('dateformat')),
+    today=datetime.today().strftime(locale.nl_langinfo(locale.D_FMT) + ' ' + locale.nl_langinfo(locale.T_FMT)),
     header=header,
     footer=footer,
   )

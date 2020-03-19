@@ -1,0 +1,283 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "description": "Lainuri core config",
+  "type": "object",
+  "properties": {
+    "devices": {
+      "type": "object",
+      "description": "Device configurations",
+      "properties": {
+        "barcode-reader": {
+          "type": "object",
+          "description": "Barcode reader configurations",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "model": {
+              "type": "string",
+              "default": "WGI3220USB",
+              "enum": ["WGI3220USB", "WGC300UsbAT"]
+            }
+          }
+        },
+        "rfid-reader": {
+          "type": "object",
+          "description": "RFID reader configurations",
+          "dependencies": {
+            "afi-checkin": { "required": ["afi-checkout"]}
+          },
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "model": {
+              "type": "string",
+              "default": "RL866",
+              "enum": ["RL866"]
+            },
+            "polling_interval": {
+              "type": "number",
+              "default": 0.25,
+              "description": "If the RFID reader polls for inventory, frequency of the polling. This consumes CPU resources and shortens the time to detect new and lost RFID tags."
+            },
+            "afi-checkin": {
+              "type": "integer",
+              "default": 7,
+              "description": "RFID ISO15691 AFI value written to the RFID tags on checkin. This disables the security gate alarm."
+            },
+            "afi-checkout": {
+              "type": "integer",
+              "default": 194,
+              "description": "RFID ISO15691 AFI value written to the RFID tags on checkout. This enables the security gate alarm."
+            },
+            "eas": {
+              "type": "boolean",
+              "default": false,
+              "description": "RFID ISO15691 EAS value written to the RFID tags on checkout/in. This enables the security gate alarm."
+            },
+            "iso28560-data-format-overloads": {
+              "type": "array",
+              "description": "List of overloads to detect RFID tags' ISO28560 data format outside the standard format identification rules.",
+              "items": {
+                "type": "object",
+                "default": [{
+                  "!class": "ISO28560_3_Object",
+                  "dsfid": 0
+                }],
+                "description": "Overload definition",
+                "required": ["!class"],
+                "properties": {
+                  "!class": {
+                    "type": "string",
+                    "description": "ISO28560 data format implementation to use if the given rules match"
+                  },
+                  "dsfid": {
+                    "type": "integer",
+                    "description": "RFID tag's DSFID code that must match so the !class data format is used"
+                  },
+                  "afi": {
+                    "type": "integer",
+                    "description": "RFID tag's AFI code that must match so the !class data format is used"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ringtone-player": {
+          "type": "object",
+          "description": "RTTTL Player configurations",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "thermal-printer": {
+          "type": "object",
+          "description": "Thermal printer configurations",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "css": {
+              "type": "object",
+              "description": "These are injected to the body's css stylings",
+              "properties": {
+                "font-size": {
+                  "type": "string",
+                  "default": "12px"
+                },
+                "font-family": {
+                  "type": "string",
+                  "default": "Quicksand, sans-serif !important"
+                }
+              }
+            },
+            "css_string": {
+              "type": "string",
+              "description": "This is a full css-document that overloads other css-directives",
+              "examples": ["body {border: 2px solid;}"]
+            },
+            "check-in-receipt": {
+              "type": "string",
+              "default": "templates/check_in.j2",
+              "description": "which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
+              "examples": [
+                "koha",
+                "templates/check_in.j2"
+              ]
+            },
+            "check-out-receipt": {
+              "type": "string",
+              "default": "koha",
+              "description": "MUST BE 'koha'. Need to implement check-in login to get borrowernumber of the user. This might be undesirable. Which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
+              "examples": [
+                "koha",
+                "templates/check_in.j2"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "koha": {
+      "type": "object",
+      "description": "Koha ILS configurations",
+      "properties": {
+        "api_memoize_cache_size": {
+          "type": "integer",
+          "description": "How many different requests per endpoint are cached locally to the internal Koha API cache? Eg. How many most recent items' information to cache?",
+          "default": 8
+        },
+        "timeout_request_connect_ms": {
+          "type": "integer",
+          "default": 2500,
+          "description": "How long to wait for connection to the library system?"
+        },
+        "timeout_request_read_ms": {
+          "type": "integer",
+          "default": 11000,
+          "description": "How long to wait for the library system to reply after connection is made?"
+        },
+        "baseurl": {
+          "type": "string",
+          "description": "Koha base url",
+          "examples": ["https://demo.koha.hypernova.fi"]
+        },
+        "branchcode": {
+          "type": "string",
+          "description": "Library system's internal branch/library code/identifier this device sits in",
+          "examples": ["MIK","JOE_JOE"]
+        },
+        "password": {
+          "type": "string",
+          "description": "Lainuri user's login password"
+        },
+        "userid": {
+          "type": "string",
+          "description": "Lainuri user's login password"
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "description": "Backend server configurations. You shouldn't change these.",
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "default": "localhost",
+          "description": "Lainuri-serve backend server's hostname"
+        },
+        "port": {
+          "type": "integer",
+          "default": 53153,
+          "description": "Lainuri-serve backend server's port"
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "description": "User interface configurations",
+      "properties": {
+        "use_bookcovers": {
+          "type": "boolean",
+          "description": "Display bookcovers (true) or show more condensed item information cards (false)",
+          "default": true
+        },
+        "images": {
+          "type": "array",
+          "description": "Inject custom images from the lainuri configuration directory (defaults to /etc/lainuri-serve/images) to the lainuri-ui public html files. They are loaded for the configured display positions.",
+          "items": {
+            "type": "object",
+            "description": "Custom image rule to match a image file to a image place in the GUI",
+            "properties": {
+              "position": {
+                "type": "string",
+                "description": "Image position identifier in the GUI",
+                "enum": [
+                  "Place_to_bin_1", "Place_to_bin_2"
+                ]
+              },
+              "src": {
+                "type": "string",
+                "description": "The relative path to the image. HTML image src-attribute relative to the 'public html directory + /images/'",
+                "examples": ["Place_to_bin_1.png"]
+              }
+            }
+          }
+        },
+        "i18n": {
+          "type": "object",
+          "description": "i18n configurations",
+          "properties": {
+            "enabled_locales": {
+              "type": "array",
+              "description": "2-character language codes to enable for Lainuri. Lainuri makes sure the langauge codes are installed if they exists.",
+              "items": {
+                "type": "string"
+              },
+              "default": ["en", "fi", "ru", "sv"]
+            },
+            "default_locale": {
+              "type": "string",
+              "description": "The locale which is loaded by default"
+            },
+            "messages": {
+              "type": "object",
+              "description": "Overload translateable UI messages. See lainuri-ui/src/i18n.js for all the translation keys.",
+              "examples": [{
+                "fi": {
+                  "CheckIn": {
+                    "Place_to_bin_1": "Vie nide saunan taakse",
+                    "Place_to_bin_2": "Laita omaan lokeroon"
+                  },
+                  "CheckOut": {
+                    "Read_library_card": "Aseta kortti lukijaan"
+                  }
+                }
+              }],
+              "additionalProperties": {
+                "type": "object",
+                "description": "This object property name is the 2-char locale to overload translations for.",
+                "additionalProperties": {
+                  "type": "object",
+                  "description": "This object property name is the UI module the keys are for",
+                  "additionalProperties": {
+                    "type": "object",
+                    "description": "The translations keys for the given module and their translated meanings"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -111,7 +111,7 @@ class RFID_Reader():
 
     log.info(f"Terminating RFID thread")
 
-  def do_inventory(self):
+  def do_inventory(self, no_events: bool = False):
     with self.access_lock():
       self.write(IBlock_TagInventory())
       resp = IBlock_TagInventory_Response(self.read(IBlock_TagInventory_Response))
@@ -142,10 +142,11 @@ class RFID_Reader():
 
     self.tags_present = [tag for tag in self.tags_present if not [tag_lost for tag_lost in self.tags_lost if tag.serial_number() == tag_lost.serial_number()]]
 
-    if self.tags_new:
-      lainuri.event_queue.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
-    if self.tags_lost:
-      lainuri.event_queue.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
+    if not no_events:
+      if self.tags_new:
+        lainuri.event_queue.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
+      if self.tags_lost:
+        lainuri.event_queue.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
 
     return self
 

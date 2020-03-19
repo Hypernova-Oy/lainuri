@@ -7,7 +7,7 @@ log_scrape = logging.getLogger('lainuri.scraping')
 from lainuri.constants import Status
 import lainuri.exception as exception
 import lainuri.exception.ils as exception_ils
-
+import lainuri.locale
 import lainuri.websocket_handlers.status
 
 from bs4 import BeautifulSoup
@@ -40,7 +40,7 @@ class KohaAPI():
   def __init__(self):
     self.koha_baseurl = get_config('koha.baseurl')
     self.http = urllib3.PoolManager(
-      timeout=urllib3.Timeout(connect=get_config('server.timeout_request_connect_ms')/1000, read=get_config('server.timeout_request_read_ms')/1000),
+      timeout=urllib3.Timeout(connect=get_config('koha.timeout_request_connect_ms')/1000, read=get_config('koha.timeout_request_read_ms')/1000),
       retries=False,
     )
 
@@ -362,16 +362,16 @@ class KohaAPI():
 
     return None
 
-  def receipt(self, borrowernumber, slip_type, locale) -> str:
-    log.info(f"Receipt: borrowernumber='{borrowernumber}' slip_type='{slip_type}' locale='{locale}'")
+  def receipt(self, borrowernumber, slip_type) -> str:
+    log.info(f"Receipt: borrowernumber='{borrowernumber}' slip_type='{slip_type}'")
     if slip_type not in ['qslip','checkinslip']:
-      raise TypeError(f"Receipt:> borrowernumber='{borrowernumber}' slip_type='{slip_type}' locale='{locale}' has invalid slip_type. Allowed values ['qslip','checkinslip']")
+      raise TypeError(f"Receipt:> borrowernumber='{borrowernumber}' slip_type='{slip_type}' has invalid slip_type. Allowed values ['qslip','checkinslip']")
 
     r = self.http.request(
       'GET',
       self.koha_baseurl + f'/cgi-bin/koha/members/printslip.pl?borrowernumber={borrowernumber}&print={slip_type}',
       headers = {
-        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={locale}',
+        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={lainuri.locale.get_locale(iso639_1=False, iso639_1_iso3166=True)}',
       },
     )
     (soup, alerts, messages) = self._receive_html(r)

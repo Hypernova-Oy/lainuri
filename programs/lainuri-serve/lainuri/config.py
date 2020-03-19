@@ -2,11 +2,28 @@
 #from lainuri.logging_context import logging
 #log = logging.getLogger(__name__)  # Logging not yet available
 
+import json
+import jsonschema
+import locale
 import yaml
 import os
+import traceback
 
-## Do the bare minimums here to read the most rudimentary configuration, before logging can be set up.
+from lainuri.helpers import get_lainuri_sources_Path, get_system_context, null_safe_lookup, slurp_json, slurp_yaml # DO NOT import OTHER lainuri.* -modules! CIRCULAR DEPENDENCY HELL!
+
+log = None
+path_to_config_file = None
+jsonschema_validator = None
+c = None
+
+########                                                                                               ########
+##                                                                                                           ##
+# Do the bare minimums here to read the most rudimentary configuration, before logging can be set up.         #
+##                                                                                                           ##
+########                                                                                               ########
+locale.setlocale(locale.LC_ALL, '') # According to POSIX, a program which has not called setlocale(LC_ALL, '') runs using the portable 'C' locale. Calling setlocale(LC_ALL, '') lets it use the default locale as defined by the LANG variable. Since we do not want to interfere with the current locale setting we thus emulate the behavior in the way described above.
 def validate_environment():
+  global path_to_config_file
   print("Lainuri ENV:")
   if not os.environ.get('LAINURI_CONF_DIR'):
     print(f"Environment variable LAINURI_CONF_DIR is not set, looking for config from cwd '{os.getcwd()}'")
@@ -16,40 +33,47 @@ def validate_environment():
     print(f"Environment variable LAINURI_LOG_DIR is not set, setting log dir based on cwd '{os.getcwd()}'")
     os.environ.update({'LAINURI_LOG_DIR': './logs/'})
   print(f"  LAINURI_LOG_DIR='{os.environ.get('LAINURI_LOG_DIR')}'")
-validate_environment()
+  path_to_config_file = os.path.join(os.environ.get('LAINURI_CONF_DIR'), 'config.yaml')
 
-path_to_config_file = os.path.join(os.environ.get('LAINURI_CONF_DIR'), 'config.yaml')
-def load_config():
-  with open(path_to_config_file, 'r', encoding='UTF-8') as f:
-    return yaml.safe_load(f.read())
+def instantiate_jsonschema_validator():
+  config_schema = slurp_json(get_lainuri_sources_Path() / 'lainuri' / 'config_schema.json')
+  jsonschema_validator = jsonschema.Draft6Validator(config_schema)
+  jsonschema_validator.check_schema(config_schema)
+  return jsonschema_validator
 
-def validate_config(c: dict):
-  if bool(c['devices']['rfid-reader']['afi-checkout']) != bool(c['devices']['rfid-reader']['afi-checkin']):
-    raise ValueError(f"Configuration error: devices.rfid-reader.afi-checkout '{c['devices']['rfid-reader']['afi-checkout']}' and afi-checkin '{c['devices']['rfid-reader']['afi-checkin']}' must both be defined or not defined.")
-  return c
+try:
+  validate_environment()
+  jsonschema_validator = instantiate_jsonschema_validator()
+  c = slurp_yaml(path_to_config_file)
+  jsonschema_validator.validate(c)
 
-c = validate_config(load_config())
-
-def persist_config():
-  with open(path_to_config_file, 'w', encoding='UTF-8') as f:
-    f.write(yaml.dump(c))
-
-from lainuri.logging_context import logging
-log = logging.getLogger(__name__)
-
-# Logging has been set up and the app is now properly operational to behave uniformly from now on.
-
-from lainuri.helpers import null_safe_lookup
+  from lainuri.logging_context import logging
+  log = logging.getLogger(__name__)
+except Exception as e:
+  raise type(e)(f"Loading configuration failed!\n  - System context='{get_system_context()}'\n  - Exception='{traceback.format_exc()}'")
+########                                                                                               ########
+##                                                                                                           ##
+# Logging and config has been set up and the app is now properly operational to behave uniformly from now on. #
+##                                                                                                           ##
+########                                                                                               ########
 
 def get_public_configs() -> dict:
   """
   Whitelist the configs that can be exposed to the UI
   """
+  images = get_config('ui.images')
+  if images: images = {i['position']: i for i in images}
   return {
-    'use_bookcovers': get_config('ui.use_bookcovers'),
-    'default_language': get_config('ui.default_language').lower(),
-    'dateformat': get_config('dateformat'),
+    'ui.images': images,
+    'ui.use_bookcovers': get_config('ui.use_bookcovers'),
+    'i18n.default_locale': get_config('i18n.default_locale').lower(),
+    'i18n.enabled_locales': get_config('i18n.enabled_locales'),
+    'i18n.messages': get_config('i18n.messages'),
   }
+
+def persist_config():
+  with open(path_to_config_file, 'w', encoding='UTF-8') as f:
+    f.write(yaml.dump(c))
 
 def write_config(variable: str, new_value: str) -> dict:
   old_value = null_safe_lookup(c, variable)
@@ -71,3 +95,4 @@ def get_ringtone(ringtone_type) -> str:
 
 def get_config(lookup: str):
   return null_safe_lookup(c, lookup)
+

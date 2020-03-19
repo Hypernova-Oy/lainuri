@@ -161,14 +161,14 @@ def tezt_print_fonts():
 def test_format_css_rules_from_config():
   assert lp.format_css_rules_from_config() == [
     "body {\n"+\
-    "  font-size: 12px;\n"+\
     "  font-family: Quicksand, sans-serif !important;\n"+\
+    "  font-size: 12px;\n"+\
     "}\n"
   ]
 
 def test_print_template_check_in():
   global items
-  event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items, locale='en')
+  event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
   printable_sheet = lp.get_sheet('/templates/check_in.j2', items=event.items, borrower={})
   assert lp.print_html(printable_sheet)
 
@@ -177,13 +177,13 @@ def test_print_koha_api():
 
   lainuri.koha_api.koha_api.authenticate()
 
-  event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good', locale='en'))
+  event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good'))
   assert lainuri.websocket_server.handle_one_event(5) == event
 
   response_event = lainuri.websocket_server.handle_one_event(5)
   assert type(response_event) == lainuri.event.LEPrintResponse
-  assert response_event.status == lainuri.event.Status.SUCCESS
   assert not response_event.states.get('exception', None)
+  assert response_event.status == lainuri.event.Status.SUCCESS
 
 def test_print_exception_bad_cli_command():
   global items
@@ -193,7 +193,7 @@ def test_print_exception_bad_cli_command():
   lainuri.printer.cli_print_command = ['lp-not-exists']
 
   event = lainuri.event_queue.push_event(
-    lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items, locale='en')
+    lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
   )
   assert lainuri.websocket_server.handle_one_event(5) == event
   assert lainuri.event_queue.history[0] == event

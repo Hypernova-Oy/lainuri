@@ -69,10 +69,7 @@ def test_checkout_rfid_via_event_queue(subtests):
 
   with subtests.test("And a rfid reader which has RFID tags in reading radius"):
     rfid_reader = rfid.get_rfid_reader()
-    assert len(rfid_reader.do_inventory().tags_present) > 0
-    event = lainuri.websocket_server.handle_one_event(5)
-    assert type(event) == lainuri.event.LERFIDTagsNew
-    assert event == lainuri.event_queue.history[0]
+    assert len(rfid_reader.do_inventory(no_events=True).tags_present) > 0
 
   with subtests.test("And a RFID tag"):
     tags_present = rfid.get_current_inventory_status()
@@ -86,11 +83,11 @@ def test_checkout_rfid_via_event_queue(subtests):
     event = le.LECheckIn(item_barcode=tag.iso25680_get_primary_item_identifier(), tag_type='rfid')
     lainuri.event_queue.push_event(event)
     assert lainuri.websocket_server.handle_one_event(5) == event
-    assert event == lainuri.event_queue.history[1]
+    assert event == lainuri.event_queue.history[0]
 
   with subtests.test("Then a response event is generated"):
     event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[2]
+    assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LECheckInComplete
     assert event.status == Status.SUCCESS
 
@@ -98,11 +95,11 @@ def test_checkout_rfid_via_event_queue(subtests):
     event = le.LECheckOut(item_barcode=tag.iso25680_get_primary_item_identifier(), user_barcode=good_user_barcode, tag_type='barcode')
     lainuri.event_queue.push_event(event)
     assert lainuri.websocket_server.handle_one_event(5) == event
-    assert event == lainuri.event_queue.history[3]
+    assert event == lainuri.event_queue.history[2]
 
   with subtests.test("Then a LECheckOutComplete-event is dispatched"):
     event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[4]
+    assert event == lainuri.event_queue.history[3]
     assert event.states == {}
     assert type(event) == le.LECheckOutComplete
     assert event.status == Status.SUCCESS
@@ -111,11 +108,11 @@ def test_checkout_rfid_via_event_queue(subtests):
     event = le.LECheckOut(item_barcode=tag.iso25680_get_primary_item_identifier(), user_barcode=good_user_barcode, tag_type='barcode')
     lainuri.event_queue.push_event(event)
     assert lainuri.websocket_server.handle_one_event(5) == event
-    assert event == lainuri.event_queue.history[5]
+    assert event == lainuri.event_queue.history[4]
 
   with subtests.test("Then a LECheckOutComplete-event is dispatched AGAIN"):
     event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[6]
+    assert event == lainuri.event_queue.history[5]
     assert type(event) == le.LECheckOutComplete
 
   with subtests.test("And the event succeeded due to item already checked out, but doesn't renew"):

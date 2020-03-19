@@ -18,7 +18,7 @@ def test_write_to_external_log():
   global log_path
   log = logging.getLogger('lainuri.websocket_handlers.logging_external')
   log.fatal('TEST: This is a test message')
-  assert 'TEST: This is a test message' in tailer.tail(open(log_path),lines=1)[0]
+  assert 'TEST: This is a test message' in tailer.tail(open(log_path),lines=1)[-1]
 
 def test_handle_external_logging_event(subtests):
   global log_path
@@ -48,4 +48,4 @@ def test_handle_external_logging_event(subtests):
     #assert response_event.status == Status.SUCCESS
 
   with subtests.test("And an external log is written"):
-    assert 'this is a test log entry' in tailer.tail(open(log_path),lines=1)[0]
+    assert 'this is a test log entry' in tailer.tail(open(log_path),lines=1)[-1]

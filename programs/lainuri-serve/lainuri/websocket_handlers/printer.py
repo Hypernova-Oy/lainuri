@@ -16,7 +16,6 @@ def print_receipt(event):
   printable_sheet = None
 
   try:
-
     if event.receipt_type == 'check-out':
       receipt_template = get_config('devices.thermal-printer.check-out-receipt')
 
@@ -24,14 +23,14 @@ def print_receipt(event):
 
       printable_sheet = None
       if receipt_template.lower() == 'koha':
-        printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'qslip', event.locale)
+        printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'qslip')
       else:
         printable_sheet = lainuri.printer.get_sheet(receipt_template, event.items, borrower)
 
       lainuri.printer.print_html(printable_sheet)
       lainuri.event_queue.push_event(
         le.LEPrintResponse(
-          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet, locale=event.locale,
+          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
           status=Status.SUCCESS,
         )
       )
@@ -44,21 +43,21 @@ def print_receipt(event):
       printable_sheet = None
       if receipt_template.lower() == 'koha':
         if not borrower: raise TypeError("config('devices.thermal-printer.check-in-receipt') cannot be 'koha', because no way of telling Koha which user did the returns without forcing login.")
-        printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'checkinslip', event.locale)
+        printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'checkinslip')
       else:
         printable_sheet = lainuri.printer.get_sheet(receipt_template, event.items, {})
 
       lainuri.printer.print_html(printable_sheet)
       lainuri.event_queue.push_event(
         le.LEPrintResponse(
-          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet, locale=event.locale,
+          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
           status=Status.SUCCESS,
         )
       )
   except Exception as e:
     lainuri.event_queue.push_event(
       le.LEPrintResponse(
-        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet or None, locale=event.locale,
+        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet or None,
         status=Status.ERROR,
         states={
           'exception': {

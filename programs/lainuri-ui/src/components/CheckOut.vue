@@ -411,8 +411,7 @@ export default {
         new LEPrintRequest(
           'check-out',
           Object.values(this.$data.items_checked_out_successfully),
-          this.$data.user.user_barcode,
-          this.$appConfig.default_language,
+          this.$data.user.user_barcode
         ),
       );
     },
