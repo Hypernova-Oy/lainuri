@@ -1,4 +1,4 @@
-from lainuri.config import get_config
+from lainuri.config import get_config, get_lainuri_conf_dir
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
@@ -98,10 +98,7 @@ def print_thermal_receipt(byttes: bytes):
     log.info(f"Thermal printer is disabled from configuration.")
 
 def get_sheet(receipt_template_name: str, items: list, borrower: dict, header: str = None, footer: str = None) -> str:
-  receipt_template = open(
-    os.environ.get('LAINURI_CONF_DIR')+'/'+receipt_template_name,
-    'r',
-  ).read()
+  receipt_template = (get_lainuri_conf_dir() / receipt_template_name).read_text()
   return render_jinja2_template(receipt_template=receipt_template, items=items, borrower=borrower, header=header, footer=footer)
 
 def render_jinja2_template(receipt_template: str, items: list, borrower: dict, header: str = None, footer: str = None):

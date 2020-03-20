@@ -7,6 +7,8 @@ import jsonschema
 import locale
 import yaml
 import os
+import pathlib
+import shutil
 import traceback
 
 from lainuri.helpers import get_lainuri_sources_Path, get_system_context, null_safe_lookup, slurp_json, slurp_yaml # DO NOT import OTHER lainuri.* -modules! CIRCULAR DEPENDENCY HELL!
@@ -96,3 +98,67 @@ def get_ringtone(ringtone_type) -> str:
 def get_config(lookup: str):
   return null_safe_lookup(c, lookup)
 
+def get_lainuri_conf_dir() -> pathlib.Path:
+  return pathlib.Path(os.environ.get('LAINURI_CONF_DIR'))
+
+def image_types():
+  return [
+    'png' # currently only .png is supported
+    ## raster types
+    #'bmp','gif','heif','indd','jpg','jpeg','png', 'psd', 'raw','tiff','webp'
+    ## vector types
+    #'ai','eps','pdf','svg'
+  ]
+
+def image_overloads_flush():
+  """
+  Only used for test cases atm. Only flushes .png-files
+  """
+  for target_path in image_overloads_target_directories():
+    for img_type in image_types():
+      for file_path in target_path.glob(f"*.{img_type}"):
+        if file_path.exists():
+          log.debug(f"image_overloads_flush():> Removing file '{file_path}'")
+          file_path.unlink()
+
+def image_overloads_handle():
+  """
+  Deploys image overloads to the UI server's public images directories
+  """
+  ui_images = get_config('ui.images')
+  if not ui_images: return
+  lainuri_config_image_overloads_path = get_lainuri_conf_dir() / 'image_overloads'
+
+  for ui_img in ui_images:
+    for target_path in image_overloads_target_directories():
+      if not target_path.is_dir(): target_path.mkdir(parents=True)
+      src = None
+      position = None
+      try:
+        src = pathlib.Path(ui_img['src'])
+        position = target_path / ui_img['position']
+        if not src.is_absolute(): src = lainuri_config_image_overloads_path / src
+        if not src.exists():
+          log.error(f"image_overloads_handle():> image src '{src}' doesn't exist?")
+          continue
+        if not src.is_file():
+          log.error(f"image_overloads_handle():> image src '{src}' is not a file?")
+          continue
+        shutil.copy(src=str(src), dst=str(position))
+      except Exception as e:
+        log.error(f"image_overloads_handle():> Trying to copy src='{src}' to '{position}' failed. {type(e).__name__}:\n  "+traceback.format_exc)
+
+def image_overloads_target_directories():
+  lainuri_ui_path = (get_lainuri_sources_Path() / '..' / 'lainuri-ui').resolve()
+  return (
+    lainuri_ui_path / 'public' / 'image_overloads',
+    lainuri_ui_path / 'dist' / 'image_overloads'
+  )
+
+def image_overloads_get_images():
+  images = []
+  for target_path in image_overloads_target_directories():
+    for img_type in image_types():
+      for img_path in target_path.glob(f"*.{img_type}"):
+        images.append(img_path)
+  return images

@@ -219,14 +219,16 @@
             "properties": {
               "position": {
                 "type": "string",
-                "description": "Image position identifier in the GUI",
+                "pattern": "^.*\\.png$",
+                "description": "Image position identifier in the GUI. Must be a .png-file.",
                 "enum": [
-                  "Place_to_bin_1", "Place_to_bin_2"
+                  "Place_to_bin_1.png", "Place_to_bin_2.png"
                 ]
               },
               "src": {
                 "type": "string",
-                "description": "The relative path to the image. HTML image src-attribute relative to the 'public html directory + /images/'",
+                "pattern": "^.*\\.png$",
+                "description": "The relative path to the image. HTML image src-attribute relative to the 'public html directory + /images/'. Must be a .png-file.",
                 "examples": ["Place_to_bin_1.png"]
               }
             }

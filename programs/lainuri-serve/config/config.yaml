@@ -50,6 +50,8 @@ server:
   port: 53153
 ui:
   images:
-  - position: Place_to_bin_1
+  - position: Place_to_bin_1.png
     src: Place_to_bin_1.png
+  - position: Place_to_bin_2.png
+    src: Place_to_bin_2.png
   use_bookcovers: true
