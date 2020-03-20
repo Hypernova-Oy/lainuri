@@ -2,6 +2,10 @@
   "$schema": "http://json-schema.org/draft-06/schema#",
   "description": "Lainuri core config",
   "type": "object",
+  "publicProperties": [
+    "ui",
+    "i18n"
+  ],
   "properties": {
     "devices": {
       "type": "object",
@@ -219,17 +223,16 @@
             "properties": {
               "position": {
                 "type": "string",
-                "pattern": "^.*\\.png$",
-                "description": "Image position identifier in the GUI. Must be a .png-file.",
+                "description": "Image position identifier in the GUI.",
                 "enum": [
-                  "Place_to_bin_1.png", "Place_to_bin_2.png"
+                  "bookcover-missing-placeholder", "logo-big", "logo-small", "Place_to_bin_OK", "Place_to_bin_ODD"
                 ]
               },
               "src": {
                 "type": "string",
                 "pattern": "^.*\\.png$",
-                "description": "The relative path to the image. HTML image src-attribute relative to the 'public html directory + /images/'. Must be a .png-file.",
-                "examples": ["Place_to_bin_1.png"]
+                "description": "The relative path to the image. HTML image src-attribute relative to the 'public html directory + /images/'. Must be a .png-image.",
+                "examples": ["Place_to_bin_OK.png"]
               }
             }
           }
@@ -256,8 +259,8 @@
               "examples": [{
                 "fi": {
                   "CheckIn": {
-                    "Place_to_bin_1": "Vie nide saunan taakse",
-                    "Place_to_bin_2": "Laita omaan lokeroon"
+                    "Place_to_bin_OK": "Vie nide saunan taakse",
+                    "Place_to_bin_ODD": "Laita omaan lokeroon"
                   },
                   "CheckOut": {
                     "Read_library_card": "Aseta kortti lukijaan"

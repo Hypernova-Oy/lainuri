@@ -15,6 +15,7 @@ from lainuri.helpers import get_lainuri_sources_Path, get_system_context, null_s
 
 log = None
 path_to_config_file = None
+config_schema = None
 jsonschema_validator = None
 c = None
 
@@ -38,6 +39,7 @@ def validate_environment():
   path_to_config_file = os.path.join(os.environ.get('LAINURI_CONF_DIR'), 'config.yaml')
 
 def instantiate_jsonschema_validator():
+  global config_schema
   config_schema = slurp_json(get_lainuri_sources_Path() / 'lainuri' / 'config_schema.json')
   jsonschema_validator = jsonschema.Draft6Validator(config_schema)
   jsonschema_validator.check_schema(config_schema)
@@ -62,16 +64,13 @@ except Exception as e:
 def get_public_configs() -> dict:
   """
   Whitelist the configs that can be exposed to the UI
+
+  see the config_schema.json -> "publicProperties" for null_safe_lookup keys to include in the public config
   """
-  images = get_config('ui.images')
-  if images: images = {i['position']: i for i in images}
-  return {
-    'ui.images': images,
-    'ui.use_bookcovers': get_config('ui.use_bookcovers'),
-    'i18n.default_locale': get_config('i18n.default_locale').lower(),
-    'i18n.enabled_locales': get_config('i18n.enabled_locales'),
-    'i18n.messages': get_config('i18n.messages'),
-  }
+  public_config_keys = config_schema.get('publicProperties', None)
+  if not public_config_keys or len(public_config_keys) == 0:
+    raise Exception("Master configuration schema error: '{\"publicProperties\": "+public_config_keys+"\}\}' is not set! The config contains a whitelist of configs that can be exposed to the GUI.")
+  return {key: get_config(key) for key in public_config_keys}
 
 def persist_config():
   with open(path_to_config_file, 'w', encoding='UTF-8') as f:
@@ -131,12 +130,13 @@ def image_overloads_handle():
 
   for ui_img in ui_images:
     for target_path in image_overloads_target_directories():
+      target_path_stat = target_path.stat()
       if not target_path.is_dir(): target_path.mkdir(parents=True)
       src = None
       position = None
       try:
         src = pathlib.Path(ui_img['src'])
-        position = target_path / ui_img['position']
+        position = target_path / (ui_img['position']+'.png')
         if not src.is_absolute(): src = lainuri_config_image_overloads_path / src
         if not src.exists():
           log.error(f"image_overloads_handle():> image src '{src}' doesn't exist?")
@@ -145,6 +145,11 @@ def image_overloads_handle():
           log.error(f"image_overloads_handle():> image src '{src}' is not a file?")
           continue
         shutil.copy(src=str(src), dst=str(position))
+        try:
+          os.chown(path=position, uid=target_path_stat.st_uid, gid=target_path_stat.st_gid)
+        except Exception as e:
+          log.debug(f"Exception setting the owner of image overloads. path='{position}', uid='{target_path_stat.st_uid}', gid='{target_path_stat.st_gid}':\n  "+traceback.format_exc)
+
       except Exception as e:
         log.error(f"image_overloads_handle():> Trying to copy src='{src}' to '{position}' failed. {type(e).__name__}:\n  "+traceback.format_exc)
 

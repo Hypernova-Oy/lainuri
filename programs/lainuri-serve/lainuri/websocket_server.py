@@ -160,6 +160,7 @@ class SimpleChat(WebSocket):
 def start():
 
   lainuri.locale.verify_locales_installed()
+  lainuri.config.image_overloads_handle()
 
   # Other devices need data from the Koha API, so we need to make sure we have a working connection before
   # letting device threads to fork.

@@ -1,3 +1,5 @@
+const CopyPlugin = require('copy-webpack-plugin');
+
 module.exports = {
   "transpileDependencies": [
     "vuetify"
@@ -12,6 +14,11 @@ module.exports = {
       rules: [
         { test: /globalize/, parser: { amd: false } }
       ]
-    }
+    },
+    plugins: [
+      new CopyPlugin([
+        { from: '../lainuri-serve/lainuri/config_schema.json', to: './config_schema.json' },
+      ])
+    ],
   }
 }

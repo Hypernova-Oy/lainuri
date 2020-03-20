@@ -11,7 +11,7 @@
         <v-img
           v-if="app_mode !== 'mode_main_menu'"
           alt="Logo"
-          src="images/xamk-logo-small.png"
+          :src="$appConfigGetImageOverload('logo-small')"
           width="150"
           v-bind:css="false"
         />
@@ -20,7 +20,7 @@
         <v-img
           v-if="app_mode === 'mode_main_menu'"
           alt="Logo"
-          src="images/xamk-logo-big.png"
+          :src="$appConfigGetImageOverload('logo-big')"
           width="150"
           v-bind:css="false"
         />

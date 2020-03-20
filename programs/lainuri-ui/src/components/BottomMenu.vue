@@ -63,12 +63,10 @@ export default {
   },
   methods: {
     abort_user_login: function () {
-      console.log("abort_user_login in CheckOut")
       this.$data.user = undefined
       this.$emit('abort_user_login');
     },
     start_checking_out: function () {
-      console.log("Started checking out")
     },
   }
 }

@@ -251,7 +251,6 @@ export default {
           rfid_tags_filtered[item_bib.item_barcode] = item_bib
         }
       }
-      console.log(rfid_tags_filtered)
       return rfid_tags_filtered
     },
     column_width: function () {

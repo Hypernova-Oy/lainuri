@@ -17,5 +17,5 @@ def test_image_overloads(subtests):
 
   with subtests.test("Then the configured images are present"):
     images_found = ' '.join([str(path) for path in lainuri.config.image_overloads_get_images()])
-    assert 'Place_to_bin_1.png' in images_found
-    assert 'Place_to_bin_2.png' in images_found
+    assert 'Place_to_bin_OK.png' in images_found
+    assert 'Place_to_bin_ODD.png' in images_found

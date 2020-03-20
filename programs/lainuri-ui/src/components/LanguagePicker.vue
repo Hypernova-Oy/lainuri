@@ -15,7 +15,7 @@
     </template>
     <v-list>
       <v-list-item
-        v-for="(lang) in $appConfig['i18n.enabled_locales']"
+        v-for="(lang) in $appConfig.i18n.enabled_locales"
         :key="lang"
         @click="set_lo(lang)"
       >
@@ -37,7 +37,7 @@ export default {
   name: 'LanguagePicker',
   computed: {
     active_language_2_char: function () {
-      return this.$appConfig['i18n.default_locale'].substring(0,2);
+      return this.$appConfig.i18n.default_locale.substring(0,2);
     }
   },
   methods: {

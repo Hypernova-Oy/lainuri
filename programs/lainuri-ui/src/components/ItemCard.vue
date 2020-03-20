@@ -26,8 +26,8 @@
       </div>
 
       <v-img
-        v-if="$appConfig['ui.use_bookcovers']"
-        :src="item_bib.book_cover_url || 'images/bookcover-placeholder.png'"
+        v-if="$appConfig.ui.use_bookcovers"
+        :src="item_bib.book_cover_url || $appConfigGetImageOverload('bookcover-missing-placeholder')"
         contain
         height="50%"
         class="white--text align-end"

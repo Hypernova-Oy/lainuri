@@ -16,7 +16,8 @@ const i18n_messages = {
       Your_Check_ins: "Your returns",
       In_Queue: "In queue",
       Errors: "Errors",
-      Place_to_bin_1: "Place to bin 1",
+      Place_to_bin_OK: "Place to shelf 'normal'",
+      Place_to_bin_ODD: "Place to shelf 'strange'",
     },
     CheckOut: {
       Checking_out: "Checking out",
@@ -55,8 +56,8 @@ const i18n_messages = {
       outstanding_fines: "Found outstanding fines",
       checkout_impossible: "Check out is impossible!",
 
-      'Checkout::Renew': "Already checked out for you",
-      'Item::CheckedOut': "Item was already checked out by somebody else",
+      'Checkout::Renew': "Already checked out to you",
+      'Item::CheckedOut': "Item is already checked out by somebody else",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Lainuri",
@@ -85,7 +86,8 @@ const i18n_messages = {
       Your_Check_ins: "Palautuksesi",
       In_Queue: "Jonossa",
       Errors: "Virheet",
-      Place_to_bin_1: "Aseta lokeroon 1",
+      Place_to_bin_OK: "Paikka hyllyyn 'normaali'",
+      Place_to_bin_ODD: "Paikka hyllylle 'outo'",
     },
     CheckOut: {
       Checking_out: "Lainataan",
@@ -154,7 +156,8 @@ const i18n_messages = {
       Your_Check_ins: "Dina checkins",
       In_Queue: "I kö",
       Errors: "Misstag",
-      Place_to_bin_1: "Plats till fack 1",
+      Place_to_bin_OK: "Plats på hyllan 'normal'",
+      Place_to_bin_ODD: "Plats att hyllas 'konstigt'",
     },
     CheckOut: {
       Checking_out: "Checkar ut",
@@ -223,7 +226,8 @@ const i18n_messages = {
       Your_Check_ins: "Ваши возвращения",
       In_Queue: "Ваши чеки",
       Errors: "ошибки",
-      Place_to_bin_1: "Поместите в корзину 1",
+      Place_to_bin_OK: "Место на полке 'нормально'",
+      Place_to_bin_ODD: "Место на полке 'странно'",
     },
     CheckOut: {
       Checking_out: "Проверка",

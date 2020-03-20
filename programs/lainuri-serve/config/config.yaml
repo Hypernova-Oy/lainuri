@@ -32,8 +32,10 @@ i18n:
   messages:
     fi:
       CheckIn:
-        Place_to_bin_1: "Aseta hyllyyn selk\xE4si taakse"
-        Place_to_bin_2: "Laita laatikkoon vieress\xE4si"
+        Place_to_bin_OK: "Aseta hyllyyn selkäsi taakse"
+        Place_to_bin_ODD: "Laita laatikkoon vieressäsi"
+      MainMenuView:
+        RFID_tags_found: "Aineisto löydetty"
 koha:
   api_memoize_cache_size: 8
   baseurl: https://demo1.intra.koha-helsinki-2.hypernova.fi
@@ -50,8 +52,12 @@ server:
   port: 53153
 ui:
   images:
-  - position: Place_to_bin_1.png
-    src: Place_to_bin_1.png
-  - position: Place_to_bin_2.png
-    src: Place_to_bin_2.png
+  - position: Place_to_bin_OK
+    src: Place_to_bin_OK.png
+  - position: Place_to_bin_ODD
+    src: Place_to_bin_ODD.png
+  - position: logo-big
+    src: ../../../lainuri-ui/public/images/shared_gallery/xamk-logo-big.png
+  - position: logo-small
+    src: ../../../lainuri-ui/public/images/shared_gallery/xamk-logo-small.png
   use_bookcovers: true
