@@ -131,7 +131,7 @@
             "check-in-receipt": {
               "type": "string",
               "default": "templates/check_in.j2",
-              "description": "which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
+              "description": "MUST BE 'koha'. Need to implement check-in login to get borrowernumber of the user. This might be undesirable. which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
               "examples": [
                 "koha",
                 "templates/check_in.j2"
@@ -140,7 +140,7 @@
             "check-out-receipt": {
               "type": "string",
               "default": "koha",
-              "description": "MUST BE 'koha'. Need to implement check-in login to get borrowernumber of the user. This might be undesirable. Which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
+              "description": "Which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
               "examples": [
                 "koha",
                 "templates/check_in.j2"

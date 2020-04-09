@@ -169,7 +169,7 @@ def test_format_css_rules_from_config():
 def test_print_template_check_in():
   global items
   event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
-  printable_sheet = lp.get_sheet('/templates/check_in.j2', items=event.items, borrower={})
+  printable_sheet = lp.get_sheet(lainuri.config.get_config('devices.thermal-printer.check-in-receipt'), items=event.items, borrower={})
   assert lp.print_html(printable_sheet)
 
 def test_print_koha_api():

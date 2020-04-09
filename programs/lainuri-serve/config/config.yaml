@@ -15,7 +15,7 @@ devices:
   ringtone-player:
     enabled: false
   thermal-printer:
-    check-in-receipt: /templates/check_in.j2
+    check-in-receipt: ./templates/check_in.j2
     check-out-receipt: koha
     css:
       font-family: Quicksand, sans-serif !important
@@ -32,8 +32,8 @@ i18n:
   messages:
     fi:
       CheckIn:
-        Place_to_bin_OK: "Aseta hyllyyn selkäsi taakse"
-        Place_to_bin_ODD: "Laita laatikkoon vieressäsi"
+        Place_to_bin_OK: "Laita laatikkoon vieressäsi"
+        Place_to_bin_ODD: "Aseta hyllyyn selkäsi taakse"
       MainMenuView:
         RFID_tags_found: "Aineisto löydetty"
 koha:

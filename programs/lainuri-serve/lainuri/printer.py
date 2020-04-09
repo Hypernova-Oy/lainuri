@@ -98,7 +98,10 @@ def print_thermal_receipt(byttes: bytes):
     log.info(f"Thermal printer is disabled from configuration.")
 
 def get_sheet(receipt_template_name: str, items: list, borrower: dict, header: str = None, footer: str = None) -> str:
-  receipt_template = (get_lainuri_conf_dir() / receipt_template_name).read_text()
+  try:
+    receipt_template = (get_lainuri_conf_dir() / receipt_template_name).read_text()
+  except Exception as e:
+    raise type(e)(e, f"Exception when get_sheet():> receipt template lookup path='{get_lainuri_conf_dir() / receipt_template_name}' get_lainuri_conf_dir() {get_lainuri_conf_dir()}, receipt_template_name '{receipt_template_name}'")
   return render_jinja2_template(receipt_template=receipt_template, items=items, borrower=borrower, header=header, footer=footer)
 
 def render_jinja2_template(receipt_template: str, items: list, borrower: dict, header: str = None, footer: str = None):
