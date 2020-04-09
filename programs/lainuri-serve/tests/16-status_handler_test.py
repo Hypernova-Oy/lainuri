@@ -59,5 +59,5 @@ def test_get_public_config(subtests):
     event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LEConfigGetpublic_Response
-    assert event.config['i18n.default_locale']
-    assert event.config['ui.use_bookcovers']
+    assert event.config['i18n']['default_locale']
+    assert event.config['ui']['use_bookcovers']

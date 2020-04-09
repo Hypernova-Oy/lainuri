@@ -49,6 +49,7 @@ def test_print_template_with_locales(subtests):
   fi_date = None
   printable_sheet = None
   new_locale = None
+  sheet_filename = lainuri.config.get_config('devices.thermal-printer.check-in-receipt')
 
   with subtests.test("Given locale 'en'"):
     new_locale = lainuri.locale.set_locale('en')
@@ -59,7 +60,7 @@ def test_print_template_with_locales(subtests):
     assert en_date
 
   with subtests.test("When a template is processed"):
-    printable_sheet = lainuri.printer.get_sheet('/templates/check_in.j2', items=items, borrower={})
+    printable_sheet = lainuri.printer.get_sheet(sheet_filename, items=items, borrower={})
     assert printable_sheet
 
   with subtests.test("Then the date format matches the locale 'en'"):
@@ -74,7 +75,7 @@ def test_print_template_with_locales(subtests):
     assert fi_date
 
   with subtests.test("When a template is processed"):
-    printable_sheet = lainuri.printer.get_sheet('/templates/check_in.j2', items=items, borrower={})
+    printable_sheet = lainuri.printer.get_sheet(sheet_filename, items=items, borrower={})
     assert printable_sheet
 
   with subtests.test("Then the date format matches the locale 'fi'"):

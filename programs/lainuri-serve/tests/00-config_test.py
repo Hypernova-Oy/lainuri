@@ -7,5 +7,4 @@ def test_validate_config():
 
 def test_get_public_configs():
   import lainuri.config
-  import pdb; pdb.set_trace()
   assert lainuri.config.get_public_configs()
