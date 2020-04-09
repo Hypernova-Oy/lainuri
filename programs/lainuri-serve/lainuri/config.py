@@ -82,7 +82,6 @@ def write_config(variable: str, new_value: str) -> dict:
     raise Exception(f"Trying to write a config variable '{variable}' which doesn't exist!")
   null_safe_lookup(c, variable, new_value)
   log.info(f"Replaced config '{variable}'='{old_value}' with '{new_value}'")
-  persist_config()
   return {
     'old_value': old_value,
     'new_value': new_value,
@@ -90,7 +89,7 @@ def write_config(variable: str, new_value: str) -> dict:
   }
 
 def get_ringtone(ringtone_type) -> str:
-  ringtone = null_safe_lookup(c, ['ringtones', ringtone_type])
+  ringtone = null_safe_lookup(c, ['devices','ringtone-player','ringtone_types',ringtone_type])
   if None == ringtone: raise Exception(f"Missing ringtone for ringtone type '{ringtone_type}'!")
   return ringtone
 

@@ -6,6 +6,7 @@ from simple_websocket_server import WebSocketServer, WebSocket
 
 import json
 import _thread as thread
+import threading
 import time
 import traceback
 
@@ -19,6 +20,7 @@ from lainuri.exception import NoResults
 import lainuri.exception.ils as exception_ils
 import lainuri.rfid_reader
 import lainuri.barcode_reader
+import lainuri.rtttl_player
 
 ## Import all handlers, because the handle_events_loop dynamically invokes them
 import lainuri.websocket_handlers.auth
@@ -175,7 +177,10 @@ def start():
 
   start_barcode_reader()
 
-  thread.start_new_thread(handle_events_loop, ())
+  event_thr = threading.Thread(group=None, target=handle_events_loop)
+  event_thr.start()
+  player_thr = threading.Thread(group=None, target=lainuri.rtttl_player.rtttl_daemon)
+  player_thr.start()
 
   port = int(get_config('server.port'))
   hostname = get_config('server.hostname')

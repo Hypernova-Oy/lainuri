@@ -91,7 +91,7 @@ def null_safe_lookup(obckt, keys: List, value: Any = None) -> Any:
           return obckt[keys[0]]
         else:
           return obckt[keys[0]]
-      return null_safe_lookup(obckt.get(keys[0], None), keys[1:])
+      return null_safe_lookup(obckt.get(keys[0], None), keys[1:], value)
     elif hasattr(obckt, '__dict__'):  # with a high probability this is a class instance or a class object
       if len(keys) == 1:
         if value != None:
@@ -99,7 +99,7 @@ def null_safe_lookup(obckt, keys: List, value: Any = None) -> Any:
           return getattr(obckt, keys[0])
         else:
           return getattr(obckt, keys[0])
-      return null_safe_lookup(getattr(obckt, keys[0]), keys[1:])
+      return null_safe_lookup(getattr(obckt, keys[0]), keys[1:], value)
     elif isinstance(obckt, PRIMITIVE_TYPES):
       return None
     else:

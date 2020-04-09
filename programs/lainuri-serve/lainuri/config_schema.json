@@ -98,6 +98,31 @@
             "enabled": {
               "type": "boolean",
               "default": true
+            },
+            "ringtone_types": {
+              "type": "object",
+              "default": {
+                "checkin-error": "ToveriAccessDenied",
+                "checkin-success": "ToveriAccessGranted",
+                "checkout-error": "ToveriAccessDenied",
+                "checkout-success": "ToveriAccessGranted"
+              },
+              "description": "Audio alert types to ringtone mapping. Can be either the name of a known ringtone song, or the rtttl-code",
+              "required": ["checkin-error", "checkin-success","checkout-error","checkout-success"],
+              "properties": {
+                "checkin-error": {
+                  "type": "string"
+                },
+                "checkin-success": {
+                  "type": "string"
+                },
+                "checkout-error": {
+                  "type": "string"
+                },
+                "checkout-success": {
+                  "type": "string"
+                }
+              }
             }
           }
         },

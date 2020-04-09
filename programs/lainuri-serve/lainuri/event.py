@@ -171,6 +171,28 @@ class LESetTagAlarmComplete(LEvent):
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
+class LERingtoneList(LEvent):
+  event = 'ringtone-list'
+  default_handler = 'lainuri.websocket_handlers.ringtone.ringtone_list'
+  default_recipient = 'server'
+
+  serializable_attributes = []
+
+class LERingtoneListResponse(LEvent):
+  event = 'ringtone-list-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['rtttls', 'states', 'status']
+  rtttls = {}
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, rtttls: dict, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.rtttls = rtttls
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
 class LERingtonePlay(LEvent):
   event = 'ringtone-play'
   default_handler = 'lainuri.websocket_handlers.ringtone.ringtone_play'

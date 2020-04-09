@@ -14,6 +14,11 @@ devices:
     polling_interval: 0.25
   ringtone-player:
     enabled: false
+    ringtone_types:
+      checkin-error: ToveriAccessDenied
+      checkin-success: ToveriAccessGranted
+      checkout-error: ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c
+      checkout-success: ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5
   thermal-printer:
     check-in-receipt: ./templates/check_in.j2
     check-out-receipt: koha
@@ -44,9 +49,6 @@ koha:
   timeout_request_connect_ms: 2500
   timeout_request_read_ms: 11000
   userid: l-t-dev-good
-ringtones:
-  error: ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c
-  success: ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5
 server:
   hostname: localhost
   port: 53153
