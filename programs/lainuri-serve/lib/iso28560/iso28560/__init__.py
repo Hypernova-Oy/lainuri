@@ -78,11 +78,6 @@ class ISO28560_3_Object(ISO28560_Object):
     return self
 
   def get_basic_block(self):
-    """
-    The basic block contains a number of fixed length data fields. The basic block occupies the first 34 bytes
-    (272 bits) on the tag. If the tag has only 32 bytes (256 bits), the layout for the truncated basic block shall be
-    used. In this case, no other data can be stored on the tag.
-    """
     if len(self._tag_memory) < 32 or len(self._tag_memory) == 33:
       raise Exception(f"tag memory length '{len(self._tag_memory)}' must be 32 or 34 or more. tag_memory='{self._tag_memory}'")
     self.content_parameter = self._tag_memory[0] & 0b00001111

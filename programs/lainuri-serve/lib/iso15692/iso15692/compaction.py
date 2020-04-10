@@ -41,11 +41,6 @@ def detect_best_compaction_scheme(data: str) -> callable:
   except ValueError:
     pass
 
-#41 to 5F  Length of object > 2 bytes  5 bit code
-#20 to 5F  Length of object > 3 bytes  6 bit code
-#00 to 7E  Length of object > 7 bytes  7 bit code
-#00 to FF  N/A  octet string
-
 
 def encode_compacted_object_length(byttes: bytes) -> bytes:
   bit_len_bytes = len(byttes).bit_length()
