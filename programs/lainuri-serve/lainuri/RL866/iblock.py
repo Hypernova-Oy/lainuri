@@ -9,6 +9,13 @@ from lainuri.RL866.message import Message, Request, Response, parseMessage, pars
 from lainuri.RL866.tag import Tag
 import lainuri.RL866.state as state
 
+class ITimeout():
+  def __init__(self, type: int = 0, timeout: int = 500, value: int = 0):
+    if type not in (0,1,2,3):
+      raise Exception(f"Invalid stop trigger type '{type}'. Allowed values  [0, 1, 2, 3].")
+    self.type = type
+    self.timeout = timeout
+    self.value = value
 
 class IBlock(Message):
   def __init__(self, RID, INF):
@@ -79,22 +86,14 @@ class IBlock_ReadSystemConfigurationBlock_Response(IBlock, Response):
 
 class IBlock_TagInventory(IBlock, Request):
   CMD = b'\x31'
-
-  stop_trigger_types = {
-    "No new tag is found or timed out within Tms": 0,
-    "No new tags or timeouts were detected after trying N times": 1,
-    "When N tags are found or timed out": 2,
-    "When the time out": 3,
-  }
-
-  def __init__(self, query_multiple_antenna=None, air_protocol_inventory_parameters=None, stop_trigger=None, new_inventory=None):
+  def __init__(self, query_multiple_antenna=None, air_protocol_inventory_parameters=None, stop_trigger: ITimeout=None, new_inventory=1):
     self.INF = self.CMD
 
     field1 = bytearray([0x00])
     if query_multiple_antenna: field1[0] |= 1<<0
     if air_protocol_inventory_parameters: field1[0] |= 1<<1
     if stop_trigger: field1[0] |= 1<<2
-    if new_inventory: field1[0] |= 1<<3
+    if not new_inventory: field1[0] |= 1<<3
     self.INF += field1
     self.field1 = field1
 
@@ -171,7 +170,7 @@ class IBlock_TagInventory(IBlock, Request):
     return field3
 
 
-  def field4_stop_trigger(self, stop_trigger) -> bytearray:
+  def field4_stop_trigger(self, stop_trigger: ITimeout) -> bytearray:
     """
     Field 4.Stop trigger parameter: Node
       Field 4.1.Type:
@@ -189,19 +188,7 @@ class IBlock_TagInventory(IBlock, Request):
         When Stop Type = 2, this value indicates the discovery of N tags;
         When stop type = 3, this value is ignored;
     """
-    field4 = bytearray()
-    field4.append( self.stop_trigger_types[stop_trigger.type] )
-    # DWORD (4 bytes)
-    field4.append( stop_trigger.timeout & 0xFF000000 )
-    field4.append( stop_trigger.timeout & 0x00FF0000 )
-    field4.append( stop_trigger.timeout & 0x0000FF00 )
-    field4.append( stop_trigger.timeout & 0x000000FF )
-    # WORD (2 bytes)
-    field4.append( stop_trigger.value & 0xFF00 )
-    field4.append( stop_trigger.value & 0x00FF )
-
-
-    return field4
+    return helpers.int_to_byte(stop_trigger.type) + helpers.int_to_dword(stop_trigger.timeout) + helpers.int_to_word(stop_trigger.value)
 
 
 class IBlock_TagInventory_Response(IBlock, Response):
@@ -242,7 +229,7 @@ class IBlock_TagInventory_Response(IBlock, Response):
     The total number of tag found for this inventory
     """
     field2 = self.PARM[1:3]
-    self.tags_buffered = self.PARM[1] + (self.PARM[0] <<8)
+    self.tags_buffered = helpers.word_to_int(field2)
     return field2
 
   def field3_the_number_of_transferring(self) -> bytearray:
