@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Lainuri core config",
   "type": "object",
   "publicProperties": [
@@ -162,6 +162,11 @@
                 "templates/check_in.j2"
               ]
             },
+            "check-in-receipt-koha-borrower": {
+              "type": "number",
+              "default": 0,
+              "description": "The borrowernumber of the user to use to render the check-in template in Koha. Only used if configuration parameter 'check-in-receipt'='koha'. Koha cannot render a check-in -receipt without an attached borrower. Without this configuration the user returning books, would have to log in to Lainuri, and boy that would be dull. It is bestest to remove all borrower-dependent information from Koha's check-in receipt template."
+            },
             "check-out-receipt": {
               "type": "string",
               "default": "koha",
@@ -171,7 +176,9 @@
                 "templates/check_in.j2"
               ]
             }
-          }
+          },
+          "if": {"properties": {"check-in-receipt": {"const": "koha"}}},
+          "then": {"required": ["check-in-receipt-koha-borrower"]}
         }
       }
     },

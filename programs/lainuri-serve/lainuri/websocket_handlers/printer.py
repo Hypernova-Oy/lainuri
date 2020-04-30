@@ -38,14 +38,20 @@ def print_receipt(event):
     elif event.receipt_type == 'check-in':
       receipt_template = get_config('devices.thermal-printer.check-in-receipt')
 
-      if event.user_barcode: borrower = koha_api.get_borrower(event.user_barcode)
+      default_receipt_borrowernumber = get_config('devices.thermal-printer.check-in-receipt-koha-borrower')
+      if event.user_barcode:
+        borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
+      elif default_receipt_borrowernumber:
+        borrower = koha_api.get_borrower(borrowernumber=get_config('devices.thermal-printer.check-in-receipt-koha-borrower'))
+      else:
+        borrower = {}
 
       printable_sheet = None
       if receipt_template.lower() == 'koha':
-        if not borrower: raise TypeError("config('devices.thermal-printer.check-in-receipt') cannot be 'koha', because no way of telling Koha which user did the returns without forcing login.")
+        if not borrower['borrowernumber']: raise TypeError("config('devices.thermal-printer.check-in-receipt') is 'koha', but there is no default borrower?")
         printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'checkinslip')
       else:
-        printable_sheet = lainuri.printer.get_sheet(receipt_template, event.items, {})
+        printable_sheet = lainuri.printer.get_sheet(receipt_template, event.items, borrower)
 
       lainuri.printer.print_html(printable_sheet)
       lainuri.event_queue.push_event(

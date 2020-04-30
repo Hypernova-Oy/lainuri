@@ -374,9 +374,7 @@ class KohaAPI():
         'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={lainuri.locale.get_locale(iso639_1=False, iso639_1_iso3166=True)}',
       },
     )
-    (soup, alerts, messages) = self._receive_html(r)
-    if (alerts or messages):
-      raise Exception(f"Checkin failed: alerts='{alerts // []}' messages='{messages // []}'")
+    soup = self._receive_html(r)
     receipt = soup.select('#receipt')
     if not receipt:
       raise Exception("Fetching the checkout receipt failed: CSS selector '#receipt' didn't match.")

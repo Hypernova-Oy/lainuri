@@ -2,6 +2,7 @@
 
 import context
 
+from lainuri.config import get_config
 from lainuri.constants import Status
 import lainuri.websocket_server
 import lainuri.event
@@ -11,6 +12,8 @@ import lainuri.printer as lp
 
 from datetime import datetime
 import os
+
+import unittest.mock
 
 poem = """
 <body>
@@ -167,23 +170,60 @@ def test_format_css_rules_from_config():
   ]
 
 def test_print_template_check_in():
+  lainuri.config.write_config('devices.thermal-printer.enabled', False)
   global items
-  event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
-  printable_sheet = lp.get_sheet(lainuri.config.get_config('devices.thermal-printer.check-in-receipt'), items=event.items, borrower={})
-  assert lp.print_html(printable_sheet)
+  with unittest.mock.patch('lainuri.printer.print_html') as mock_print_html:
+    event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
+    printable_sheet = lp.get_sheet(lainuri.config.get_config('devices.thermal-printer.check-in-receipt'), items=event.items, borrower={})
+    assert lp.print_html(printable_sheet)
 
-def test_print_koha_api():
-  assert lainuri.event_queue.flush_all()
+def test_print_koha_check_in_receipt(subtests):
+  lainuri.config.write_config('devices.thermal-printer.enabled', False)
+  global items
+  with unittest.mock.patch('lainuri.printer.print_html') as mock_print_html:
+    with subtests.test("Given the check-in receipt template backend is set to 'koha'"):
+      lainuri.config.write_config('devices.thermal-printer.check-in-receipt', 'koha')
+    with subtests.test("And the check-in receipt template default borrower is set"):
+      lainuri.config.write_config('devices.thermal-printer.check-in-receipt-koha-borrower', 19)
 
-  lainuri.koha_api.koha_api.authenticate()
+    with subtests.test("When a check-in print request is handled using 'koha' as backend receipt template source"):
+      lainuri.websocket_handlers.printer.print_receipt(lainuri.event.LEPrintRequest('check-in', items=[], user_barcode=None))
+      assert lainuri.event_queue.history[0].states == {} # Catch a possible exception from handling of the event
 
-  event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good'))
-  assert lainuri.websocket_server.handle_one_event(5) == event
+    with subtests.test("Then the check-in receipt contains the information from the receipt template default borrower"):
+      #TODO: Should intelligently know what is in the test servers check-in template. assert get_config('devices.thermal-printer.check-in-receipt-koha-borrower') in mock_print_html.call_args.args[0]
+      assert 'Acevedo' in mock_print_html.call_args[0][0]
 
-  response_event = lainuri.websocket_server.handle_one_event(5)
-  assert type(response_event) == lainuri.event.LEPrintResponse
-  assert not response_event.states.get('exception', None)
-  assert response_event.status == lainuri.event.Status.SUCCESS
+def test_print_koha_api(subtests):
+  lainuri.config.write_config('devices.thermal-printer.enabled', True)
+  response_event = None
+  lainuri.event_queue.flush_all()
+
+  with subtests.test("Scenario: Print check-out -receipt via Koha API"):
+    with subtests.test("Given a check-out print request"):
+      event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good'))
+      assert lainuri.websocket_server.handle_one_event(5) == event
+
+    with subtests.test("When the event is handled"):
+      response_event = lainuri.websocket_server.handle_one_event(5)
+
+    with subtests.test("Then the response is a success"):
+      assert type(response_event) == lainuri.event.LEPrintResponse
+      assert not response_event.states.get('exception', None)
+      assert response_event.status == lainuri.event.Status.SUCCESS
+
+  with subtests.test("Scenario: Print check-in -receipt via Koha API"):
+    with subtests.test("Given a check-in print request"):
+      event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-in', items=[], user_barcode=None))
+      assert lainuri.websocket_server.handle_one_event(5) == event
+
+    with subtests.test("When the event is handled"):
+      response_event = lainuri.websocket_server.handle_one_event(5)
+
+    with subtests.test("Then the response is a success"):
+      assert type(response_event) == lainuri.event.LEPrintResponse
+      assert not response_event.states.get('exception', None)
+      assert response_event.status == lainuri.event.Status.SUCCESS
 
 def test_print_exception_bad_cli_command():
   global items

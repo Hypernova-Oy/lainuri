@@ -21,6 +21,7 @@ devices:
       checkout-success: ToveriAccessGranted:d=4,o=5,b=100:32c5,32b4,32c5,4d5
   thermal-printer:
     check-in-receipt: ./templates/check_in.j2
+    check-in-receipt-koha-borrower: 0
     check-out-receipt: koha
     css:
       font-family: Quicksand, sans-serif !important
