@@ -26,14 +26,15 @@ export default function (Vue) {
         // see. config_schema.json for all configuration options
         app_config: {
           ui: {
+            always_display_check_in_out_notification: true,
             images: {},
+            session_inactivity_timeout_s: 120,
             use_bookcovers: true,
           },
           i18n: {
             default_locale: 'en',
             enabled_locales: ['en'],
             messages: {},
-            always_display_check_in_out_notification: true,
           },
         },
       }

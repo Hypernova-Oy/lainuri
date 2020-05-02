@@ -279,47 +279,52 @@
             }
           }
         },
-        "i18n": {
+        "session_inactivity_timeout_s": {
+          "type": "integer",
+          "default": 120,
+          "description": "In seconds, how quickly the user's check-in/out session is canceled and the UI returned to the main menu, if the user doesn't do any actions."
+        }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "description": "i18n configurations",
+      "properties": {
+        "enabled_locales": {
+          "type": "array",
+          "description": "2-character language codes to enable for Lainuri. Lainuri makes sure the langauge codes are installed if they exists.",
+          "items": {
+            "type": "string"
+          },
+          "default": ["en", "fi", "ru", "sv"]
+        },
+        "default_locale": {
+          "type": "string",
+          "description": "The locale which is loaded by default"
+        },
+        "messages": {
           "type": "object",
-          "description": "i18n configurations",
-          "properties": {
-            "enabled_locales": {
-              "type": "array",
-              "description": "2-character language codes to enable for Lainuri. Lainuri makes sure the langauge codes are installed if they exists.",
-              "items": {
-                "type": "string"
+          "description": "Overload translateable UI messages. See lainuri-ui/src/i18n.js for all the translation keys.",
+          "examples": [{
+            "fi": {
+              "CheckIn": {
+                "Place_to_bin_OK": "Vie nide saunan taakse",
+                "Place_to_bin_ODD": "Laita omaan lokeroon"
               },
-              "default": ["en", "fi", "ru", "sv"]
-            },
-            "default_locale": {
-              "type": "string",
-              "description": "The locale which is loaded by default"
-            },
-            "messages": {
+              "CheckOut": {
+                "Read_library_card": "Aseta kortti lukijaan"
+              }
+            }
+          }],
+          "additionalProperties": {
+            "type": "object",
+            "description": "This object property name is the 2-char locale to overload translations for.",
+            "additionalProperties": {
               "type": "object",
-              "description": "Overload translateable UI messages. See lainuri-ui/src/i18n.js for all the translation keys.",
-              "examples": [{
-                "fi": {
-                  "CheckIn": {
-                    "Place_to_bin_OK": "Vie nide saunan taakse",
-                    "Place_to_bin_ODD": "Laita omaan lokeroon"
-                  },
-                  "CheckOut": {
-                    "Read_library_card": "Aseta kortti lukijaan"
-                  }
-                }
-              }],
+              "description": "This object property name is the UI module the keys are for",
               "additionalProperties": {
                 "type": "object",
-                "description": "This object property name is the 2-char locale to overload translations for.",
-                "additionalProperties": {
-                  "type": "object",
-                  "description": "This object property name is the UI module the keys are for",
-                  "additionalProperties": {
-                    "type": "object",
-                    "description": "The translations keys for the given module and their translated meanings"
-                  }
-                }
+                "description": "The translations keys for the given module and their translated meanings"
               }
             }
           }

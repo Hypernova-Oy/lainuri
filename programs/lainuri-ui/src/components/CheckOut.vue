@@ -18,7 +18,7 @@
             <v-spacer></v-spacer>
 
             <v-btn
-              v-on:click="abort_user_login"
+              v-on:click="stop_checking_out"
               v-if="!is_user_logged_in"
               x-large color="secondary"
             >
@@ -162,6 +162,7 @@ import {find_tag_by_key} from '../helpers'
 import {ItemBib} from '../item_bib'
 import {lainuri_ws, send_user_logging_in} from '../lainuri'
 import {Status, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
+import * as Timeout from '../timeout_poller'
 
 
 export default {
@@ -176,9 +177,10 @@ export default {
   },
   created: function () {
     send_user_logging_in();
+    Timeout.start(() => {this.stop_checking_out()}, this.$appConfig.ui.session_inactivity_timeout_s);
 
     lainuri_ws.attach_event_listener(LEUserLoginComplete, this, (event) => {
-      log.info(`Received event 'LEUserLoginComplete'`);
+      log.info(`Received event 'LEUserLoginComplete'`); Timeout.prod();
       if (event.status === Status.SUCCESS) {
         if (! this.is_user_logged_in) {
           this.user_login_success(event);
@@ -192,11 +194,11 @@ export default {
       }
     });
     lainuri_ws.attach_event_listener(LECheckOutComplete, this, function(event) {
-      log.info(`Received event 'LECheckOutComplete' for barcode='${event.item_barcode}'`);
+      log.info(`Received event 'LECheckOutComplete' for barcode='${event.item_barcode}'`); Timeout.prod();
       this.check_out_complete(event);
     });
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
-      log.info(`Event 'LEBarcodeRead' for barcode='${event.barcode}'`);
+      log.info(`Event 'LEBarcodeRead' for barcode='${event.barcode}'`); Timeout.prod();
       if (this.is_user_logged_in) {
         this.start_or_continue_transaction(new ItemBib(event.tag))
       }
@@ -205,7 +207,7 @@ export default {
       }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
-      log.info(`Event 'LERFIDTagsNew' triggered. New RFID tags:`, event.tags_new);
+      log.info(`Event 'LERFIDTagsNew' triggered. New RFID tags:`, event.tags_new); Timeout.prod();
       if (this.is_user_logged_in) {
         for (let item_bib of event.tags_new) {
           let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
@@ -220,16 +222,17 @@ export default {
       }
     });
     lainuri_ws.attach_event_listener(LESetTagAlarmComplete, this, function(event) {
-      log.info(`Event 'LESetTagAlarmComplete' for item_barcode='${event.item_barcode}'`);
+      log.info(`Event 'LESetTagAlarmComplete' for item_barcode='${event.item_barcode}'`); Timeout.prod();
       this.set_rfid_tag_alarm_complete(event);
     });
     lainuri_ws.attach_event_listener(LEPrintResponse, this, function(event) {
-      log.info(`Event 'LEPrintResponse'`);
+      log.info(`Event 'LEPrintResponse'`); Timeout.prod();
       if (this.receipt_printing) {this.print_receipt_complete(event);}
       else {log.error(`Received event 'LEPrintResponse' but not printing a receipt. User race condition maybe?`)}
     });
   },
   beforeDestroy: function () {
+    Timeout.terminate();
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
     this.items_checked_out_failed = {}
     this.items_checked_out_successfully = {}
@@ -283,7 +286,6 @@ export default {
     abort_user_login: function () {
       log.info("abort_user_login in CheckOut");
       lainuri_ws.dispatch_event(new LEUserLoginAbort('client', 'server'));
-      this.stop_checking_out();
     },
     start_or_continue_transaction: function (tag) {
       log.info('start_or_continue_transaction():> tag=', tag)
@@ -325,6 +327,7 @@ export default {
     },
     stop_checking_out: function () {
       log.info(`Stopped checking out`);
+      if (!(this.$data.user) || Object.keys(this.$data.user).length == 0) this.abort_user_login();
       this.$data.user = {};
       this.$emit('stop_checking_out');
     },
