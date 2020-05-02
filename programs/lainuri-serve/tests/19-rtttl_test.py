@@ -42,23 +42,22 @@ def test_list_rtttl(subtests):
     assert event_response.status == Status.SUCCESS
 
 
-def tssest_play_rtttl_checkin_out_types(subtests):
+def test_play_rtttl_checkin_out_types(subtests):
   lainuri.config.write_config('devices.ringtone-player.enabled', True)
-  patcher = unittest.mock.patch.object(lainuri.rtttl_player, 'play_rtttl', side_effect=lainuri.rtttl_player.play_rtttl)
-  play_rtttl_mock = patcher.start()
+  with unittest.mock.patch.object(lainuri.rtttl_player, 'play_rtttl', side_effect=lainuri.rtttl_player.play_rtttl) as play_rtttl_mock:
 
-  player_thr = threading.Thread(group=None, target=lainuri.rtttl_player.rtttl_daemon)
-  player_thr.start()
+    player_thr = threading.Thread(group=None, target=lainuri.rtttl_player.rtttl_daemon)
+    player_thr.start()
 
-  run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-error')
-  run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-success')
-  run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-error')
-  run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-success')
-  run_play_rtttl_tst(subtests, play_rtttl_mock, None, 'Popcorn:d=4,o=5,b=160:8c6,8a#,8c6,8g,8d#,8g,c,8c6,8a#,8c6,8g,8d#,8g,c,8c6,8d6,8d#6,16c6,8d#6,16c6,8d#6,8d6,16a#,8d6,16a#,8d6,8c6,8a#,8g,8a#,c6')
+    run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-error')
+    run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-success')
+    run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-error')
+    run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-success')
+    run_play_rtttl_tst(subtests, play_rtttl_mock, None, 'Popcorn:d=4,o=5,b=160:8c6,8a#,8c6,8g,8d#,8g,c,8c6,8a#,8c6,8g,8d#,8g,c,8c6,8d6,8d#6,16c6,8d#6,16c6,8d#6,8d6,16a#,8d6,16a#,8d6,8c6,8a#,8g,8a#,c6')
 
-  lainuri.rtttl_player.kill = 1
-  player_thr.join(timeout=5)
-  assert not player_thr.is_alive()
+    lainuri.rtttl_player.kill = 1
+    player_thr.join(timeout=5)
+    assert not player_thr.is_alive()
 
 def run_play_rtttl_tst(subtests, play_rtttl_mock, ringtone_type = None, ringtone = None):
   assert lainuri.event_queue.flush_all()
