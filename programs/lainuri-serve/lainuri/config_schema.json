@@ -57,6 +57,11 @@
               "default": 194,
               "description": "RFID ISO15691 AFI value written to the RFID tags on checkout. This enables the security gate alarm."
             },
+            "double-check-gate-security": {
+              "type": "boolean",
+              "default": false,
+              "description": "Make an extra check to make sure the RFID gate security status is set. This might increase confidence in setting the RFID tag's gate security status correctly, but causes the check-out/in to be 300-500ms slower."
+            },
             "eas": {
               "type": "boolean",
               "default": false,

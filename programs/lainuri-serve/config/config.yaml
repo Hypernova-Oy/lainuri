@@ -5,6 +5,7 @@ devices:
   rfid-reader:
     afi-checkin: 7
     afi-checkout: 194
+    double-check-gate-security: True
     eas: false
     enabled: true
     iso28560-data-format-overloads:

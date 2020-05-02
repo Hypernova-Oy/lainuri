@@ -70,6 +70,30 @@ def test_flip_flop_gate_security_status_via_event_queue(subtests):
     assert event.status == Status.SUCCESS
     assert event.on == False
 
+def test_gate_security_double_check_performance(subtests):
+  rfid_reader = rfid.get_rfid_reader()
+
+  tags_present = rfid.get_current_inventory_status()
+  assert len(tags_present) > 0
+  tag = tags_present[0]
+
+  lainuri.config.write_config('devices.rfid-reader.double-check-gate-security', True)
+  start_time_1 = time.time()
+  for i in range(0,5):
+    rfid._set_tag_gate_alarm_afi(rfid_reader, tag, flag_on=True)
+    rfid._set_tag_gate_alarm_afi(rfid_reader, tag, flag_on=False)
+  duration_1 = time.time() - start_time_1
+
+  lainuri.config.write_config('devices.rfid-reader.double-check-gate-security', False)
+  start_time_2 = time.time()
+  for i in range(0,5):
+    rfid._set_tag_gate_alarm_afi(rfid_reader, tag, flag_on=True)
+    rfid._set_tag_gate_alarm_afi(rfid_reader, tag, flag_on=False)
+  duration_2 = time.time() - start_time_2
+
+  print(f"Extra check: '{duration_1}'. No check: '{duration_2}'.")
+  assert duration_1 > (duration_2 * 1.33)
+
 def test_set_gate_security_status_for_missing_tag(subtests):
   event = None
 
