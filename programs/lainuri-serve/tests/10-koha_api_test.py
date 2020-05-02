@@ -20,7 +20,7 @@ def test_authenticate():
   lainuri.config.c['koha']['userid'] = 'l-t-dev-bad'
   lainuri.config.c['koha']['password'] = 'bad_pass'
   koha_api.current_event_id = 'event-id-2'
-  assert_raises('Testing bad authentication', exception_ils.InvalidUser, 'l-t-dev-bad',
+  context.assert_raises('Testing bad authentication', exception_ils.InvalidUser, 'l-t-dev-bad',
     lambda: koha_api.authenticate()
   )
 
@@ -33,7 +33,7 @@ def test_authenticate():
 def test_user_login():
   global borrower, item, record
   koha_api.current_event_id = 'auth-user-4'
-  assert_raises('Testing bad enduser', exception_ils.NoUser, 'l-t-u-bad',
+  context.assert_raises('Testing bad enduser', exception_ils.NoUser, 'l-t-u-bad',
     lambda: koha_api.authenticate_user('l-t-u-bad')
   )
 
@@ -46,7 +46,7 @@ def test_user_login():
 def test_get_item():
   global borrower, item, record
   koha_api.current_event_id = 'item-6'
-  assert_raises('Testing bad item barcode', exception_ils.NoItem, 'l-t-i-bad',
+  context.assert_raises('Testing bad item barcode', exception_ils.NoItem, 'l-t-i-bad',
     lambda: koha_api.get_item('l-t-i-bad')
   )
 
@@ -59,7 +59,7 @@ def test_get_item():
 def test_enrich_rfid_tag_with_marc():
   global borrower, item, record
   koha_api.current_event_id = 'marc-8'
-  assert_raises('Testing bad biblionumber', NoResults, '9999999999', lambda: MARCRecord(koha_api.get_record(9999999999)))
+  context.assert_raises('Testing bad biblionumber', NoResults, '9999999999', lambda: MARCRecord(koha_api.get_record(9999999999)))
 
   koha_api.current_event_id = 'marc-9'
   record = MARCRecord(koha_api.get_record(item['biblionumber']))
@@ -71,11 +71,3 @@ def test_enrich_rfid_tag_with_marc():
   assert item_bib['title']
   assert item_bib['author']
   assert item_bib['book_cover_url']
-
-def assert_raises(name, e_class, e_string, cb):
-  try:
-    cb()
-    raise AssertionError(name + " failed to raise! " + cb)
-  except Exception as e:
-    assert type(e) == e_class
-    assert e_string in str(e)
