@@ -4,7 +4,6 @@ import context
 from lainuri.config import get_config
 
 import time
-import pytest_subtests
 import unittest.mock
 
 import lainuri.websocket_server
