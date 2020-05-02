@@ -33,6 +33,7 @@ export default function (Vue) {
             default_locale: 'en',
             enabled_locales: ['en'],
             messages: {},
+            always_display_check_in_out_notification: true,
           },
         },
       }

@@ -55,6 +55,7 @@ server:
   hostname: localhost
   port: 53153
 ui:
+  always_display_check_in_out_notification: True
   images:
   - position: Place_to_bin_OK
     src: Place_to_bin_OK.png

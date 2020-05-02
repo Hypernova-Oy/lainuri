@@ -246,6 +246,11 @@
       "type": "object",
       "description": "User interface configurations",
       "properties": {
+        "always_display_check_in_out_notification": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always show a popup notification telling where to place the Item. Otherwise shows a popup notification only if there are some special statuses or errors involved."
+        },
         "use_bookcovers": {
           "type": "boolean",
           "description": "Display bookcovers (true) or show more condensed item information cards (false)",
