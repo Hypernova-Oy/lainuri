@@ -35,7 +35,6 @@ class KohaAPI():
   koha_baseurl = ''
   current_event_id = ''
   current_request_url = ''
-  reauthenticate_tries = 0
 
   def __init__(self):
     self.koha_baseurl = get_config('koha.baseurl')
@@ -44,9 +43,9 @@ class KohaAPI():
       retries=False,
     )
 
-  def _request(self, method, url, fields=None, headers=None):
-    try:
-      for i in range(1,4):
+  def _request(self, method, url, headers=None, fields=None, expect_json=1, expect_html=None):
+    for i in range(1,4):
+      try:
         r = self.http.request(
           method,
           url,
@@ -54,17 +53,23 @@ class KohaAPI():
           headers,
         )
         lainuri.websocket_handlers.status.set_ils_connection_status(Status.SUCCESS)
-        return r
-    except Exception as e:
-      if isinstance(e, urllib3.exceptions.NewConnectionError):
-        lainuri.websocket_handlers.status.set_ils_connection_status(Status.ERROR)
-        time.sleep(1)
-      elif isinstance(e, urllib3.exceptions.ConnectTimeoutError):
-        lainuri.websocket_handlers.status.set_ils_connection_status(Status.PENDING)
-        time.sleep(1)
-      else:
-        lainuri.websocket_handlers.status.set_ils_connection_status(Status.ERROR)
-        raise e
+
+        if expect_html: return self._maybe_not_logged_in(r, self._receive_html(r))
+        if expect_json: return self._maybe_not_logged_in(r, self._receive_json(r))
+
+      except Exception as e:
+        if isinstance(e, urllib3.exceptions.NewConnectionError):
+          lainuri.websocket_handlers.status.set_ils_connection_status(Status.ERROR)
+          time.sleep(1)
+        elif isinstance(e, urllib3.exceptions.ConnectTimeoutError):
+          lainuri.websocket_handlers.status.set_ils_connection_status(Status.PENDING)
+          time.sleep(1)
+        elif "TRANSPARENT_REAUTHENTICATION" in str(e):
+          headers['Cookie'] = f'CGISESSID={self.sessionid}'
+          pass # Continue to the next retry loop
+        else:
+          lainuri.websocket_handlers.status.set_ils_connection_status(Status.ERROR)
+          raise e
 
   def _scrape_log_header(self, r: urllib3.HTTPResponse):
     return f"event_id='{self.current_event_id}' status='{r.status} url='{r.geturl() or self.current_request_url}"
@@ -73,7 +78,6 @@ class KohaAPI():
     data = r.data.decode('utf-8')
     log_scrape.info(self._scrape_log_header(r) + "\n" + data)
     payload = json.loads(data)
-    self._maybe_not_logged_in(r, payload)
     self._maybe_missing_permission(payload)
     return payload
 
@@ -83,66 +87,100 @@ class KohaAPI():
       soup = BeautifulSoup(data, features="html.parser")
       for e in soup.select('script'): e.decompose() # Remove all script-tags
       log_scrape.info(self._scrape_log_header(r) + "\n" + soup.select_one('body').prettify())
-
-      alerts = soup.select('.dialog.alert')
-      # Filter away hidden alerts
-      alerts = [m.prettify() for m in alerts if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
-      messages = soup.select('.dialog.message')
-      # Filter away hidden messages
-      messages = [m.prettify() for m in messages if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
     except Exception as e:
       log_scrape.info(f"event_id='{self.current_event_id}'\n" + data)
       log.error(f"Failed to parse HTML for event_id='{self.current_event_id}': {traceback.format_exc()}")
       raise e
+    return soup
 
-    self._maybe_not_logged_in(r, soup)
-    return (soup, alerts, messages)
+  def _parse_html(self, soup: BeautifulSoup):
+    alerts = soup.select('.dialog.alert')
+    # Filter away hidden alerts
+    alerts = [m.prettify() for m in alerts if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
+    messages = soup.select('.dialog.message')
+    # Filter away hidden messages
+    messages = [m.prettify() for m in messages if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
+    return (alerts, messages)
 
   def _maybe_not_logged_in(self, r, payload):
     if isinstance(payload, dict) and payload.get('error', None):
       if r.status == 401:
-        self.reauthenticate_tries += 1
+        self._transparent_reauthentication()
     elif isinstance(payload, BeautifulSoup):
       login_error = payload.select("#login_error")
       if login_error:
-        self.reauthenticate_tries += 1
-
-    if self.reauthenticate_tries == 2:
-      if not self.authenticate():
-        self.reauthenticate_tries = 0
-        raise Exception(f"Lainuri device was not authenticated to Koha and failed to automatically reauthenticate.")
-      self.reauthenticate_tries = 0
+        self._transparent_reauthentication()
+    return (r, payload)
 
   def _maybe_missing_permission(self, payload):
     if isinstance(payload, dict) and payload.get('error', None):
       if payload.get('required_permissions'):
-        raise Exception(f"Lainuri device is missing permission '{payload.get('required_permissions')}'. Lainuri needs these permissions to access Koha: '{self.required_permissions}'")
+        raise exception_ils.PermissionMissing(payload.get('required_permissions'))
+
+  def _transparent_reauthentication(self):
+    self.authenticate()
+    raise Exception("TRANSPARENT_REAUTHENTICATION")
 
   def authenticated(self):
-    r = self.http.request(
+    if not self.sessionid: return 0
+
+    # TODO: Koha API is broken here. On success we get 500, on error we get 401.
+    r = self.http.request_encode_body(
       'GET',
       self.koha_baseurl+'/api/v1/auth/session',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
-      }
+      },
+      fields = {
+        'sessionid': self.sessionid,
+      },
     )
     self._receive_json(r)
-    if r.status == '200':
+    if r.status == 500 or r.status == 200: #Bug in Koha API
       return 1
     else:
       return 0
 
   def authenticate(self):
-    log.info(f"Authenticating. Reauth '{self.reauthenticate_tries}'")
-    self.reauthenticate_tries += 1
-    r = self._auth_post(userid=get_config('koha.userid'), password=get_config('koha.password'))
+    log.info(f"Authenticating")
+
+    r = self.http.request(
+      'POST',
+      self.koha_baseurl + '/api/v1/auth/session',
+      headers = {
+        'Cookie': f'CGISESSID={self.sessionid}',
+      },
+      fields = {
+        'password': get_config('koha.password'),
+        'userid': get_config('koha.userid'),
+      },
+    )
     payload = self._receive_json(r)
     error = payload.get('error', None)
     if error:
       if 'Login failed' in error: raise exception_ils.InvalidUser(get_config('koha.userid'))
       else: raise Exception(f"Unknown error '{error}'")
     self.sessionid = payload['sessionid']
-    self.reauthenticate_tries = 0
+    return payload
+
+  def deauthenticate(self):
+    log.info(f"Deauthenticating")
+    r = self.http.request_encode_body(
+      'DELETE',
+      self.koha_baseurl + '/api/v1/auth/session',
+      headers = {
+        'Cookie': f'CGISESSID={self.sessionid}',
+      },
+      fields = {
+        'sessionid': self.sessionid,
+      },
+    )
+    payload = self._receive_json(r)
+    error = payload.get('error', None)
+    if error:
+      if 'Logout failed' in error: raise exception_ils.InvalidUser(get_config('koha.userid'))
+      else: raise Exception(f"Unknown error '{error}'")
+    self.sessionid = None
     return payload
 
   def authenticate_user(self, user_barcode, userid=None, password=None) -> dict:
@@ -154,39 +192,24 @@ class KohaAPI():
       else:
         raise exception_ils.InvalidUser(user_barcode)
 
-  def _auth_post(self, password, userid=None, user_barcode=None):
-    if not userid or user_barcode:
-      raise Exception("Mandatory parameter 'userid' or 'user_barcode' is missing!")
-    fields = {
-      'password': password,
-    }
-    if userid: fields['userid'] = userid
-    if user_barcode: fields['user_barcode'] = user_barcode
-
-    return self.http.request(
-      'POST',
-      self.koha_baseurl + '/api/v1/auth/session',
-      fields = fields,
-      headers = {
-        'Cookie': f'CGISESSID={self.sessionid}',
-      },
-    )
-
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
-  def get_borrower(self, user_barcode):
-    log.info(f"Get borrower: user_barcode='{user_barcode}'")
-    r = self.http.request_encode_url(
+  def get_borrower(self, user_barcode=None, borrowernumber=None):
+    self.current_request_url = self.koha_baseurl + f'/api/v1/patrons'
+    log.info(f"Get borrower: user_barcode='{user_barcode}' borrowernumber='{borrowernumber}'")
+
+    fields = {}
+    if user_barcode: fields['cardnumber'] = user_barcode
+    if borrowernumber: fields['borrowernumber'] = borrowernumber
+
+    (response, payload) = self._request(
       'GET',
-      self.koha_baseurl + f'/api/v1/patrons',
+      self.current_request_url,
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
-      fields = {
-        'cardnumber': user_barcode,
-      },
+      fields = fields,
     )
-    self.current_request_url = self.koha_baseurl + f'/api/v1/patrons'
-    payload = self._receive_json(r)
+
     if isinstance(payload, dict) and payload.get('error', None):
       error = payload.get('error', None)
       if error:

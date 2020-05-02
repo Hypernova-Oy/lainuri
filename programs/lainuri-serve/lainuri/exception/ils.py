@@ -14,3 +14,7 @@ class NoItem(lainuri.exception.ILS):
 
 class NoItemIdentifier(lainuri.exception.ILS):
   pass
+
+class PermissionMissing(lainuri.exception.ILS):
+  def __init__(self, id: str):
+    self.id = id
