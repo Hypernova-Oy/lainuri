@@ -29,6 +29,10 @@ devices:
       font-size: 12px
     css_string: ''
     enabled: true
+    printing-speed: 9
+    printing-heat: 80
+    printing-precision: 32
+
 i18n:
   default_locale: fi
   enabled_locales:

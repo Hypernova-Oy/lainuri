@@ -8,9 +8,21 @@ dev = usb.core.find(idVendor=0x4B43, idProduct=0x3830)
 if dev is None:
     raise ValueError('Device not found')
 
+c = 1
+for config in dev:
+    print('config', c)
+    print('Interfaces', config.bNumInterfaces)
+    for i in range(config.bNumInterfaces):
+        if dev.is_kernel_driver_active(i):
+            dev.detach_kernel_driver(i)
+        print(i)
+    c+=1
+
 # set the active configuration. With no arguments, the first
 # configuration will be the active one
 dev.set_configuration()
+
+
 
 # get an endpoint instance
 cfg = dev.get_active_configuration()
@@ -38,14 +50,14 @@ assert ep_in is not None
 
 # write the data
 ep_out.write(b'\x10\x04\x01')
-rv = ep_in.read()
+rv = ep_in.read(10, 100)
 
 
 import pdb; pdb.set_trace()
 
 
 
-TODO: Show paper status in the GUI
+#TODO: Show paper status in the GUI
 
 class HSK_PrinterStatus():
   def __init__(self, usb_ep_out, usb_ep_in):

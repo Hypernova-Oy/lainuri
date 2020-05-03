@@ -180,6 +180,27 @@
                 "koha",
                 "templates/check_in.j2"
               ]
+            },
+            "printing-speed": {
+              "type": "integer",
+              "default": "9",
+              "minimum": 0,
+              "maximum": 255,
+              "description": "How many dots the printer prints simultaneously."
+            },
+            "printing-heat": {
+              "type": "integer",
+              "default": "80",
+              "minimum": 3,
+              "maximum": 255,
+              "description": "How long a dot is heated. Too high values burn through, too low values leave a blank page."
+            },
+            "printing-precision": {
+              "type": "integer",
+              "default": "32",
+              "minimum": 0,
+              "maximum": 255,
+              "description": "Increase print precision at the cost of speed. Should not be more than 64"
             }
           },
           "if": {"properties": {"check-in-receipt": {"const": "koha"}}},
@@ -323,7 +344,7 @@
               "type": "object",
               "description": "This object property name is the UI module the keys are for",
               "additionalProperties": {
-                "type": "object",
+                "type": "string",
                 "description": "The translations keys for the given module and their translated meanings"
               }
             }

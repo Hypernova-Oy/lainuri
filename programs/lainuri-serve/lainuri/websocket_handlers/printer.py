@@ -16,50 +16,21 @@ def print_receipt(event):
   printable_sheet = None
 
   try:
+    printable_sheet = None
+
     if event.receipt_type == 'check-out':
-      receipt_template = get_config('devices.thermal-printer.check-out-receipt')
-
-      borrower = koha_api.get_borrower(event.user_barcode)
-
-      printable_sheet = None
-      if receipt_template.lower() == 'koha':
-        printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'qslip')
-      else:
-        printable_sheet = lainuri.printer.get_sheet(receipt_template, event.items, borrower)
-
-      lainuri.printer.print_html(printable_sheet)
-      lainuri.event_queue.push_event(
-        le.LEPrintResponse(
-          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
-          status=Status.SUCCESS,
-        )
-      )
-
+      printable_sheet = lainuri.printer.print_check_out_receipt(user_barcode=event.user_barcode, items=event.items)
     elif event.receipt_type == 'check-in':
-      receipt_template = get_config('devices.thermal-printer.check-in-receipt')
+      printable_sheet = lainuri.printer.print_check_in_receipt(user_barcode=event.user_barcode, items=event.items)
+    else:
+      raise ValueError(f"print_receipt() Unknown receipt_type '{event.receipt_type}'!")
 
-      default_receipt_borrowernumber = get_config('devices.thermal-printer.check-in-receipt-koha-borrower')
-      if event.user_barcode:
-        borrower = koha_api.get_borrower(user_barcode=event.user_barcode)
-      elif default_receipt_borrowernumber:
-        borrower = koha_api.get_borrower(borrowernumber=get_config('devices.thermal-printer.check-in-receipt-koha-borrower'))
-      else:
-        borrower = {}
-
-      printable_sheet = None
-      if receipt_template.lower() == 'koha':
-        if not borrower['borrowernumber']: raise TypeError("config('devices.thermal-printer.check-in-receipt') is 'koha', but there is no default borrower?")
-        printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'checkinslip')
-      else:
-        printable_sheet = lainuri.printer.get_sheet(receipt_template, event.items, borrower)
-
-      lainuri.printer.print_html(printable_sheet)
-      lainuri.event_queue.push_event(
-        le.LEPrintResponse(
-          receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
-          status=Status.SUCCESS,
-        )
+    lainuri.event_queue.push_event(
+      le.LEPrintResponse(
+        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
+        status=Status.SUCCESS,
       )
+    )
   except Exception as e:
     lainuri.event_queue.push_event(
       le.LEPrintResponse(

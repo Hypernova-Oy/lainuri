@@ -22,6 +22,16 @@ def _two_way_link_dict(d) -> dict:
     tmp[k] = d[k]
   return tmp
 
+def bytes_to_hex(bs: bytes) -> list:
+  return [hex(byte) for byte in bs]
+
+def bytes_to_hex_string(bs: bytes, prefix: str = None, suffix: str = None, hex_separator: str = " "):
+  sb = []
+  if prefix: sb.append(prefix)
+  for byte in bs: sb.append(hex(byte))
+  if suffix: sb.append(suffix)
+  return hex_separator.join(sb)
+
 def shift_byte(buffer: bytearray, iterator: list) -> bytearray:
   iterator[0] += 1 # Increment the reference to the iterator
   return buffer[ iterator[0]-1 : iterator[0] ] # Get the next byte
