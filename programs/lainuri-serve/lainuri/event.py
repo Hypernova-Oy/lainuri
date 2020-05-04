@@ -427,16 +427,18 @@ class LEServerStatusResponse(LEvent):
   event = 'server-status-response'
   default_recipient = 'client'
 
-  serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status', 'ils_connection_status']
+  serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'thermal_printer_paper_status', 'rfid_reader_status', 'touch_screen_status', 'ils_connection_status']
   barcode_reader_status = Status.NOT_SET
   thermal_printer_status = Status.NOT_SET
+  thermal_printer_paper_status = Status.NOT_SET
   rfid_reader_status = Status.NOT_SET
   touch_screen_status = Status.NOT_SET
   ils_connection_status = Status.NOT_SET
 
-  def __init__(self, barcode_reader_status: Status, thermal_printer_status: Status, rfid_reader_status: Status, touch_screen_status: Status, ils_connection_status: Status, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, barcode_reader_status: Status, thermal_printer_status: Status, thermal_printer_paper_status: Status, rfid_reader_status: Status, touch_screen_status: Status, ils_connection_status: Status, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode_reader_status = barcode_reader_status
     self.thermal_printer_status = thermal_printer_status
+    self.thermal_printer_paper_status = thermal_printer_paper_status
     self.rfid_reader_status = rfid_reader_status
     self.touch_screen_status = touch_screen_status
     self.ils_connection_status = ils_connection_status

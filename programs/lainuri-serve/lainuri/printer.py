@@ -2,8 +2,10 @@ from lainuri.config import get_config, get_lainuri_conf_dir
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+from lainuri.constants import Status
 import lainuri.hs_k33
 from lainuri.koha_api import koha_api
+import lainuri.status
 
 from jinja2 import Template
 from datetime import datetime
@@ -58,9 +60,14 @@ def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
   css_dict: Overload config.yaml's 'devices.thermal-printer.css' with this. Mostly useful for testing.
   """
   log.debug(f"print_html text='{html_text}'")
-  _print_thermal_receipt(
-    _prepare_weasy_doc(html_text=html_text, page_increment=page_increment, css_dict=css_dict)
-  )
+  try:
+    _print_thermal_receipt(
+      _prepare_weasy_doc(html_text=html_text, page_increment=page_increment, css_dict=css_dict)
+    )
+    lainuri.status.update_status('thermal_printer_status', Status.SUCCESS)
+  except Exception as e:
+    lainuri.status.update_status('thermal_printer_status', Status.ERROR)
+    raise e
   return 1
 
 def get_sheet(receipt_template_name: str, items: list, borrower: dict, header: str = None, footer: str = None) -> str:
@@ -136,6 +143,14 @@ def _print_via_escpos_raster(png_file_path: str):
   printer = lainuri.hs_k33.get_printer()
   printer.escpos_printer.image(png_file_path, impl=u'bitImageRaster')
   printer.escpos_printer.cut()
+  update_paper_status()
+
+def update_paper_status():
+  printer = lainuri.hs_k33.get_printer()
+  ps = printer.paper_status()
+  if ps == 2: lainuri.status.update_status('thermal_printer_paper_status') = Status.SUCCESS
+  if ps == 1: lainuri.status.update_status('thermal_printer_paper_status') = Status.PENDING
+  if ps == 0: lainuri.status.update_status('thermal_printer_paper_status') = Status.ERROR
 
 def _print_via_cups(byttes: bytes):
   global cli_print_command

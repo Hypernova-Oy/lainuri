@@ -436,17 +436,19 @@ class LEServerStatusRequest extends LEvent {
 class LEServerStatusResponse extends LEvent {
   static event = 'server-status-response';
 
-  static serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'rfid_reader_status', 'touch_screen_status', 'ils_connection_status'];
+  static serializable_attributes = ['barcode_reader_status', 'thermal_printer_status', 'thermal_printer_paper_status', 'rfid_reader_status', 'touch_screen_status', 'ils_connection_status'];
   barcode_reader_status;
   thermal_printer_status;
+  thermal_printer_paper_status;
   rfid_reader_status;
   touch_screen_status;
   ils_connection_status;
 
-  constructor(barcode_reader_status, thermal_printer_status, rfid_reader_status, touch_screen_status, ils_connection_status, sender, recipient, event_id = undefined) {
+  constructor(barcode_reader_status, thermal_printer_status, thermal_printer_paper_status, rfid_reader_status, touch_screen_status, ils_connection_status, sender, recipient, event_id = undefined) {
     super(event_id);
     this.barcode_reader_status = barcode_reader_status
     this.thermal_printer_status = thermal_printer_status
+    this.thermal_printer_paper_status = thermal_printer_paper_status
     this.rfid_reader_status = rfid_reader_status
     this.touch_screen_status = touch_screen_status
     this.ils_connection_status = ils_connection_status

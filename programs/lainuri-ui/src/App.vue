@@ -57,7 +57,7 @@
     >
     </div>
     <v-container fluid max-height="800">
-      <StatusBar :status="status"/>
+      <StatusBar/>
       <Exception v-if="exceptions.length"
         :exception="exceptions[0]" :exceptions_count="exceptions.length"
         v-on:exception_close="exceptions.shift()"
@@ -180,14 +180,6 @@ export default {
     lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
       log.info(`Event 'LEServerStatusResponse' received.`);
     });
-    lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
-      log.info(`Event 'LEServerConnected' received.`);
-      this.$data.status.server_connected = Status.SUCCESS;
-    });
-    lainuri_ws.attach_event_listener(LEServerDisconnected, this, function(event) {
-      log.info(`Event 'LEServerDisconnected' received.`);
-      this.$data.status.server_connected = Status.ERROR;
-    });
     if (!preseed) {
       lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
         log.info(`PRESEEDING!! Received 'LEServerConnected'`);
@@ -242,17 +234,6 @@ export default {
       bottom_bar_view: undefined,
       bottom_bar_view_debug: false,
       bottom_bar_view_config: false,
-
-      status: {
-        server_connected: Status.ERROR,
-        printer_off: Status.SUCCESS,
-        printer_paper_low: Status.SUCCESS,
-        printer_paper_out: Status.SUCCESS,
-        printer_receipt_not_torn: Status.SUCCESS,
-        rfid_reader_off: Status.SUCCESS,
-        barcode_reader_off: Status.SUCCESS,
-        ils_connection_status: Status.SUCCESS,
-      },
 
       repl_active: false,
       repl: '',
