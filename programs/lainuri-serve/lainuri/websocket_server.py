@@ -18,6 +18,8 @@ from lainuri.koha_api import koha_api
 import lainuri.locale
 from lainuri.exception import NoResults
 import lainuri.exception.ils as exception_ils
+import lainuri.printer
+import lainuri.printer.status
 import lainuri.rfid_reader
 import lainuri.barcode_reader
 import lainuri.rtttl_player
@@ -53,7 +55,7 @@ def set_state(new_state: str):
   state = new_state
 
 def handle_events_loop():
-  while(1):
+  while(threading.main_thread().isAlive()):
     try:
       handle_one_event()
     except Exception as e:
@@ -181,6 +183,8 @@ def start():
   event_thr.start()
   player_thr = threading.Thread(group=None, target=lainuri.rtttl_player.rtttl_daemon)
   player_thr.start()
+  printer_thr = threading.Thread(group=None, target=lainuri.printer.status.printer_status_daemon)
+  printer_thr.start()
 
   port = int(get_config('server.port'))
   hostname = get_config('server.hostname')

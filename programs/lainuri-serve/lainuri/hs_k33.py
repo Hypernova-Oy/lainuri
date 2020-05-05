@@ -8,6 +8,7 @@ import atexit
 import escpos
 import escpos.constants
 import escpos.printer
+import threading
 import time
 import usb.core
 import usb.util
@@ -28,6 +29,7 @@ class HSK_Printer():
   timeout = 1000
 
   def __init__(self):
+    self.transaction_lock = threading.Lock()
     self._get_printer_usb_connection()
     self.initialize_printer()
     self.reconfigure()
@@ -80,27 +82,54 @@ class HSK_Printer():
 
     self.escpos_printer = escpos.printer.Usb(idVendor=0x4B43, idProduct=0x3830, in_ep=self.usb_ep_in, out_ep=self.usb_ep_out, timeout=self.timeout)
 
+  def _transaction(self, write_bytes: bytes, read_bytes: int = 0, read_can_timeout: bool = False, sleep: int = 0):
+    """
+    Thread-safety layer
+    """
+    with self.transaction_lock:
+      self._write(write_bytes)
+
+      resp = None
+      if read_bytes:
+        try:
+          resp = self._read(read_bytes)
+        except usb.core.USBError as e:
+          if "[Errno 110] Operation timed out" in str(e):
+            if not read_can_timeout: raise e
+          else: raise e
+
+    if sleep: time.sleep(sleep)
+
+    return resp
+
   def _write(self, msg: bytes):
     if log.isEnabledFor(logging.DEBUG):
       log.debug(lainuri.helpers.bytes_to_hex_string(msg, f"HS-K33: _write '", "'", " "))
     return self.escpos_printer.device.write(self.usb_ep_out, msg, self.timeout)
-  def _read(self):
-    msg = self.escpos_printer.device.read(self.usb_ep_in, 16, self.timeout)
+
+  def _read(self, read_bytes: int = 16):
+    msg = self.escpos_printer.device.read(self.usb_ep_in, read_bytes, self.timeout)
     if log.isEnabledFor(logging.DEBUG):
       log.debug(lainuri.helpers.bytes_to_hex_string(msg, f"HS-K33: _read  '", "'", " "))
     return msg
+
   def close(self):
     return self.escpos_printer.close()
 
+  def escpos_method(self, method_name, *args, **kwargs):
+    """
+    Thread-safe version of python-escpos methods
+    """
+    method = getattr(self.escpos_printer, method_name, None)
+    if not method: raise ValueError(f"python-escpos method '{method_name}' doesn't exist!")
+
+    with self.transaction_lock: return method(*args, **kwargs)
+
   def initialize_printer(self):
-    try:
-      self._write(b'\x1B\x40')
-      return self._read()
-    except usb.core.USBError as e:
-      if "[Errno 110] Operation timed out" in str(e):
-        self._write(b'\x1B\x40')
-        time.sleep(0.1)
-        #return self._read() #The device not always responds with b'B', but that seems to be quite ok.
+    return self._transaction(b'\x1B\x40', read_bytes=1, read_can_timeout=True)
+
+  def is_paper_torn_away(self):
+    return not self.real_time_transmission_status(printer_status=True).paper_not_torn_away
 
   def paper_status(self):
     """
@@ -111,6 +140,10 @@ class HSK_Printer():
     if rtts.paper_ending: return 1
     if rtts.paper_out: return 0
 
+  def paper_cut(one_point_left: bool = True, three_points_left: bool = False):
+    if three_points_left: return self._transaction(b'\x1B\x6D')
+    if one_point_left: return self._transaction(b'\x1B\x69')
+
   def real_time_transmission_status(self, printer_status=None, send_offline_status=None, transmission_error_status=None, transmission_paper_sensor_status=None):
     """
     See HS-K33 User Manual
@@ -120,17 +153,13 @@ class HSK_Printer():
 
     rtts = HSK_RealTimeTransmissionStatus()
     if printer_status:
-      self._write(b'\x10\x04\x01')
-      rtts.printer_status(self._read())
+      rtts.printer_status(self._transaction(b'\x10\x04\x01', read_bytes=1))
     if send_offline_status:
-      self._write(b'\x10\x04\x02')
-      rtts.send_offline_status(self._read())
+      rtts.send_offline_status(self._transaction(b'\x10\x04\x02', read_bytes=1))
     if transmission_error_status:
-      self._write(b'\x10\x04\x03')
-      rtts.transmission_error_status(self._read())
+      rtts.transmission_error_status(self._transaction(b'\x10\x04\x03', read_bytes=1))
     if transmission_paper_sensor_status:
-      self._write(b'\x10\x04\x04')
-      rtts.transmission_paper_sensor_status(self._read())
+      rtts.transmission_paper_sensor_status(self._transaction(b'\x10\x04\x04', read_bytes=1))
     return rtts
 
   def set_print_concentration(self, max_printing_dots=9, heating_time=80, heating_interval=2):
@@ -146,17 +175,14 @@ class HSK_Printer():
     bs.append(heating_time)
     bs.append(heating_interval)
 
-    self._write(bs)
-    time.sleep(0.250) # Wait a bit for the printer to set the new settings internally
-    #return self._read()
+    return self._transaction(bs, read_bytes=0, sleep=0.250) # Wait a bit for the printer to set the new settings internally
 
   def transmit_status(self):
     """
     See HS-K33 User Manual.
     Use real_time_transmission_status() instead, as this timeouts on paper out
     """
-    self._write(b'\x1D\x72\x01')
-    return HSK_TransmitStatus(self._read())
+    return HSK_TransmitStatus(self._transaction(b'\x1D\x72\x01', read_bytes=1))
 
 class HSK_TransmitStatus():
   def __init__(self, bs: bytes):
@@ -210,7 +236,10 @@ class HSK_RealTimeTransmissionStatus():
     if bs[0] & 0b01000000: self.print_head_voltage_and_temperature_over_range = True
     else: self.print_head_voltage_and_temperature_over_range = False
 
-    if self.paper_out or self.paper_ending: self.paper_adequate = False
+    if self.paper_out or self.paper_ending:
+      self.paper_adequate = False
+    else:
+      self.paper_adequate = True
     return self
 
 def get_printer() -> HSK_Printer:

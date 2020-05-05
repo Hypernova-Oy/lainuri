@@ -140,17 +140,20 @@ def _print_thermal_receipt(doc: weasyprint.Document):
   #  _print_via_cups(doc.to_pdf())
 
 def _print_via_escpos_raster(png_file_path: str):
-  printer = lainuri.hs_k33.get_printer()
-  printer.escpos_printer.image(png_file_path, impl=u'bitImageRaster')
-  printer.escpos_printer.cut()
-  update_paper_status()
+  if get_config('devices.thermal-printer.enabled'):
+    printer = lainuri.hs_k33.get_printer()
+    printer.escpos_method('image', png_file_path, impl=u'bitImageRaster')
+    printer.escpos_method('cut')
+    update_paper_status()
+  else:
+    log.info(f"Thermal printer is disabled from configuration.")
 
 def update_paper_status():
   printer = lainuri.hs_k33.get_printer()
   ps = printer.paper_status()
-  if ps == 2: lainuri.status.update_status('thermal_printer_paper_status') = Status.SUCCESS
-  if ps == 1: lainuri.status.update_status('thermal_printer_paper_status') = Status.PENDING
-  if ps == 0: lainuri.status.update_status('thermal_printer_paper_status') = Status.ERROR
+  if ps == 2: lainuri.status.update_status('thermal_printer_paper_status', Status.SUCCESS)
+  if ps == 1: lainuri.status.update_status('thermal_printer_paper_status', Status.PENDING)
+  if ps == 0: lainuri.status.update_status('thermal_printer_paper_status', Status.ERROR)
 
 def _print_via_cups(byttes: bytes):
   global cli_print_command

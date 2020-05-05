@@ -28,7 +28,7 @@ def print_receipt(event):
     lainuri.event_queue.push_event(
       le.LEPrintResponse(
         receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet,
-        status=Status.SUCCESS,
+        status=Status.SUCCESS, # We are waiting for the end-user to tear off the receipt, see lainuri.printer.status
       )
     )
   except Exception as e:

@@ -7,12 +7,15 @@ from lainuri.constants import Status
 import lainuri.websocket_server
 import lainuri.event
 import lainuri.event_queue
+import lainuri.hs_k33
 import lainuri.koha_api
 import lainuri.printer as lp
+import lainuri.printer.status
 
 from datetime import datetime
 import os
-
+import threading
+import time
 import unittest.mock
 
 poem = """
@@ -194,10 +197,44 @@ def test_print_koha_check_in_receipt(subtests):
       #TODO: Should intelligently know what is in the test servers check-in template. assert get_config('devices.thermal-printer.check-in-receipt-koha-borrower') in mock_print_html.call_args.args[0]
       assert 'Acevedo' in mock_print_html.call_args[0][0]
 
+def test_printer_status_polling(subtests):
+  printer_thr = None
+
+  with unittest.mock.patch('lainuri.hs_k33.HSK_Printer.real_time_transmission_status') as mock_rtts:
+
+    with subtests.test("Given a thermal printer status polling thread"):
+      printer_thr = threading.Thread(group=None, target=lainuri.printer.status.printer_status_daemon)
+      printer_thr.start()
+      assert printer_thr.is_alive()
+
+    with subtests.test("When status polling is requested"):
+      lainuri.printer.status.start_polling(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good'))
+
+    with subtests.test("And a bit of time has passed"):
+      time.sleep(2.0)
+
+    with subtests.test("Then status polling is performed"):
+      mock_rtts.assert_called_with(printer_status=True)
+
+    with subtests.test("Finally the status polling thread is terminated"):
+      lainuri.printer.status.kill = True
+      printer_thr.join(5)
+      assert not printer_thr.is_alive()
+      assert lainuri.printer.status.kill == False
+
 def test_print_koha_api(subtests):
-  lainuri.config.write_config('devices.thermal-printer.enabled', True)
+  lainuri.config.write_config('devices.thermal-printer.enabled', False)
   response_event = None
   lainuri.event_queue.flush_all()
+  printer_thr = None
+
+  with subtests.test("SetUp: Assert the receipt is torn away"):
+    assert lainuri.hs_k33.get_printer().is_paper_torn_away()
+
+  with subtests.test("SetUp: Given a thermal printer status polling thread"):
+    printer_thr = threading.Thread(group=None, target=lainuri.printer.status.printer_status_daemon)
+    printer_thr.start()
+    assert printer_thr.is_alive()
 
   with subtests.test("Scenario: Print check-out -receipt via Koha API"):
     with subtests.test("Given a check-out print request"):
@@ -212,6 +249,9 @@ def test_print_koha_api(subtests):
       assert not response_event.states.get('exception', None)
       assert response_event.status == lainuri.event.Status.SUCCESS
 
+    with subtests.test("And the receipt is not torn away"):
+      assert not lainuri.hs_k33.get_printer().is_paper_torn_away()
+
   with subtests.test("Scenario: Print check-in -receipt via Koha API"):
     with subtests.test("Given a check-in print request"):
       event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-in', items=[], user_barcode=None))
@@ -224,6 +264,15 @@ def test_print_koha_api(subtests):
       assert type(response_event) == lainuri.event.LEPrintResponse
       assert not response_event.states.get('exception', None)
       assert response_event.status == lainuri.event.Status.SUCCESS
+
+    with subtests.test("And the receipt is not torn away"):
+      assert not lainuri.hs_k33.get_printer().is_paper_torn_away()
+
+  with subtests.test("TearDown: the status polling thread is terminated"):
+    lainuri.printer.status.kill = True
+    printer_thr.join(5)
+    assert not printer_thr.is_alive()
+    assert lainuri.printer.status.kill == False
 
 def test_print_exception_bad_cli_command():
   global items
