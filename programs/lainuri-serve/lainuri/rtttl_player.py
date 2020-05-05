@@ -124,7 +124,7 @@ def _do_play(event: lainuri.event.LERingtonePlay):
 def rtttl_daemon():
   global event_play_ringtone, kill
   log.info(f"RTTTL-Player thread starting")
-  while(1):
+  while(threading.main_thread().isAlive()):
     if kill:
       kill = 0
       break

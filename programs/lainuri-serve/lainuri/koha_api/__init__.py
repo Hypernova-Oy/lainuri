@@ -52,23 +52,23 @@ class KohaAPI():
           fields,
           headers,
         )
-        lainuri.status.update_status('set_ils_connection_status', Status.SUCCESS)
+        lainuri.status.update_status('ils_connection_status', Status.SUCCESS)
 
         if expect_html: return self._maybe_not_logged_in(r, self._receive_html(r))
         if expect_json: return self._maybe_not_logged_in(r, self._receive_json(r))
 
       except Exception as e:
         if isinstance(e, urllib3.exceptions.NewConnectionError):
-          lainuri.status.update_status('set_ils_connection_status', Status.ERROR)
+          lainuri.status.update_status('ils_connection_status', Status.ERROR)
           time.sleep(1)
         elif isinstance(e, urllib3.exceptions.ConnectTimeoutError):
-          lainuri.status.update_status('set_ils_connection_status', Status.PENDING)
+          lainuri.status.update_status('ils_connection_status', Status.PENDING)
           time.sleep(1)
         elif "TRANSPARENT_REAUTHENTICATION" in str(e):
           headers['Cookie'] = f'CGISESSID={self.sessionid}'
           pass # Continue to the next retry loop
         else:
-          lainuri.status.update_status('set_ils_connection_status', Status.ERROR)
+          lainuri.status.update_status('ils_connection_status', Status.ERROR)
           raise e
 
   def _scrape_log_header(self, r: urllib3.HTTPResponse):
