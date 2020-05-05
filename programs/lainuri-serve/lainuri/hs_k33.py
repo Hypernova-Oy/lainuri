@@ -177,6 +177,9 @@ class HSK_Printer():
 
     return self._transaction(bs, read_bytes=0, sleep=0.250) # Wait a bit for the printer to set the new settings internally
 
+  def test_page(self):
+    return self._transaction(b'\x1B\x40\x12\x54', read_bytes=1, sleep=1.0)
+
   def transmit_status(self):
     """
     See HS-K33 User Manual.
