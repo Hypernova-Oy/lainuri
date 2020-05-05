@@ -224,10 +224,11 @@ class KohaAPI():
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_item(self, item_barcode):
+    self.current_request_url = self.koha_baseurl + f'/api/v1/items'
     log.info(f"Get item: item_barcode='{item_barcode}'")
-    r = self.http.request_encode_url(
+    (response, payload) = self._request(
       'GET',
-      self.koha_baseurl + f'/api/v1/items',
+      self.current_request_url,
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
@@ -235,8 +236,7 @@ class KohaAPI():
         'barcode': item_barcode,
       },
     )
-    self.current_request_url = self.koha_baseurl + f'/api/v1/items'
-    payload = self._receive_json(r)
+
     if isinstance(payload, dict) and payload.get('error', None):
       error = payload.get('error', None)
       if error:
@@ -252,14 +252,14 @@ class KohaAPI():
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_record(self, biblionumber):
     log.info(f"Get record: biblionumber='{biblionumber}'")
-    r = self.http.request(
+    (response, payload) = self._request(
       'GET',
       self.koha_baseurl + f'/api/v1/records/{biblionumber}',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
     )
-    payload = self._receive_json(r)
+
     error = payload.get('error', None)
     if error:
       if r.status == 404:
@@ -269,7 +269,7 @@ class KohaAPI():
 
   def checkin(self, barcode) -> tuple:
     log.info(f"Checkin: barcode='{barcode}'")
-    r = self.http.request(
+    (response, soup) = self._request(
       'POST',
       self.koha_baseurl + '/cgi-bin/koha/circ/returns.pl',
       fields={
@@ -278,9 +278,10 @@ class KohaAPI():
       headers = {
         'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage=en',
       },
+      expect_html=True,
     )
 
-    (soup, alerts, messages) = self._receive_html(r)
+    (alerts, messages) = self._parse_html(soup)
 
     states = {}
     status = None
@@ -331,7 +332,7 @@ class KohaAPI():
 
   def checkout(self, barcode, borrowernumber) -> tuple:
     log.info(f"Checkout: barcode='{barcode}' borrowernumber='{borrowernumber}'")
-    r = self.http.request(
+    (response, soup) = self._request(
       'POST',
       self.koha_baseurl + '/cgi-bin/koha/circ/circulation.pl',
       fields={
@@ -345,10 +346,12 @@ class KohaAPI():
       headers = {
         'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage=en',
       },
+      expect_html=True,
     )
-    (soup, alerts, messages) = self._receive_html(r)
+    (alerts, messages) = self._parse_html(soup)
 
     states = {}
+    status = None
     alerts = [a for a in alerts if not self.checkout_has_status(a, states)]
     messages = [a for a in messages if not self.checkout_has_status(a, states)]
 
@@ -390,14 +393,15 @@ class KohaAPI():
     if slip_type not in ['qslip','checkinslip']:
       raise TypeError(f"Receipt:> borrowernumber='{borrowernumber}' slip_type='{slip_type}' has invalid slip_type. Allowed values ['qslip','checkinslip']")
 
-    r = self.http.request(
+    (response, soup) = self._request(
       'GET',
       self.koha_baseurl + f'/cgi-bin/koha/members/printslip.pl?borrowernumber={borrowernumber}&print={slip_type}',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={lainuri.locale.get_locale(iso639_1=False, iso639_1_iso3166=True)}',
       },
+      expect_html=True,
     )
-    soup = self._receive_html(r)
+
     receipt = soup.select('#receipt')
     if not receipt:
       raise Exception("Fetching the checkout receipt failed: CSS selector '#receipt' didn't match.")
@@ -407,14 +411,14 @@ class KohaAPI():
 
   def availability(self, borrowernumber, itemnumber):
     log.info(f"Availability: borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'")
-    r = self.http.request(
+    (response, payload) = self._request(
       'GET',
       self.koha_baseurl + f'/api/v1/availability/item/checkout?itemnumber={itemnumber}&borrowernumber={borrowernumber}',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
     )
-    payload = self._receive_json(r)
+
     if isinstance(payload, dict) and payload.get('error', None):
       error = payload.get('error', None)
       if error:

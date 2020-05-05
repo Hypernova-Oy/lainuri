@@ -80,7 +80,7 @@ def test_rfid_tag_data_format_overload(subtests):
     with subtests.test("(ISO28560_2_Object) Given a rfid tag"):
       tag = Tag('12341234')
       tag.dsfid(0x06)
-      tag.afi(0xC2)
+      tag.afi(0x00)
       assert tag
 
     with subtests.test("(ISO28560_2_Object) Then the rfid tag is checked for data format implementation"):

@@ -14,6 +14,7 @@ record = {}
 def test_authenticate():
   global borrower, item, record
   koha_api.current_event_id = 'event-id-1'
+  koha_api.deauthenticate()
   assert koha_api.authenticated() == 0
 
   # Lainuri boots and whenever authentication times out.

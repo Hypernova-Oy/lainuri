@@ -2,14 +2,17 @@
 SUBSYSTEM=="usb", ATTR{idVendor}=="fffe", ATTR{idProduct}=="0091", OWNER="lainuri", GROUP="lainuri"
 
 ## RL866 using pl2303
-SUBSYSTEM=="usb", ATTR{idVendor}=="067b", ATTR{idProduct}=="2303", OWNER="lainuri", GROUP="lainuri", NAME="ttyRL866", SYMLINK+="ttyRL866"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", OWNER="lainuri", GROUP="lainuri", SYMLINK+="ttyRL866"
 
 ## HS-K33
 SUBSYSTEM=="usb", ATTR{idVendor}=="4b43", ATTR{idProduct}=="3830", OWNER="lainuri", GROUP="lainuri"
 
 ## WGI3220USB
-SUBSYSTEM=="usb", ATTR{idVendor}=="24ea", ATTR{idProduct}=="0187", OWNER="lainuri", GROUP="lainuri", NAME="ttyWGI3220USB", SYMLINK+="ttyWGI3220USB"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="24ea", ATTRS{idProduct}=="0187", OWNER="lainuri", GROUP="lainuri", SYMLINK+="ttyWGI3220USB"
 
 ## WGC300UsbAT
-SUBSYSTEM=="usb", ATTR{idVendor}=="8888", ATTR{idProduct}=="0007", OWNER="lainuri", GROUP="lainuri", NAME="ttyWGC300UsbAT", SYMLINK+="ttyWGC300UsbAT"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="8888", ATTRS{idProduct}=="0007", OWNER="lainuri", GROUP="lainuri", SYMLINK+="ttyWGC300UsbAT"
 
+# After changing these rules, you can hot-realod specific configurations with:
+#  sudo udevadm control -R
+#  sudo udevadm trigger /dev/ttyACM0
