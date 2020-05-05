@@ -1,4 +1,15 @@
-## RL866
-#SUBSYSTEM=="input", GROUP="input", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="FFFE", ATTRS{idProduct}=="0091", MODE:="0660", GROUP="lainuri"
+## RL866 via USB
+SUBSYSTEM=="usb", ATTR{idVendor}=="fffe", ATTR{idProduct}=="0091", OWNER="lainuri", GROUP="lainuri"
+
+## RL866 using pl2303
+SUBSYSTEM=="usb", ATTR{idVendor}=="067b", ATTR{idProduct}=="2303", OWNER="lainuri", GROUP="lainuri", NAME="ttyRL866", SYMLINK+="ttyRL866"
+
+## HS-K33
+SUBSYSTEM=="usb", ATTR{idVendor}=="4b43", ATTR{idProduct}=="3830", OWNER="lainuri", GROUP="lainuri"
+
+## WGI3220USB
+SUBSYSTEM=="usb", ATTR{idVendor}=="24ea", ATTR{idProduct}=="0187", OWNER="lainuri", GROUP="lainuri", NAME="ttyWGI3220USB", SYMLINK+="ttyWGI3220USB"
+
+## WGC300UsbAT
+SUBSYSTEM=="usb", ATTR{idVendor}=="8888", ATTR{idProduct}=="0007", OWNER="lainuri", GROUP="lainuri", NAME="ttyWGC300UsbAT", SYMLINK+="ttyWGC300UsbAT"
 

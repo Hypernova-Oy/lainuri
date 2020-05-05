@@ -9,10 +9,10 @@ import lainuri.helpers
 from lainuri.barcode_reader.model.WGI_commands import *
 
 usb_vendor = '24EA'
-usb_model = '0187'
+usb_product = '0187'
 
 def connect(self):
-  port = lainuri.helpers.find_dev_path(usb_vendor, usb_model)
+  port = '/dev/ttyWGI3220USB'
   log.info(f"Connecting to port='{port}'")
   ser = serial.Serial()
   ser.baudrate = 9600

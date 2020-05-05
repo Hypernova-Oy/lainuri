@@ -9,10 +9,10 @@ import lainuri.helpers
 from lainuri.barcode_reader.model.WGC_commands import *
 
 usb_vendor = '8888'
-usb_model = '0007'
+usb_product = '0007'
 
 def connect(self):
-  port = lainuri.helpers.find_dev_path(usb_vendor, usb_model)
+  port = '/dev/ttyWGC300UsbAT'
   log.info(f"Connecting to port='{port}'")
   ser = serial.Serial()
   ser.baudrate = 9600

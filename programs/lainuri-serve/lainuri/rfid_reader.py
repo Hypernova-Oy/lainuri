@@ -50,7 +50,7 @@ class RFID_Reader():
     ser = serial.Serial()
     ser.baudrate = 38400
     ser.parity = serial.PARITY_EVEN
-    ser.port = '/dev/ttyUSB0'
+    ser.port = '/dev/ttyRL866'
     ser.timeout = 0
     ser.open()
 
