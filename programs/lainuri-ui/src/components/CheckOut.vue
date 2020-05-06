@@ -30,14 +30,14 @@
               v-if="is_user_logged_in"
               x-large color="secondary"
             >
-              {{t('CheckOut/Stop')}}
+              {{t('CheckOut/Finish')}}
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_out_and_get_receipt"
               v-if="is_user_logged_in"
               x-large color="secondary"
             >
-              {{t('CheckOut/Stop+Receipt')}}
+              {{t('CheckOut/Finish+Receipt')}}
             </v-btn>
           </v-card-actions>
         </v-col>
@@ -177,7 +177,10 @@ export default {
   },
   created: function () {
     send_user_logging_in();
-    Timeout.start(() => {this.stop_checking_out()}, this.$appConfig.ui.session_inactivity_timeout_s);
+    Timeout.start(() => {
+      this.$emit('exception', {type: "SessionTimeout"});
+      this.stop_checking_out()
+    }, this.$appConfig.ui.session_inactivity_timeout_s);
 
     lainuri_ws.attach_event_listener(LEUserLoginComplete, this, (event) => {
       log.info(`Received event 'LEUserLoginComplete'`); Timeout.prod();

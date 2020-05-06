@@ -16,13 +16,13 @@
               v-on:click="stop_checking_in"
               x-large color="secondary"
             >
-              {{t('CheckIn/Stop')}}
+              {{t('CheckIn/Finish')}}
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_in_and_get_receipt"
               x-large color="secondary"
             >
-              {{t('CheckIn/Stop+Receipt')}}
+              {{t('CheckIn/Finish+Receipt')}}
             </v-btn>
           </v-card-actions>
         </v-col>
@@ -160,7 +160,10 @@ export default {
     rfid_tags_present: Array,
   },
   created: function () {
-    Timeout.start(() => {this.stop_checking_in()}, this.$appConfig.ui.session_inactivity_timeout_s);
+    Timeout.start(() => {
+      this.$emit('exception', {type: "SessionTimeout"});
+      this.stop_checking_in()
+    }, this.$appConfig.ui.session_inactivity_timeout_s);
 
     lainuri_ws.attach_event_listener(LECheckInComplete, this, function(event) {
       log.info(`Event 'LECheckInComplete' for barcode='${event.item_barcode}'`); Timeout.prod();

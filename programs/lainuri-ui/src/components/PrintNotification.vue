@@ -6,7 +6,7 @@
       raised
       @click="$emit('close_notification')"
     >
-      <h1>OTA KUITTI</h1>
+      <h1>{{t('PrintNotification/Take_the_receipt')}}</h1>
     </v-card>
     <ArrowSliding/>
     </v-container>

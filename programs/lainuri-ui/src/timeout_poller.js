@@ -6,13 +6,17 @@
  * Vue.js build pipeline makes sure this file is namespaced
  */
 
+import {get_logger} from './logger'
+let log = get_logger('timeout_poller.js');
+
 let timeout_poller = 0;
 let last_prod = 0;
 
 function start(callback, timeout) {
-  last_prod = Date.now();
+  log.info(`New timeout starting '${timeout}s'`);
+  last_prod = Date.now()/1000;
   timeout_poller = window.setInterval(() => {
-    if ((Date.now() - last_prod) > timeout) {
+    if ((Date.now()/1000 - last_prod) > timeout) {
       terminate();
       callback();
     }
@@ -20,9 +24,13 @@ function start(callback, timeout) {
 }
 
 function prod() {
-  last_prod = Date.now();
+  log.debug("Timeout prod()")
+  last_prod = Date.now()/1000;
 }
 
 function terminate() {
+  log.info('Timeout terminating');
   window.clearInterval(timeout_poller);
 }
+
+export {start, prod, terminate};

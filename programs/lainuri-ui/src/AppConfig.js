@@ -43,6 +43,7 @@ export default function (Vue) {
       handle_new_app_configuration: function (app_config) {
         log.debug('New configuration', app_config);
         if (this.$data.app_config.i18n.default_locale !== app_config.i18n.default_locale) this.set_locale(app_config.i18n.default_locale);
+        this.$data.app_config.i18n.enabled_locales = app_config.i18n.enabled_locales; // Trigger reactivity
 
         if (app_config.ui.images) {
           app_config.ui.images = app_config.ui.images.reduce((acc, image_conf) => {acc[image_conf.position] = image_conf; return acc;}, {})

@@ -137,7 +137,7 @@ import StatusBar from './components/StatusBar.vue'
 import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
-import {Status, LEConfigGetpublic_Response, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LEUserLoginComplete} from './lainuri_events'
+import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
 
 
 let shared = {
@@ -177,17 +177,6 @@ export default {
       log.info(`Event 'LERFIDTagsPresent' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
       this.rfid_tags_present = event.tags_present.reduce((reducer, elem) => {reducer.push(new ItemBib(elem)); return reducer}, []);
     });
-    lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
-      log.info(`Event 'LEServerStatusResponse' received.`);
-    });
-    if (!preseed) {
-      lainuri_ws.attach_event_listener(LEServerConnected, this, (event) => {
-        log.info(`PRESEEDING!! Received 'LEServerConnected'`);
-        window.setTimeout(() => lainuri_ws.dispatch_event(
-          new LEUserLoginComplete('Olli-Antti', 'Kivilahti', '2600104874', Status.SUCCESS, {}, 'server', 'client')
-        ), 4000);
-      });
-    }
   },
 
   mounted: function () {

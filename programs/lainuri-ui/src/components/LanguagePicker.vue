@@ -15,7 +15,7 @@
     </template>
     <v-list>
       <v-list-item
-        v-for="(lang) in $appConfig.i18n.enabled_locales"
+        v-for="(lang) of $appConfig.i18n.enabled_locales"
         :key="lang"
         @click="set_lo(lang)"
       >

@@ -1,48 +1,48 @@
 <template>
   <v-snackbar
-    :value="Object.keys(status).filter((k) => {return status[k] != Status.SUCCESS}).length"
+    :value="show_statusbar"
     color="error"
     :timeout="0"
     top right
-    @click="show = !show"
+    @click="show_tooltips = !show_tooltips"
   >
-    <v-tooltip v-if="server_connected != Status.SUCCESS" bottom v-model="show">
+    <v-tooltip v-if="server_connected != Status.SUCCESS" bottom v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-server-off</v-icon>
       </template>
       {{t('StatusBar/Lainuri_server_connection_lost')}}
     </v-tooltip>
-    <v-tooltip v-if="status.thermal_printer_status != Status.SUCCESS" left v-model="show">
+    <v-tooltip v-if="status.thermal_printer_status != Status.SUCCESS" left v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-printer-off</v-icon>
       </template>
       {{t('StatusBar/Printer_off')}}
     </v-tooltip>
-    <v-tooltip v-if="status.thermal_printer_paper_status == Status.ERROR" bottom v-model="show">
+    <v-tooltip v-if="status.thermal_printer_paper_status == Status.ERROR" bottom v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-paper-roll</v-icon>
       </template>
       {{t('StatusBar/Printer_paper_runout')}}
     </v-tooltip>
-    <v-tooltip v-if="status.thermal_printer_paper_status != Status.SUCCESS" left v-model="show">
+    <v-tooltip v-if="status.thermal_printer_paper_status != Status.SUCCESS" left v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon color="yellow darken-2" v-on="on">mdi-paper-roll-outline</v-icon>
       </template>
       {{t('StatusBar/Printer_paper_low')}}
     </v-tooltip>
-    <v-tooltip v-if="status.rfid_reader_status != Status.SUCCESS" left v-model="show">
+    <v-tooltip v-if="status.rfid_reader_status != Status.SUCCESS" left v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-access-point</v-icon>
       </template>
       {{t('StatusBar/RFID_reader_off')}}
     </v-tooltip>
-    <v-tooltip v-if="status.barcode_reader_status != Status.SUCCESS" bottom v-model="show">
+    <v-tooltip v-if="status.barcode_reader_status != Status.SUCCESS" bottom v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-barcode</v-icon>
       </template>
       {{t('StatusBar/Barcode_reader_off')}}
     </v-tooltip>
-    <v-tooltip v-if="status.ils_connection_status != Status.SUCCESS" left v-model="show">
+    <v-tooltip v-if="status.ils_connection_status != Status.SUCCESS" left v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-if="status.ils_connection_status == Status.ERROR"   color="error" v-on="on">mdi-server-network-off</v-icon>
         <v-icon v-if="status.ils_connection_status == Status.PENDING" color="yellow darken-2" v-on="on">mdi-server-network-off</v-icon>
@@ -53,11 +53,15 @@
 </template>
 
 <script>
-import {Status} from '../lainuri_events.js'
+import {get_logger} from '../logger'
+let log = get_logger('StatusBar.vue');
+
+import {lainuri_ws} from '../lainuri'
+import {Status, LEServerConnected, LEServerDisconnected, LEServerStatusResponse} from '../lainuri_events.js'
 
 export default {
   name: 'StatusBar',
-  created: () => {
+  created: function () {
     lainuri_ws.attach_event_listener(LEServerConnected, this, function(event) {
       log.info(`[StatusBar.vue]:> Event 'LEServerConnected' received.`);
       this.$data.server_connected = Status.SUCCESS;
@@ -68,7 +72,7 @@ export default {
     });
     lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
       log.info(`[StatusBar.vue]:> Event 'LEServerStatusResponse' received.`);
-      this.$data.status = event
+      this.$data.status = event.statuses;
     });
   },
   data: () => ({
@@ -77,16 +81,24 @@ export default {
 
     server_connected: Status.ERROR,
     status: {
-      barcode_reader_status = Status.ERROR,
-      thermal_printer_status = Status.ERROR,
-      thermal_printer_paper_status = Status.ERROR,
-      rfid_reader_status = Status.ERROR,
-      touch_screen_status = Status.ERROR,
-      ils_connection_status = Status.ERROR,
+      barcode_reader_status: Status.ERROR,
+      thermal_printer_status: Status.ERROR,
+      thermal_printer_paper_status: Status.ERROR,
+      rfid_reader_status: Status.ERROR,
+      touch_screen_status: Status.ERROR,
+      ils_connection_status: Status.ERROR,
     },
 
-    show: false,
+    show_tooltips: false,
   }),
+  computed: {
+    show_statusbar: function () {
+      for (let key of Object.keys(this.$data.status)) {
+        if (this.$data.status[key] != Status.SUCCESS) return true;
+      }
+      return false;
+    },
+  },
 }
 </script>
 
