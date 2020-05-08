@@ -104,10 +104,10 @@ class BarcodeReader():
   def polling_barcodes_thread(self, handler, dummy):
     log.info("Barcodes polling starting")
 
-    while(1):
+    while(threading.main_thread().is_alive()):
       if self.barcode_polling_thread_stop_polling == True:
         self.barcode_polling_thread_stop_polling = False
-        exit()
+        break
 
       try:
         barcode = self.read_barcode_blocking()

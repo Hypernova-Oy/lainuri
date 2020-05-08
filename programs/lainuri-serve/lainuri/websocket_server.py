@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 from simple_websocket_server import WebSocketServer, WebSocket
 
 import json
+import queue
 import _thread as thread
 import threading
 import time
@@ -57,15 +58,18 @@ def set_state(new_state: str):
 def handle_events_loop():
   while(threading.main_thread().isAlive()):
     try:
-      handle_one_event()
+      handle_one_event(3) # timeout so we can terminate gracefully
+    except queue.Empty as e:
+      pass
     except Exception as e:
-      log.error(f"Handling event failed!")
-      log.exception(e)
+      log.exception("Handling event failed!")
       #lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
+  log.info("Terminating Event handling thread")
 
-def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
-  event = lainuri.event_queue.pop_event(timeout=timeout)
-  if type(event) != lainuri.event.LELogSend and type(event) != lainuri.event.LELogReceived: log.info(f"Handling event {event.to_string()}")
+def handle_one_event(timeout: int = None, event: lainuri.event.LEvent = None) -> lainuri.event.LEvent:
+  if not event: event = lainuri.event_queue.pop_event(timeout=timeout)
+  if type(event) != lainuri.event.LELogSend and type(event) != lainuri.event.LELogReceived:
+    log.info(f"Handling event {event.to_string()}")
 
   # Messages originating from the Lainuri UI
   if event.recipient == 'server' or (not(event.recipient) and event.default_recipient == 'server'):
@@ -81,7 +85,7 @@ def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
     elif event.event == 'deregister-client':
       deregister_client(event)
     elif event.event == 'exception':
-      log.error(f"Client exception: '{event.message}'")
+      log.error(f"Client exception: '{event.to_string()}'")
     else:
       raise Exception(f"Unknown event '{event.__dict__}'")
 
@@ -97,11 +101,13 @@ def handle_one_event(timeout: int = None) -> lainuri.event.LEvent:
   return event
 
 def message_clients(event: lainuri.event.LEvent):
+  if log.isEnabledFor(logging.INFO):
+    if type(event) != lainuri.event.LELogSend and type(event) != lainuri.event.LELogReceived:
+      log.info(f"Message to clients '{[client.address for client in clients]}' event_id '{event.event_id}'")
+
   for client in clients:
     if (event.recipient and event.recipient == client) or (not(event.recipient) and not(client == event.client)):
-      payload = event.serialized or event.serialize_ws()
-      if type(event) != lainuri.event.LELogSend and type(event) != lainuri.event.LELogReceived: log.info(f"Message to client '{client.address}': '{payload}'")
-      client.send_message(payload)
+      client.send_message(event.serialize_ws())
 
 def register_client(event):
   log.info(f"Registering client: '{event}'")
@@ -129,8 +135,7 @@ class SimpleChat(WebSocket):
         event = lainuri.event.parseEventFromWebsocketMessage(self.data, self)
         lainuri.event_queue.push_event(event)
       except Exception as e:
-        log.error(f"Handling payload failed!: {self.data}")
-        log.exception(e)
+        log.exception(f"Handling payload failed!: {self.data}")
         lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
@@ -142,8 +147,7 @@ class SimpleChat(WebSocket):
         event = lainuri.event.LERegisterClient(client=self, recipient='server')
         lainuri.event_queue.push_event(event)
       except Exception as e:
-        log.error(f"Handling payload failed!: {self.data}")
-        log.exception(e)
+        log.exception(f"Handling payload failed!: {self.data}")
         lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=self, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)
@@ -155,8 +159,7 @@ class SimpleChat(WebSocket):
         event = lainuri.event.LEDeregisterClient(client=self, recipient='server')
         lainuri.event_queue.push_event(event)
       except Exception as e:
-        log.error(f"Handling payload failed!: {self.data}")
-        log.exception(e)
+        log.exception(f"Handling payload failed!: {self.data}")
         lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
     except Exception as e2:
       log.exception(e2)

@@ -42,9 +42,9 @@ def test_rfid_reader_get_tag_inventory_via_event_queue(subtests):
     event = lainuri.websocket_server.handle_one_event(5)
     assert event == lainuri.event_queue.history[1]
     assert type(event) == le.LERFIDTagsPresent
-    assert getattr(event.message['tags_present'][0], 'states', None) == None
-    assert event.message['tags_present'][0]['status'] == Status.SUCCESS
-    assert event.tags_present[0].iso25680_get_primary_item_identifier() == good_item_barcode
+    assert getattr(event.tags_present[0], 'states', None) == None
+    assert event.tags_present[0]['status'] == Status.SUCCESS
+    assert event.tags_present[0]['item_barcode'] == good_item_barcode
 
 def test_get_public_config(subtests):
   assert lainuri.event_queue.flush_all()

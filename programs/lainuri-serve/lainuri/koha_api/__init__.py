@@ -164,6 +164,7 @@ class KohaAPI():
     return payload
 
   def deauthenticate(self):
+    if not self.sessionid: return None
     log.info(f"Deauthenticating")
     r = self.http.request_encode_body(
       'DELETE',
@@ -262,7 +263,7 @@ class KohaAPI():
 
     error = payload.get('error', None)
     if error:
-      if r.status == 404:
+      if response.status == 404:
         raise exception.NoResults(biblionumber)
       raise Exception(f"Unknown error '{error}'")
     return payload
@@ -493,7 +494,6 @@ class MARCRecord():
 @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
 def get_fleshed_item_record(barcode):
   log.info(f"Get fleshed item record: barcode='{barcode}'")
-  exception = None
   try:
     if not barcode: raise exception_ils.NoItemIdentifier()
     item = koha_api.get_item(barcode)
@@ -509,18 +509,16 @@ def get_fleshed_item_record(barcode):
       'status': Status.SUCCESS,
     }
   except Exception as e:
-    exception = {
-      'type': type(e).__name__,
-      'trace': traceback.format_exc(),
+    return {
+      'item_barcode': barcode,
+      'status': Status.ERROR,
+      'states': {
+        'exception': {
+          'type': type(e).__name__,
+          'trace': traceback.format_exc(),
+        },
+      },
     }
-
-  return {
-    'item_barcode': barcode,
-    'status': Status.ERROR,
-    'states': {
-      'exception': exception,
-    },
-  }
 
 
 # TODO: Thread safety for KohaAPI()

@@ -41,9 +41,9 @@ def test_rfid_reader_system_information(subtests):
     event_rfid_tags_new = lainuri.event_queue.history[0]
     assert type(event_rfid_tags_new) == lainuri.event.LERFIDTagsNew
     assert len(event_rfid_tags_new.tags_new) > 0
-    assert event_rfid_tags_new.message['tags_new'][0]['item_barcode']
+    assert event_rfid_tags_new.tags_new[0]['item_barcode']
     assert len(event_rfid_tags_new.tags_present) > 0
-    assert event_rfid_tags_new.message['tags_present'][0]['item_barcode']
+    assert event_rfid_tags_new.tags_present[0]['item_barcode']
 
 def test_rfid_reader_exception_handling_finally_disconnect_tag():
   tag = rfid_reader.tags_present[0]

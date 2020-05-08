@@ -4,6 +4,7 @@ log = logging.getLogger(__name__)
 
 from simple_websocket_server import WebSocket
 import json
+import pprint
 import time
 import traceback
 
@@ -21,9 +22,8 @@ class LEvent():
   default_handler = None
   default_recipient = None
 
-  def __init__(self, event: str = None, message: dict = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, event: str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.event = event
-    self.message = message
     self.client = client
     self.recipient = recipient
     self.event_id = event_id
@@ -31,15 +31,9 @@ class LEvent():
     if not(self.event_id) and self.event: self.event_id = get_event_id(self.event)
 
   def serialize_ws(self):
-    if not self.message:
-      msg = {}
-      for att in self.serializable_attributes:
-        msg[att] = getattr(self, att)
-      self.message = msg
-
     return json.dumps({
       'event': self.event,
-      'message': self.message,
+      'message': {key: getattr(self, key) for key in self.serializable_attributes},
       'event_id': self.event_id,
     })
 
@@ -53,7 +47,8 @@ class LEvent():
     raise Exception(f"{class_name}():> Missing attribute '{attribute_name}'")
 
   def to_string(self):
-    return f"event_id='{self.event_id}' " + str({key: getattr(self, key) for key in self.serializable_attributes})
+    #return f"event_id='{self.event_id}' " + str({key: getattr(self, key) for key in self.serializable_attributes})
+    return pprint.pformat(self.__dict__)
 
 class LECheckOut(LEvent):
   event = 'check-out'
@@ -205,8 +200,7 @@ class LERingtonePlay(LEvent):
   def __init__(self, ringtone_type: str = None, ringtone: str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.ringtone_type = ringtone_type
     self.ringtone = ringtone
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LERingtonePlayComplete(LEvent):
   event = 'ringtone-play-complete'
@@ -223,8 +217,7 @@ class LERingtonePlayComplete(LEvent):
     self.ringtone = ringtone
     self.states = states
     self.status = status
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEBarcodeRead(LEvent):
   event = 'barcode-read'
@@ -273,8 +266,7 @@ class LEConfigWrite(LEvent):
   def __init__(self, variable: str, new_value: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.variable = variable
     self.new_value = new_value
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LEConfigWriteResponse(LEvent):
@@ -290,8 +282,7 @@ class LEConfigWriteResponse(LEvent):
     self.variable = variable
     self.new_value = new_value
     self.old_value = old_value
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LELogSend(LEvent):
@@ -365,13 +356,9 @@ class LERFIDTagsLost(LEvent):
   tags_present = []
 
   def __init__(self, tags_lost: list, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.tags_present = tags_present
-    self.tags_lost = tags_lost
-    message = {
-      'tags_lost': [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in self.tags_lost],
-      'tags_present': [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in self.tags_present],
-    }
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.tags_present = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_present]
+    self.tags_lost = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_lost]
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LERFIDTagsNew(LEvent):
   event = 'rfid-tags-new'
@@ -381,13 +368,9 @@ class LERFIDTagsNew(LEvent):
   tags_present = []
 
   def __init__(self, tags_new: list, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.tags_present = tags_present
-    self.tags_new = tags_new
-    message = {
-      'tags_new': [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in self.tags_new],
-      'tags_present': [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in self.tags_present],
-    }
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.tags_present = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_present]
+    self.tags_new = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_new]
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LERFIDTagsPresentRequest(LEvent):
@@ -408,17 +391,17 @@ class LERFIDTagsPresent(LEvent):
   tags_present = []
 
   def __init__(self, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.tags_present = tags_present
-    message = {
-      'tags_present': [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_present],
-    }
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    self.tags_present = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_present]
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LEServerStatusRequest(LEvent):
   event = 'server-status-request'
   default_handler = 'lainuri.websocket_handlers.status.status_request'
   default_recipient = 'server'
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEServerStatusResponse(LEvent):
   event = 'server-status-response'
@@ -441,8 +424,7 @@ class LEUserLoggingIn(LEvent):
 
   def __init__(self, username: str = None, password:str = None, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.password = password
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     #self.validate_params()
 
 class LEUserLoginComplete(LEvent):
@@ -462,8 +444,7 @@ class LEUserLoginComplete(LEvent):
     self.user_barcode = user_barcode
     self.states = states
     self.status = status
-    message = {key: getattr(self, key) for key in self.serializable_attributes}
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 class LEUserLoginAbort(LEvent):
@@ -471,21 +452,21 @@ class LEUserLoginAbort(LEvent):
   default_recipient = 'server'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LERegisterClient(LEvent):
   event = 'register-client'
   default_recipient = 'server'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEDeregisterClient(LEvent):
   event = 'deregister-client'
   default_recipient = 'server'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LETestMockDevices(LEvent):
   event = 'test-mock-devices'
@@ -493,7 +474,7 @@ class LETestMockDevices(LEvent):
   default_recipient = 'client'
 
   def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    super().__init__(event=self.event, message=None, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEException(LEvent):
   event = 'exception'
@@ -507,10 +488,7 @@ class LEException(LEvent):
     else:
       self.exception = exception
 
-    message = {
-      'exception': self.exception,
-    }
-    super().__init__(event=self.event, message=message, client=client, recipient=recipient, event_id=event_id)
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
 
@@ -536,7 +514,6 @@ def parseEventFromWebsocketMessage(raw_data: str, client: WebSocket):
     parameters = {attr: data['message'].get(attr, None) for attr in serializable_attributes}
   try:
     event = event_class(**parameters, **instance_data)
-    event.message = raw_data
     return event
   except Exception as e:
     raise type(e)(f"Creating event '{event_class}' with parameters '{parameters}' instance_data '{instance_data}' failed:\n" + traceback.format_exc())
