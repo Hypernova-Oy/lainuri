@@ -13,27 +13,29 @@ import lainuri.event_queue
 
 def write_external_log(event: lainuri.event.LELogSend):
   try:
-    log_external.log(
-      logging.FATAL,
-      time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(event.milliseconds/1000)) +'.'+ str(event.milliseconds % 1000) + ' ' +
-      '[' + event.level + '] ' +
-      '(' + event.logger_name + ') ' +
-      event.log_entry,
-    )
-    # Logging responses are too expensive. Try to preserve UI responsiveness.
-    #lainuri.event_queue.push_event(
-    #  lainuri.event.LELogReceived(
-    #    status=Status.SUCCESS,
-    #    states={},
-    #  )
-    #)
+    for log_record in event.messages:
+      log_external.log(
+        logging.FATAL,
+        time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(log_record['milliseconds']/1000)) +'.'+ str(log_record['milliseconds'] % 1000) + ' ' +
+        '[' + log_record['level'] + '] ' +
+        '(' + log_record['logger_name'] + ') ' +
+        log_record['log_entry'],
+      )
+      # Logging responses are too expensive. Try to preserve UI responsiveness.
+      #lainuri.event_queue.push_event(
+      #  lainuri.event.LELogReceived(
+      #    status=Status.SUCCESS,
+      #    states={},
+      #  )
+      #)
   except Exception as e:
-    error_event = lainuri.event.LELogReceived(
-      status=Status.ERROR,
-      states={'exception': {
-        'type': type(e).__name__,
-        'trace': traceback.format_exc()}
-      },
+    log.exception(f"Exception at {__name__}")
+    lainuri.event_queue.push_event(
+      lainuri.event.LELogReceived(
+        status=Status.ERROR,
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': str(e)}
+        },
+      )
     )
-    #lainuri.event_queue.push_event(error_event)
-    raise e

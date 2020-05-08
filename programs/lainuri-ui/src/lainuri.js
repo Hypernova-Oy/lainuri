@@ -44,15 +44,14 @@ function start_ws () {
     ), 30000);
   }
 
-  logger_manager.setWebsocketHandlers((logging_event, formatted_message) => {
-    lainuri_ws.dispatch_event(
-      new LELogSend(
-        logging_event.level.name,
-        logging_event.logger.name,
-        logging_event.timeStampInMilliseconds,
-        formatted_message,
-      ),
-    );
+  logger_manager.setWebsocketHandlers((log_records_chunk) => {
+    if (lainuri_ws.ws.readyState == WebSocket.OPEN) {
+      lainuri_ws.dispatch_event(
+        new LELogSend(log_records_chunk),
+      );
+      return true;
+    }
+    return false;
   });
 }
 

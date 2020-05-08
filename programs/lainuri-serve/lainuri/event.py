@@ -299,13 +299,10 @@ class LELogSend(LEvent):
   default_handler = 'lainuri.websocket_handlers.logging.write_external_log'
   default_recipient = 'server'
 
-  serializable_attributes = ['level', 'logger_name', 'milliseconds', 'log_entry']
+  serializable_attributes = ['messages']
 
-  def __init__(self, level, logger_name, milliseconds, log_entry, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.level = level
-    self.logger_name = logger_name
-    self.milliseconds = milliseconds
-    self.log_entry = log_entry
+  def __init__(self, messages, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.messages = messages
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 

@@ -281,18 +281,12 @@ class LELogSend extends LEvent {
   static event = 'log-send'
   default_dispatch = 'server'
 
-  static serializable_attributes = ['level', 'logger_name', 'milliseconds', 'log_entry']
-  level;
-  logger_name;
-  milliseconds;
-  log_entry;
+  static serializable_attributes = ['messages']
+  messages;
 
-  constructor(level, logger_name, milliseconds, log_entry, sender, recipient, event_id = undefined) {
+  constructor(messages, sender, recipient, event_id = undefined) {
     super(event_id);
-    this.level = level;
-    this.logger_name = logger_name;
-    this.milliseconds = milliseconds;
-    this.log_entry = log_entry;
+    this.messages = messages;
     this.construct(sender, recipient);
     this.validate_params();
   }

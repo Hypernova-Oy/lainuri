@@ -54,8 +54,10 @@ let WebsocketAppender = function (send_message_callback) {
     if (this.send_messages_lock) return;
     this.send_messages_lock = true;
     try {
-      this.send_queue.forEach((loggingEvent) => {this.sendMessage(loggingEvent)});
-      this.send_queue = [];
+      if (this.send_queue.length > 0 &&
+          this.sendMessageChunk(this._buildMessagesChunk())) {
+        this.send_queue = [];
+      }
     }
     catch (e){
       console.error(e)
@@ -65,8 +67,25 @@ let WebsocketAppender = function (send_message_callback) {
     }
   }
 
-  this.sendMessage = function (loggingEvent) {
-    if (this.send_message_callback) this.send_message_callback(loggingEvent, this.layout.formatWithException(loggingEvent));
+  this._buildMessagesChunk = function () {
+    let chunk = [];
+    this.send_queue.forEach((loggingEvent) => {
+      chunk.push(this._create_log_record_for_transport(loggingEvent));
+    });
+    return chunk;
+  }
+
+  this._create_log_record_for_transport = function (loggingEvent) {
+    return {
+      level: loggingEvent.level.name,
+      logger_name: loggingEvent.logger.name,
+      milliseconds: loggingEvent.timeStampInMilliseconds,
+      log_entry: this.layout.formatWithException(loggingEvent),
+    };
+  }
+
+  this.sendMessageChunk = function (chunk) {
+    if (this.send_message_callback) return this.send_message_callback(chunk);
   }
 
   this.setCallbacks = function(send_message_callback) {
