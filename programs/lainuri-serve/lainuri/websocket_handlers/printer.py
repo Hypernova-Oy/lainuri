@@ -32,15 +32,14 @@ def print_receipt(event):
       )
     )
   except Exception as e:
+    log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
       le.LEPrintResponse(
         receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet or None,
         status=Status.ERROR,
-        states={
-          'exception': {
-            'type': type(e).__name__,
-            'trace': traceback.format_exc(),
-          },
-        }
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': str(e)}
+        },
       )
     )

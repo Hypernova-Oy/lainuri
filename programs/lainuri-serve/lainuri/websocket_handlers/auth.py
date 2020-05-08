@@ -24,6 +24,7 @@ def login_user(user_barcode: str):
       )
     )
   except Exception as e:
+    log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
       lainuri.event.LEUserLoginComplete(
         firstname=borrower['firstname'] if borrower else '',
@@ -32,7 +33,7 @@ def login_user(user_barcode: str):
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,
-          'trace': traceback.format_exc()}
+          'trace': str(e)}
         },
       )
     )

@@ -24,6 +24,7 @@ def checkin(event):
       )
     )
   except Exception as e:
+    log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
       lainuri.event.LECheckInComplete(
         item_barcode=event.item_barcode,
@@ -31,7 +32,7 @@ def checkin(event):
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,
-          'trace': traceback.format_exc()}
+          'trace': str(e)}
         },
       )
     )

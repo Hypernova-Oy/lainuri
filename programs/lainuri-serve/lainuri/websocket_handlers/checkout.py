@@ -71,6 +71,7 @@ def checkout(event):
     )
 
   except Exception as e:
+    log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
       lainuri.event.LECheckOutComplete(
         item_barcode=event.item_barcode,
@@ -79,7 +80,7 @@ def checkout(event):
         status=Status.ERROR,
         states=_merge_availability_to_states(availability or {}, {'exception': {
           'type': type(e).__name__,
-          'trace': traceback.format_exc()}
+          'trace': str(e)}
         }),
       )
     )

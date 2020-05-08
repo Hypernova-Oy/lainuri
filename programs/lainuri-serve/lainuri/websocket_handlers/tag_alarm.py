@@ -23,6 +23,7 @@ def set_tag_alarm(event):
       )
     )
   except Exception as e:
+    log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
       lainuri.event.LESetTagAlarmComplete(
         item_barcode=event.item_barcode,
@@ -30,8 +31,7 @@ def set_tag_alarm(event):
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,
-          'trace': traceback.format_exc()}
+          'trace': str(e)}
         },
       )
     )
-

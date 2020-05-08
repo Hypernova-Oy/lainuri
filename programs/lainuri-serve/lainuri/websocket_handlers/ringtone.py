@@ -30,15 +30,14 @@ def ringtone_list(event: lainuri.event.LERingtoneList = None):
       )
     )
   except Exception as e:
+    log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
       lainuri.event.LERingtoneListResponse(
         rtttls={},
         status=Status.ERROR,
-        states={
-          'exception': {
-            'type': type(e).__name__,
-            'trace': traceback.format_exc(),
-          },
-        }
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': str(e)}
+        },
       )
     )
