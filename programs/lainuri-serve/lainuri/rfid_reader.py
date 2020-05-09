@@ -18,6 +18,7 @@ from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_Rea
 from lainuri.RL866.tag import Tag
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 import lainuri.RL866.state as rfid_state
+from lainuri.threadbase import Threadbase
 
 
 rfid_readers = []
@@ -41,6 +42,9 @@ class RFID_Reader():
     log.info("Connecting serial():> RESYNC")
     self.write(SBlock_RESYNC())
     SBlock_RESYNC_Response(self.read(SBlock_RESYNC_Response))
+
+    self.inventory_polling_interval = get_config('devices.rfid-reader.polling_interval')
+    self.err_repeated = 0
 
   def access_lock(self) -> thread.LockType:
     return self.lock
@@ -89,27 +93,26 @@ class RFID_Reader():
     log.debug(f"-->READ {msg_class}")
     return rv_a
 
-  def start_polling_rfid_tags(self, interval: float = None):
-    thread.start_new_thread(self._rfid_poll, (interval, interval))
+  def start_polling_rfid_tags(self):
+    self.daemon = Threadbase(name='RFID-Reader', worker_method=self.rfid_poll_daemon, listen_for_event=False)
+    self.daemon.start()
+    return self.daemon
 
-  def _rfid_poll(self, interval: float = None, interval2: float = None):
-    if not interval: interval = get_config('devices.rfid-reader.polling_interval')
-    log.info("RFID polling starting")
+  def stop_polling_rfid_tags(self):
+    self.daemon.kill()
+    return self.daemon
 
-    err_repeated = 0
-    while(1):
-      try:
-        self.do_inventory()
-        time.sleep(interval or 60) # TODO: This should be something like 0.1 or maybe even no sleep?
-        err_repeated = 0
-      except Exception as e:
-        log.error("Getting inventory failed: "+traceback.format_exc())
-        err_repeated = err_repeated + 1
-        if err_repeated > 10:
-          log.error("RFID reading loop fails too frequently, killing it. The server must be restarted.")
-          raise e
-
-    log.info(f"Terminating RFID thread")
+  def rfid_poll_daemon(self):
+    try:
+      self.do_inventory()
+      time.sleep(self.inventory_polling_interval or 1) # TODO: This should be something like 0.1 or maybe even no sleep?
+      self.err_repeated = 0
+    except Exception as e:
+      log.exception("RFID Reader - Getting inventory failed")
+      self.err_repeated = self.err_repeated + 1
+      if self.err_repeated > 10:
+        log.error("RFID reading loop fails too frequently, killing it. The server must be restarted.")
+        self.kill()
 
   def do_inventory(self, no_events: bool = False):
     with self.access_lock():

@@ -49,9 +49,13 @@ def test_print_template_with_locales(subtests):
   fi_date = None
   printable_sheet = None
   new_locale = None
-  sheet_filename = lainuri.config.get_config('devices.thermal-printer.check-in-receipt')
+  sheet_filename = None
 
-  with subtests.test("Given locale 'en'"):
+  with subtests.test("Given the check-in receipt template backend is set to './templates/check_in.j2'"):
+    lainuri.config.write_config('devices.thermal-printer.check-in-receipt', './templates/check_in.j2')
+    sheet_filename = lainuri.config.get_config('devices.thermal-printer.check-in-receipt')
+
+  with subtests.test("And locale 'en'"):
     new_locale = lainuri.locale.set_locale('en')
     assert new_locale
 

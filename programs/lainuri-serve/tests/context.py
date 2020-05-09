@@ -1,4 +1,5 @@
 import os
+import time
 import sys
 
 sys.path.append(
@@ -19,3 +20,11 @@ def assert_raises(name, e_class, e_string, cb):
   except Exception as e:
     assert type(e) == e_class
     assert e_string in str(e)
+
+def poll_thread_is_alive(is_alive: bool, thread):
+  count = 20
+  while(thread.is_alive() != is_alive):
+    count -= 1
+    time.sleep(0.1)
+    if count == 0: raise TimeoutError(f"thread failed to {is_alive}")
+  return True

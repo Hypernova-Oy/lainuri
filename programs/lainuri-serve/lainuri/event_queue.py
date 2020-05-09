@@ -15,6 +15,8 @@ from simple_websocket_server import WebSocket
 import _thread as thread
 import time
 
+from lainuri.threadbase import Threadbase
+
 history_size = 1024
 
 history_lock = thread.allocate_lock()
@@ -53,3 +55,15 @@ def flush_all():
     hii = 0
   q = queue.Queue(maxsize=0)
   return True
+
+daemon = None
+def init(event_handler: callable):
+  global daemon
+  if daemon: raise RuntimeError("EventHandler daemon already initialized!")
+  daemon = Threadbase(name='EventHandler', worker_method=event_handler, listen_for_event=False)
+  return daemon
+
+def get_daemon():
+  global daemon
+  if not daemon: raise RuntimeError("EventHandler daemon not initialized yet!")
+  return daemon

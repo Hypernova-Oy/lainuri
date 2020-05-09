@@ -13,12 +13,12 @@ import importlib
 import lainuri.helpers
 import lainuri.barcode_reader.model.WGC300UsbAT as WGC300UsbAT
 import lainuri.barcode_reader.model.WGI3220USB as WGI3220USB
+from lainuri.threadbase import Threadbase
 
 
 class BarcodeReader():
-  def __init__(self):
+  def __init__(self, barcode_read_handler: callable=None):
     self.model = get_config('devices.barcode-reader.model')
-    self.barcode_polling_thread_stop_polling = False
 
     try:
       self.config_module = importlib.import_module(f'.{self.model}', 'lainuri.barcode_reader.model')
@@ -27,6 +27,8 @@ class BarcodeReader():
 
     self.serial: serial.Serial = self.connect_serial()
     self.autoconfigure()
+
+    self.barcode_read_handler = barcode_read_handler
 
   def connect_serial(self) -> serial.Serial:
     log.info(f"Connecting to '{self.model}'")
@@ -67,12 +69,15 @@ class BarcodeReader():
       rv = rv + self.serial.read(255)
     return rv
 
-  def blocking_read(self):
+  def blocking_read(self, timeout: int = 3):
     """
     Use the serial-system's blocking read to notify us of new bytes to read, instead of looping and polling.
+    If timeout happened, returns None
+    Timeout is needed for the controlling thread to be able to receive commands.
     """
-    self.serial.timeout = None # wait forever / until requested number of bytes are received
+    self.serial.timeout = timeout
     rv = self.serial.read(1)
+    if not rv: return None
     rv = rv + self.read()
     if (rv):
       log.debug(f"Received bytes='{rv.hex()}'")
@@ -85,41 +90,34 @@ class BarcodeReader():
       log.info(f"Received barcode='{barcode}' bytes='{rv}'")
       return barcode
 
-  def start_polling_barcodes(self, handler):
-    """
-    Forks a thread to poll the serial connection for barcodes.
-    Turns the read barcodes into push notifications.
-    """
-    self.barcode_polling_thread_stop_polling = False
-    self.barcode_polling_thread = threading.Thread(name="barcode_polling_thread", target=self.polling_barcodes_thread, args=(handler, True))
-    self.barcode_polling_thread.start()
-    return self.barcode_polling_thread
+  def start_polling_barcodes(self):
+    self.daemon = Threadbase(name='BarcodeReader', worker_method=self.polling_barcodes_thread, listen_for_event=False)
+    self.daemon.start()
+    return self.daemon
 
   def stop_polling_barcodes(self):
-    """
-    Stops only after one more barcode is read
-    """
-    self.barcode_polling_thread_stop_polling = True
+    self.daemon.kill()
+    return self.daemon
 
-  def polling_barcodes_thread(self, handler, dummy):
-    log.info("Barcodes polling starting")
+  def polling_barcodes_thread(self):
+    barcode = self.read_barcode_blocking()
+    if barcode:
+      if self.barcode_read_handler: self.barcode_read_handler(self, barcode)
+      else: log.warn(f"polling_barcodes_thread():> barcode_read_handler not in place. Don't know what to do with barcode '{barcode}'?")
 
-    while(threading.main_thread().is_alive()):
-      if self.barcode_polling_thread_stop_polling == True:
-        self.barcode_polling_thread_stop_polling = False
-        break
 
-      try:
-        barcode = self.read_barcode_blocking()
-        if (barcode):
-          handler(barcode)
-      except Exception as e:
-        log.error(f"Polling barcodes received an exception='{type(e)}'\n{traceback.format_exc()}") # The prefix text is used to find caught exceptions!
-
-    log.info(f"Terminating barcode polling thread")
 
 barcode_reader_singleton = None
-def get_BarcodeReader() -> BarcodeReader:
+def init(barcode_read_handler: callable):
   global barcode_reader_singleton
-  if not barcode_reader_singleton: barcode_reader_singleton = BarcodeReader()
+  if barcode_reader_singleton: raise RuntimeError("BarcodeReader daemon already initialized!")
+  if get_config('devices.barcode-reader.enabled'):
+    barcode_reader_singleton = BarcodeReader(barcode_read_handler=barcode_read_handler)
+  else:
+    log.info("Barcode reader disabled by config")
+  return barcode_reader_singleton
+
+def get_BarcodeReader():
+  global barcode_reader_singleton
+  if not barcode_reader_singleton: raise RuntimeError("BarcodeReader daemon not initialized yet!")
   return barcode_reader_singleton

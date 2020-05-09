@@ -26,31 +26,29 @@ def tezt_manually_barcode_reader():
 
 def mock_read_one_barcode_generator():
   mock_dispatched = 0
-  def read_barcode_blocking():
+  def blocking_read():
     nonlocal mock_dispatched
     if not mock_dispatched:
       mock_dispatched += 1
       return 'mocked-barcode-read'
     return None
-  return read_barcode_blocking
+  return blocking_read
 
 def test_barcode_reader_polling_loop(subtests, caplog):
   assert lainuri.event_queue.flush_all()
-  with unittest.mock.patch.object(lainuri.barcode_reader.BarcodeReader, 'read_barcode_blocking', side_effect=mock_read_one_barcode_generator()) as barcode_blocking_read_mock:
-    thread = None
+  with unittest.mock.patch.object(lainuri.barcode_reader.BarcodeReader, 'read_barcode_blocking', side_effect=mock_read_one_barcode_generator()) as blocking_read_mock:
     bcr = None
 
     with subtests.test("Given a mocked barcode reader"):
-      bcr = lainuri.websocket_server.start_barcode_reader()
+      bcr = lainuri.barcode_reader.init(lainuri.websocket_server.handle_barcode_read)
 
     with subtests.test("When the barcode polling starts"):
-      thread = bcr.barcode_polling_thread
-      assert thread
-      assert poll_thread_is_alive(True, thread)
+      bcr.start_polling_barcodes()
+      assert context.poll_thread_is_alive(True, bcr.daemon)
       time.sleep(thread_wait_sleep)
 
     with subtests.test("And a barcode is read"):
-      barcode_blocking_read_mock.assert_called()
+      blocking_read_mock.assert_called()
 
     with subtests.test("Then the default handler is called with the read barcode"):
       event = lainuri.event_queue.history[0]
@@ -62,47 +60,30 @@ def test_barcode_reader_polling_loop(subtests, caplog):
 
     with subtests.test("Finally the polling thread is terminated"):
       bcr.stop_polling_barcodes()
-      assert poll_thread_is_alive(False, thread)
+      assert context.poll_thread_is_alive(False, bcr.daemon)
 
 def test_barcode_reader_polling_loop_exception_handling(subtests, caplog):
-  with unittest.mock.patch.object(lainuri.barcode_reader.BarcodeReader, 'read_barcode_blocking', side_effect=mock_read_one_barcode_generator()) as barcode_blocking_read_mock:
-    barcode_read_handler_mock = None
-    thread = None
+  with unittest.mock.patch.object(lainuri.barcode_reader.BarcodeReader, 'read_barcode_blocking', side_effect=lainuri.exception.ILS()) as blocking_read_mock:
     bcr = None
 
     with subtests.test("Given a mocked barcode reader that has a crashing handler"):
-      barcode_read_handler_mock = unittest.mock.Mock(side_effect=lainuri.exception.ILS())
-
       bcr = lainuri.barcode_reader.get_BarcodeReader()
 
     with subtests.test("When the barcode polling starts"):
-      thread = bcr.start_polling_barcodes(barcode_read_handler_mock)
-      assert thread
-      assert poll_thread_is_alive(True, thread)
+      bcr.start_polling_barcodes()
+      assert context.poll_thread_is_alive(True, bcr.daemon)
       time.sleep(thread_wait_sleep)
 
     with subtests.test("And a barcode is read"):
-      barcode_blocking_read_mock.assert_called()
-
-    with subtests.test("Then the handler is called with the read barcode"):
-      barcode_read_handler_mock.assert_called_with('mocked-barcode-read')
+      blocking_read_mock.assert_called()
 
     with subtests.test("And the polling thread captures the exception"):
       assert 'lainuri.exception.ILS' in ' '.join([''.join(str(t)) for t in caplog.record_tuples])
 
     with subtests.test("And the polling thread endures the Exception and keeps on polling"):
       time.sleep(thread_wait_sleep) # Give some time to die
-      assert thread.is_alive()
+      assert bcr.daemon.is_alive()
 
     with subtests.test("Finally the polling thread is terminated"):
       bcr.stop_polling_barcodes()
-      assert poll_thread_is_alive(False, thread)
-
-
-def poll_thread_is_alive(is_alive: bool, thread):
-  count = 20
-  while(thread.is_alive() != is_alive):
-    count -= 1
-    time.sleep(0.1)
-    if count == 0: raise TimeoutError(f"thread failed to {is_alive}")
-  return True
+      assert context.poll_thread_is_alive(False, bcr.daemon)

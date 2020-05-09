@@ -15,8 +15,7 @@ def ringtone_play(event: lainuri.event.LERingtonePlay):
   The thread dispatches ringtone-play-complete -events.
   """
   # Notify the RTTTL-Player thread that there is something to play.
-  lainuri.rtttl_player.play_ringtone_event = event
-  lainuri.rtttl_player.event_play_ringtone.set()
+  lainuri.rtttl_player.daemon.notify(event)
 
 def ringtone_list(event: lainuri.event.LERingtoneList = None):
   try:

@@ -10,6 +10,7 @@ import lainuri.rfid_reader
 from lainuri.RL866.tag import Tag
 
 import iso28560
+import time
 
 rfid_reader = None
 
@@ -118,3 +119,22 @@ def test_rfid_tag_data_format_overload(subtests):
 
     with subtests.test("(AFI) Then the rfid tag is checked for data format implementation"):
       assert tag.get_data_object_format_implementation() == iso28560.ISO28560_3_Object
+
+def test_rfid_reader_inventory_polling_thread(subtests):
+  global rfid_reader
+
+  with subtests.test("Given a rfid reader"):
+    rfid_reader = lainuri.rfid_reader.get_rfid_reader() if not rfid_reader else rfid_reader
+    assert rfid_reader
+
+  with subtests.test("When the rfid reader start polling for inventory"):
+    rfid_reader.start_polling_rfid_tags()
+    assert context.poll_thread_is_alive(True, rfid_reader.daemon)
+    time.sleep(1) # Give time to do the inventory
+
+  with subtests.test("Then the rfid tags are automatically inventoried"):
+    assert len(lainuri.rfid_reader.get_current_inventory_status()) > 0
+
+  with subtests.test("Finally the polling thread is terminated"):
+    rfid_reader.stop_polling_rfid_tags()
+    assert context.poll_thread_is_alive(False, rfid_reader.daemon)

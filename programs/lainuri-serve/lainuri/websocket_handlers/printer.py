@@ -31,6 +31,9 @@ def print_receipt(event):
         status=Status.SUCCESS, # We are waiting for the end-user to tear off the receipt, see lainuri.printer.status
       )
     )
+
+    #lainuri.printer.status.start_polling_for_receipt_torn(event)
+
   except Exception as e:
     log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(

@@ -41,5 +41,5 @@ def send_command(self, cmd):
   self.write(cmd)
   byttes = self.blocking_read()
   if not (byttes and byttes == b'\x52\xA0\xEC\xFE\x74'):
-    raise Exception(f"Sending command {cmd} failed due to device error response.")
+    raise Exception(f"Sending command {cmd} failed due to device error response '{byttes}'.")
 

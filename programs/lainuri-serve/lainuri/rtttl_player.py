@@ -5,15 +5,12 @@ log = logging.getLogger(__name__)
 from lainuri.constants import Status
 import lainuri.event
 import lainuri.event_queue
+from lainuri.threadbase import Threadbase
 
 import re
 import subprocess
 import threading
 import traceback
-
-event_play_ringtone = threading.Event()
-play_ringtone_event = None
-kill = None
 
 
 ringtone_type_songname_parser = re.compile(r'^[a-zA-Z0-9 \-_]+$')
@@ -35,8 +32,9 @@ def list_rtttl() -> dict:
   global rtttl_validator_re
 
   process = None
+  cmd = ['rtttl-player','-o','list']
   try:
-    process = subprocess.Popen(['rtttl-player','-o','list'], stdout=subprocess.PIPE)
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     process.wait(timeout=30)
     log.info("Listed rtttl")
     if process.returncode != 0:
@@ -52,7 +50,7 @@ def list_rtttl() -> dict:
     return rtttls
 
   except Exception as e:
-    raise type(e)(e, f"Failed to list rtttl! Command '{args}' exit='{process.returncode}', stderr='{process.stderr}', stdout='{process.stdout}'")
+    raise type(e)(e, f"Failed to list rtttl! Command '{cmd}' exit='{process.returncode}', stderr='{process.stderr}', stdout='{process.stdout}'")
 
 
 def play_rtttl(event: lainuri.event.LERingtonePlay):
@@ -121,20 +119,15 @@ def _do_play(event: lainuri.event.LERingtonePlay):
   except Exception as e:
     raise type(e)(e, f"Failed to play rtttl! Command '{args}' exit='{process.returncode}', stderr='{process.stderr}', stdout='{process.stdout}'")
 
-def rtttl_daemon():
-  global event_play_ringtone, kill
-  log.info(f"RTTTL-Player thread starting")
-  while(threading.main_thread().isAlive()):
-    if kill:
-      kill = 0
-      break
-    if not event_play_ringtone.wait(1): # This allows the running thread to receive and handle other commands, instead of being endlessly stuck at the event wait.
-      continue
-    event_play_ringtone.clear()
-    try:
-      play_rtttl(play_ringtone_event)
-    except Exception as e:
-      log.error(f"Error playing LERingtonePlay-event '{play_ringtone_event.__dict__}'. exception:\n{traceback.format_exc()}")
+def rtttl_daemon(event: lainuri.event.LERingtonePlay):
+    play_rtttl(event)
 
-  log.info(f"Terminating RTTTL-Player thread")
-  exit(0)
+daemon = None
+def get_player():
+  global daemon
+  if daemon: return daemon
+  if get_config('devices.ringtone-player.enabled'):
+    daemon = Threadbase(name='RTTTLPlayer', worker_method=rtttl_daemon, listen_for_event=True)
+    return daemon
+  else:
+    log.info("RTTTL Player disabled by config")

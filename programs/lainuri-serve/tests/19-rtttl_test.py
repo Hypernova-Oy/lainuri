@@ -46,8 +46,8 @@ def test_play_rtttl_checkin_out_types(subtests):
   lainuri.config.write_config('devices.ringtone-player.enabled', True)
   with unittest.mock.patch.object(lainuri.rtttl_player, 'play_rtttl', side_effect=lainuri.rtttl_player.play_rtttl) as play_rtttl_mock:
 
-    player_thr = threading.Thread(group=None, target=lainuri.rtttl_player.rtttl_daemon)
-    player_thr.start()
+    player = lainuri.rtttl_player.get_player()
+    player.start()
 
     run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-error')
     run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-success')
@@ -55,9 +55,9 @@ def test_play_rtttl_checkin_out_types(subtests):
     run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-success')
     run_play_rtttl_tst(subtests, play_rtttl_mock, None, 'Popcorn:d=4,o=5,b=160:8c6,8a#,8c6,8g,8d#,8g,c,8c6,8a#,8c6,8g,8d#,8g,c,8c6,8d6,8d#6,16c6,8d#6,16c6,8d#6,8d6,16a#,8d6,16a#,8d6,8c6,8a#,8g,8a#,c6')
 
-    lainuri.rtttl_player.kill = 1
-    player_thr.join(timeout=5)
-    assert not player_thr.is_alive()
+    player.kill()
+    player.join(timeout=5)
+    assert not player.is_alive()
 
 def run_play_rtttl_tst(subtests, play_rtttl_mock, ringtone_type = None, ringtone = None):
   assert lainuri.event_queue.flush_all()

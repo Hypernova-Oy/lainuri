@@ -6,60 +6,60 @@ from lainuri.constants import Status
 import lainuri.event
 import lainuri.event_queue
 import lainuri.hs_k33
+from lainuri.threadbase import Threadbase
 
 import subprocess
 import threading
 import time
 import traceback
 
-event_poll_for_receipt_torn = threading.Event()
-print_receipt_event = None
-kill = False
 
-def start_polling(event: lainuri.event.LEPrintRequest):
-  global event_poll_for_receipt_torn, print_receipt_event
-  event_poll_for_receipt_torn.set()
-  print_receipt_event = event
+def start_polling_for_receipt_torn(req_event: lainuri.event.LEPrintRequest):
+  daemon = get_daemon()
+  daemon.notify(req_event)
+  return daemon
 
-def end_polling():
-  global event_poll_for_receipt_torn, print_receipt_event
-  event_poll_for_receipt_torn.clear()
-  print_receipt_event = None
-
-def emit_event():
-  global print_receipt_event
-  lainuri.event_queue.push_event(
-    lainuri.event.LEPrintResponse(
-      receipt_type=print_receipt_event.receipt_type, items=print_receipt_event.items, user_barcode=print_receipt_event.user_barcode, printable_sheet='',
-      status=Status.SUCCESS,
-    )
-  )
-
-def printer_status_daemon():
-  global event_poll_for_receipt_torn, print_receipt_event, kill
-  log.info(f"Thermal printer status polling thread starting")
-
+def printer_status_daemon(req_event: lainuri.event.LEPrintRequest):
+  global daemon
   hs_k33 = lainuri.hs_k33.get_printer()
 
-  while(threading.main_thread().isAlive()):
-    if kill:
-      kill = False
+  while(threading.main_thread().is_alive()):
+    if daemon.killswitch:
       break
-    if not event_poll_for_receipt_torn.wait(1): # This allows the running thread to receive and handle other commands, instead of being endlessly stuck at the event wait.
-      continue
-
-
     try:
-      if not hs_k33.is_paper_torn_away():
-        emit_event()
-        end_polling()
+      if hs_k33.is_paper_torn_away():
+        lainuri.event_queue.push_event(
+          lainuri.event.LEPrintResponse(
+            receipt_type=req_event.receipt_type, items=req_event.items, user_barcode=req_event.user_barcode, printable_sheet='',
+            status=Status.SUCCESS,
+          )
+        )
+        break
       else:
-        time.sleep(0.1)
+        time.sleep(0.5)
     except Exception as e:
-      log.error(f"Error polling for LEPrintRequest-event '{print_receipt_event.__dict__}'. exception:\n{traceback.format_exc()}")
-      emit_event()
-      end_polling()
+      log.exception("Error polling for LEPrintRequest-event")
+      lainuri.event_queue.push_event(
+        lainuri.event.LEPrintResponse(
+          receipt_type=req_event.receipt_type, items=req_event.items, user_barcode=req_event.user_barcode, printable_sheet='',
+          status=Status.ERROR,
+          states={'exception': {
+            'type': type(e).__name__,
+            'trace': str(e)}
+          },
+        )
+      )
+      break
 
+daemon = None
+def get_daemon():
+  global daemon
+  if daemon: return daemon
+  daemon = Threadbase(name='ThermalPrinter', worker_method=printer_status_daemon, listen_for_event=True)
+  return daemon
 
-  log.info(f"Terminating Thermal printer status polling thread")
-  exit(0)
+def stop_daemon():
+  global daemon
+  if not daemon: return
+  daemon.kill()
+  daemon = None

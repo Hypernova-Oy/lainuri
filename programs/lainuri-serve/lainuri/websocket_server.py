@@ -55,16 +55,11 @@ def set_state(new_state: str):
   log.info(f"New state '{new_state}'")
   state = new_state
 
-def handle_events_loop():
-  while(threading.main_thread().isAlive()):
-    try:
-      handle_one_event(3) # timeout so we can terminate gracefully
-    except queue.Empty as e:
-      pass
-    except Exception as e:
-      log.exception("Handling event failed!")
-      #lainuri.event_queue.push_event(lainuri.event.LEvent('exception', {'exception': traceback.format_exc()}, recipient=event.recipient, event_id=lainuri.helpers.null_safe_lookup(event, ['event_id'])))
-  log.info("Terminating Event handling thread")
+def handle_one_event_daemon():
+  try:
+    return handle_one_event(2)
+  except queue.Empty as e:
+    pass
 
 def handle_one_event(timeout: int = None, event: lainuri.event.LEvent = None) -> lainuri.event.LEvent:
   if not event: event = lainuri.event_queue.pop_event(timeout=timeout)
@@ -175,19 +170,17 @@ def start():
     koha_api.authenticate()
 
   if get_config('devices.rfid-reader.enabled'):
-    rfid_reader = lainuri.rfid_reader.get_rfid_reader()
-    rfid_reader.start_polling_rfid_tags()
+    lainuri.rfid_reader.get_rfid_reader().start_polling_rfid_tags()
   else:
     log.info("RFID reader is disabled by config")
 
-  start_barcode_reader()
+  bcr = lainuri.barcode_reader.init(lainuri.websocket_server.handle_barcode_read).start()
 
-  event_thr = threading.Thread(group=None, target=handle_events_loop)
-  event_thr.start()
-  player_thr = threading.Thread(group=None, target=lainuri.rtttl_player.rtttl_daemon)
-  player_thr.start()
-  printer_thr = threading.Thread(group=None, target=lainuri.printer.status.printer_status_daemon)
-  printer_thr.start()
+  lainuri.event_queue.init(event_handler=lainuri.websocket_server.handle_one_event_daemon).start()
+
+  lainuri.rtttl_player.get_player().start()
+
+  lainuri.printer.status.get_daemon().start()
 
   port = int(get_config('server.port'))
   hostname = get_config('server.hostname')
@@ -195,16 +188,7 @@ def start():
   server = WebSocketServer(hostname, port, SimpleChat)
   server.serve_forever()
 
-def start_barcode_reader():
-  if get_config('devices.barcode-reader.enabled'):
-    barcode_reader = lainuri.barcode_reader.get_BarcodeReader()
-    barcode_reader.start_polling_barcodes(handle_barcode_read)
-    return barcode_reader
-  else:
-    log.info("WGC300 reader is disabled by config")
-  return None
-
-def handle_barcode_read(barcode: str):
+def handle_barcode_read(bcr: lainuri.barcode_reader.BarcodeReader, barcode: str):
   if (lainuri.websocket_server.state == 'user-logging-in'):
     lainuri.websocket_handlers.auth.login_user(barcode)
   else:
