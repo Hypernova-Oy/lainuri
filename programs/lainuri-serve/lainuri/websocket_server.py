@@ -73,8 +73,6 @@ def handle_one_event(timeout: int = None, event: lainuri.event.LEvent = None) ->
       set_state('user-logging-in')
     elif event.event == 'user-login-abort':
       set_state('get_items')
-    elif event.event == 'config-getpublic':
-      lainuri.websocket_handlers.config.get_public_configs(event)
     elif event.event == 'register-client':
       register_client(event)
     elif event.event == 'deregister-client':
