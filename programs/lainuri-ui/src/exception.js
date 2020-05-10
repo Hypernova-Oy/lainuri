@@ -1,45 +1,3 @@
-class ConnectTimeoutError extends Error {
-}
-
-// rfid.py
-class RFIDException extends Error {
-}
-class RFIDCommand extends RFIDException {
-}
-class TagNotDetected extends RFIDException {
-}
-class GateSecurityStatusVerification extends RFIDException {
-}
-
-// ils.py
-class ILSException extends Error {
-}
-class InvalidUser extends ILSException {
-}
-class NoUser extends ILSException {
-}
-class NoItem extends ILSException {
-}
-class NoItemIdentifier extends ILSException {
-}
-
-
-
-class ExceptionCastingException extends ILSException {
-}
-
-const classes = {
-  ExceptionCastingException,
-  RFIDCommand,
-  TagNotDetected,
-  GateSecurityStatusVerification,
-  InvalidUser,
-  NoUser,
-  NoItem,
-  NoItemIdentifier,
-  ConnectTimeoutError,
-}
-
 /**
  *
  * @param  {...any} args
@@ -51,7 +9,7 @@ export function translate_exception(...args) {
     let states = args[arg_i]
     for (let key in states) {
       if (key === 'exception') {
-        let i18n_key = 'Exception/'+cast_exception(states[key])
+        let i18n_key = 'Exception/'+cast_exception(states['exception'])
         trans_states[i18n_key] = true
       }
       else {
@@ -62,11 +20,13 @@ export function translate_exception(...args) {
   return trans_states
 }
 
+/**
+ *
+ * @param {exception} exception_object
+ * {'exception': {'trace': "(<urllib3.connection.VerifiedHTTPSConnection object at 0xafc683f0>, 'Connection to demo1.intra.koha-helsinki-2.hypernova.fi timed out. (connect timeout=2.5)')",
+                  'type': 'ILSConnectionFailure'}}
+ */
 function cast_exception(exception_object) {
-  let e_class = classes[exception_object.type]
-  if (!e_class) {
-    return `ExceptionCastingException("Unknown exception class for exception string '${exception_object.type}' '${exception_object.trace}'")`;
-  }
   return exception_object.type
 }
 

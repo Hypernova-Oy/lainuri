@@ -1,6 +1,7 @@
 from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
+import lainuri.pretty as lp
 
 import lainuri.RL866.state
 
@@ -83,10 +84,10 @@ class Tag():
 
   def connect(self, handle: bytes):
     self._connected_handle = handle
-    log.info(f"Connected as handle '{handle}' to tag '{self.__dict__}'")
+    log.info(f"Connected as handle '{handle}' to tag '{lp.pformat(self.__dict__)}'")
 
   def disconnect(self):
-    log.info(f"Disconnected old handle '{self._connected_handle}' to tag '{self.__dict__}'")
+    log.info(f"Disconnected old handle '{self._connected_handle}' to tag '{self.serial_number()}'")
     self._connected_handle = None
 
   def get_connection_handle(self) -> bytes:

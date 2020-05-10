@@ -24,7 +24,7 @@
       </template>
       {{t('StatusBar/Printer_paper_runout')}}
     </v-tooltip>
-    <v-tooltip v-if="status.thermal_printer_paper_status != Status.SUCCESS" left v-model="show_tooltips">
+    <v-tooltip v-else-if="status.thermal_printer_paper_status != Status.SUCCESS" left v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon color="yellow darken-2" v-on="on">mdi-paper-roll-outline</v-icon>
       </template>
@@ -45,7 +45,7 @@
     <v-tooltip v-if="status.ils_connection_status != Status.SUCCESS" left v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-if="status.ils_connection_status == Status.ERROR"   color="error" v-on="on">mdi-server-network-off</v-icon>
-        <v-icon v-if="status.ils_connection_status == Status.PENDING" color="yellow darken-2" v-on="on">mdi-server-network-off</v-icon>
+        <v-icon v-else-if="status.ils_connection_status == Status.PENDING" color="yellow darken-2" v-on="on">mdi-server-network-off</v-icon>
       </template>
       {{t('StatusBar/ILS_connection_lost')}}
     </v-tooltip>

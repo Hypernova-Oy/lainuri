@@ -44,7 +44,9 @@ class KohaAPI():
     )
 
   def _request(self, method, url, headers=None, fields=None, expect_json=1, expect_html=None):
-    for i in range(1,4):
+    retries_left = 4
+    while retries_left != 0:
+      retries_left = retries_left-1
       try:
         r = self.http.request(
           method,
@@ -57,11 +59,19 @@ class KohaAPI():
         if expect_html: return self._maybe_not_logged_in(r, self._receive_html(r))
         if expect_json: return self._maybe_not_logged_in(r, self._receive_json(r))
 
+        break # from the retry loop
+
       except Exception as e:
+        log.exception(f"Exception requesting Koha API '{url}'")
+        if retries_left == 0:
+          raise exception_ils.ILSConnectionFailure(str(e))
         if isinstance(e, urllib3.exceptions.NewConnectionError):
           lainuri.status.update_status('ils_connection_status', Status.ERROR)
           time.sleep(1)
         elif isinstance(e, urllib3.exceptions.ConnectTimeoutError):
+          lainuri.status.update_status('ils_connection_status', Status.PENDING)
+          time.sleep(1)
+        elif isinstance(e, urllib3.exceptions.ReadTimeoutError):
           lainuri.status.update_status('ils_connection_status', Status.PENDING)
           time.sleep(1)
         elif "TRANSPARENT_REAUTHENTICATION" in str(e):

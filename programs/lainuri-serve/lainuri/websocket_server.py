@@ -172,7 +172,7 @@ def start():
   else:
     log.info("RFID reader is disabled by config")
 
-  bcr = lainuri.barcode_reader.init(lainuri.websocket_server.handle_barcode_read).start()
+  bcr = lainuri.barcode_reader.init(lainuri.websocket_server.handle_barcode_read).start_polling_barcodes()
 
   lainuri.event_queue.init(event_handler=lainuri.websocket_server.handle_one_event_daemon).start()
 

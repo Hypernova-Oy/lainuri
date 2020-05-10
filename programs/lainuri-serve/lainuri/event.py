@@ -1,10 +1,10 @@
 from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
+import lainuri.pretty as lp
 
 from simple_websocket_server import WebSocket
 import json
-import pprint
 import time
 import traceback
 
@@ -48,7 +48,7 @@ class LEvent():
 
   def to_string(self):
     #return f"event_id='{self.event_id}' " + str({key: getattr(self, key) for key in self.serializable_attributes})
-    return pprint.pformat(self.__dict__)
+    return lp.pformat(self.__dict__)
 
 class LECheckOut(LEvent):
   event = 'check-out'

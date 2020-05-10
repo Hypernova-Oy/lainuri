@@ -14,7 +14,7 @@ devices:
     password: ''
     polling_interval: 0.25
   ringtone-player:
-    enabled: false
+    enabled: true
     ringtone_types:
       checkin-error: ToveriAccessDenied
       checkin-success: ToveriAccessGranted

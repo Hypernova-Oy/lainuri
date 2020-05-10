@@ -1,5 +1,8 @@
 import lainuri.exception
 
+class ILSConnectionFailure(lainuri.exception.ILS):
+  pass
+
 class InvalidUser(lainuri.exception.ILS):
   def __init__(self, id: str):
     self.id = id
