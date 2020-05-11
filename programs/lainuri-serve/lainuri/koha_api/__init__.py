@@ -442,12 +442,12 @@ class KohaAPI():
 
     return payload[0]['availability']
 
-
+image_types_matcher = re.compile("(?:"+"|.".join(lainuri.config.image_types(True))+"|image)", re.I)
 class MARCRecord():
-  candidate_author_fields = {'100': ['a'], '110': ['a']}
-  candidate_title_fields  = {'245': ['a'], '240': ['a']}
-  candidate_book_cover_url_fields  = {'856': ['u']}
-  candidate_edition_fields = {'250': ['a']}
+  candidate_author_fields = [['100', 'a'], ['110', 'a']]
+  candidate_title_fields  = [['245', 'a'], ['240', 'a']]
+  candidate_book_cover_url_fields  = [['856', 'u']]
+  candidate_edition_fields = [['250', 'a']]
 
   _author = ''
   _title = ''
@@ -462,44 +462,34 @@ class MARCRecord():
 
   def author(self):
     if self._author: return self._author
-    for field_code in self.candidate_author_fields:
-      field = self.soup.select_one(f'datafield[tag="{field_code}"]')
-      if field:
-        for sf in field.children:
-          if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_author_fields[field_code]:
-            self._author = sf.get_text()
-            return self._author
-
-  def title(self):
-    if self._title: return self._title
-    for field_code in self.candidate_title_fields:
-      field = self.soup.select_one(f'datafield[tag="{field_code}"]')
-      if field:
-        for sf in field.children:
-          if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_title_fields[field_code]:
-            self._title = sf.get_text()
-            return self._title
+    for field_code, subfield_code in self.candidate_author_fields:
+      sf = self.soup.select_one(f'datafield[tag="{field_code}"] subfield[code="{subfield_code}"]')
+      if sf: self._author = sf.get_text()
+    return self._author
 
   def book_cover_url(self):
     if self._book_cover_url: return self._book_cover_url
-    for field_code in self.candidate_book_cover_url_fields:
-      field = self.soup.select_one(f'datafield[tag="{field_code}"]')
-      if field:
-        for sf in field.children:
-          if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_book_cover_url_fields[field_code]:
+    for field_code, subfield_code in self.candidate_book_cover_url_fields:
+      sfs = self.soup.select(f'datafield[tag="{field_code}"] subfield[code="{subfield_code}"]')
+      if sfs:
+        for sf in sfs:
+          if image_types_matcher.search(sf.get_text()):
             self._book_cover_url = sf.get_text()
-            return self._book_cover_url
+    return self._book_cover_url
 
   def edition(self):
     if self._edition: return self._edition
-    for field_code in self.candidate_edition_fields:
-      field = self.soup.select_one(f'datafield[tag="{field_code}"]')
-      if field:
-        for sf in field.children:
-          if isinstance(sf, bs4.element.Tag) and sf.attrs['code'] in self.candidate_edition_fields[field_code]:
-            self._author = sf.get_text()
-            return self._author
+    for field_code, subfield_code in self.candidate_edition_fields:
+      sf = self.soup.select_one(f'datafield[tag="{field_code}"] subfield[code="{subfield_code}"]')
+      if sf: self._edition = sf.get_text()
+    return self._edition
 
+  def title(self):
+    if self._title: return self._title
+    for field_code, subfield_code in self.candidate_title_fields:
+      sf = self.soup.select_one(f'datafield[tag="{field_code}"] subfield[code="{subfield_code}"]')
+      if sf: self._title = sf.get_text()
+    return self._title
 
 @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
 def get_fleshed_item_record(barcode):

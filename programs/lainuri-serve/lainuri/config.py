@@ -99,13 +99,17 @@ def get_config(lookup: str):
 def get_lainuri_conf_dir() -> pathlib.Path:
   return pathlib.Path(os.environ.get('LAINURI_CONF_DIR'))
 
-def image_types():
-  return [
-    'png' # currently only .png is supported
+def image_types(all: bool = False):
+  if all:
+    return [
     ## raster types
-    #'bmp','gif','heif','indd','jpg','jpeg','png', 'psd', 'raw','tiff','webp'
+    'bmp','gif','heif','indd','jpg','jpeg','png', 'psd', 'raw','tiff','webp',
     ## vector types
-    #'ai','eps','pdf','svg'
+    'ai','eps','pdf','svg',
+    ]
+
+  return [ #for image_overloads -feature
+    'png' # currently only .png is supported
   ]
 
 def image_overloads_flush():
