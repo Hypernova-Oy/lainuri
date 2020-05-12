@@ -4,7 +4,7 @@
     v-bind:class="{
       error: item_bib.status === Status.ERROR,
     }"
-    @click="$emit('close_notification')"
+    @click="close_notification"
     style="padding: 20px;"
   >
     <h1 v-if="mode === 'checkin'">{{t('CheckIn/'+notification_type)}}</h1>
@@ -22,6 +22,9 @@
 </template>
 
 <script>
+import {get_logger} from '../logger'
+let log = get_logger('OverlayNotification.vue');
+
 import {Status} from '../lainuri_events.js'
 import ItemCard from '../components/ItemCard.vue'
 
@@ -52,6 +55,12 @@ export default {
       }
       return 'Place_to_bin_OK';
     },
+  },
+  methods: {
+    close_notification: function () {
+      log.info('close_notification():> item_bib=', this.item_bib.item_barcode);
+      this.$emit('close_notification')
+    }
   },
 }
 </script>
