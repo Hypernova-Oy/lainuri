@@ -1,0 +1,5 @@
+(sym_lib_table
+  (lib (name Koha-Suomi)(type Legacy)(uri /home/kivilahtio/work/emb-toveri/KiCad/authenticator/libraries/Koha-Suomi.lib)(options "")(descr ""))
+  (lib (name at-1220-twt-5v-r)(type Legacy)(uri /home/kivilahtio/work/emb-toveri/KiCad/authenticator/libraries/at-1220-twt-5v-r.lib)(options "")(descr ""))
+  (lib (name authenticator-rescue)(type Legacy)(uri /home/kivilahtio/work/emb-toveri/KiCad/authenticator/authenticator-rescue.lib)(options "")(descr ""))
+)
