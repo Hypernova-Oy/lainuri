@@ -46,5 +46,8 @@ export default {
 </script>
 
 <style scoped>
-
+.v-toolbar__title {
+  font-weight: 900;
+  font-size: 1.5rem;
+}
 </style>

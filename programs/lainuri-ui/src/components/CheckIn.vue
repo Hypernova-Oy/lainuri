@@ -4,10 +4,6 @@
       <v-row>
         <v-col>
           <v-card-title>{{t('CheckIn/Place_items_on_the_reader_and_read_barcodes')}}</v-card-title>
-          <v-progress-linear
-            indeterminate
-            color="yellow darken-2"
-          ></v-progress-linear>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -309,14 +305,14 @@ export default {
       }
 
       if (event.status === Status.SUCCESS) {
-        this.check_in_succeeded(item_bib, event.states)
+        this.check_in_succeeded(item_bib, event.states);
+        if (item_bib.tag_type === "barcode") {
+          this.show_overlay_notification(item_bib);  //The transaction ends here for a barcode-Item.
+        }
       }
       else {
-        this.check_in_failed(item_bib, event.states)
-      }
-
-      if (item_bib.tag_type === "barcode") {
-        this.show_overlay_notification(item_bib);  //The transaction ends here for a barcode-Item.
+        this.check_in_failed(item_bib, event.states);
+        this.show_overlay_notification(item_bib);
       }
     },
     check_in_failed: function (item_bib, states) {
@@ -355,7 +351,7 @@ export default {
       this.show_overlay_notification(item_bib); //The transaction ends here for a rfid-tag-Item.
     },
     show_overlay_notification: function (item_bib) {
-      if (this.$appConfig.i18n.always_display_check_in_out_notification ||
+      if (this.$appConfig.ui.always_display_check_in_out_notification ||
           Object.keys(item_bib.states_check_in).length) {
         this.overlay_notifications.push(item_bib);
 
@@ -404,7 +400,15 @@ export default {
 /*.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
   font-size: 1.3em;
 }*/
+.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
+  font-size: 1.5em;
+  font-weight: 900;
+}
 .subspace-navigation .v-card__actions {
   height: 100%;
+}
+.v-toolbar__title {
+  font-weight: 900;
+  font-size: 1.5rem;
 }
 </style>

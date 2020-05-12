@@ -8,10 +8,6 @@
             {{t('CheckOut/Hi_user!', {user: user.firstname})}}<br/>
             {{t('CheckOut/Place_items_on_the_reader_and_read_barcodes')}}
           </v-card-title>
-          <v-progress-linear
-            indeterminate
-            color="yellow darken-2"
-          ></v-progress-linear>
         </v-col>
         <v-col>
           <v-card-actions>
@@ -363,14 +359,14 @@ export default {
       }
 
       if (event.status === Status.SUCCESS) {
-        this.check_out_succeeded(item_bib, event.states)
+        this.check_out_succeeded(item_bib, event.states);
+        if (item_bib.tag_type === "barcode") {
+          this.show_overlay_notification(item_bib);  //The transaction ends here for a barcode-Item.
+        }
       }
       else {
-        this.check_out_failed(item_bib, event.states)
-      }
-
-      if (item_bib.tag_type === "barcode") {
-        this.show_overlay_notification(item_bib);  //The transaction ends here for a barcode-Item.
+        this.check_out_failed(item_bib, event.states);
+        this.show_overlay_notification(item_bib);
       }
     },
     check_out_failed: function (item_bib, states) {
@@ -409,8 +405,7 @@ export default {
       this.show_overlay_notification(item_bib); //The transaction ends here for a rfid-tag-Item.
     },
     show_overlay_notification: function (item_bib) {
-      if (this.$appConfig.i18n.always_display_check_in_out_notification ||
-          Object.keys(item_bib.states_check_in).length) {
+      if (Object.keys(item_bib.states_check_out).length) {
         this.overlay_notifications.push(item_bib);
 
         if (item_bib._overlay_notificated) log.warn(`show_overlay_notification() item_barcode '${item_bib.item_barcode}', duplicate overlay notification!`);
@@ -455,10 +450,15 @@ export default {
 </script>
 
 <style scoped>
-/*.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
-  font-size: 1.3em;
-}*/
+.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
+  font-size: 1.5em;
+  font-weight: 900;
+}
 .subspace-navigation .v-card__actions {
   height: 100%;
+}
+.v-toolbar__title {
+  font-weight: 900;
+  font-size: 1.5rem;
 }
 </style>
