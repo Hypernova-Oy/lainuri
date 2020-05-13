@@ -3,11 +3,12 @@
     raised
     v-bind:class="{
       error: item_bib.status === Status.ERROR,
+      overlay_notification: true,
     }"
     @click="close_notification"
-    style="padding: 20px;"
   >
-    <h1 v-if="mode === 'checkin'">{{t('CheckIn/'+notification_type)}}</h1>
+    <h1 v-if="     mode === 'checkin'">{{t('CheckIn/'+notification_type)}}</h1>
+    <h1 v-else-if="mode === 'checkout' && notification_type === 'Place_to_RFID_reader'">{{t('CheckOut/'+notification_type)}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.ERROR">{{t('CheckOut/Check_out_failed')}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.SUCCESS">{{t('CheckOut/Be_advised!')}}</h1>
     <ItemCard :item_bib="item_bib"/>
@@ -50,7 +51,10 @@ export default {
     notification_type: function () {
       let states_keys = Object.keys(this.item_bib.states)
       if (states_keys.length) {
-        if (states_keys.length == 1 && this.item_bib.states['not_checked_out']) return 'Place_to_bin_OK';
+        if (this.item_bib.states['Exception/RFIDCommand'] || this.item_bib.states["Exception/TagNotDetected"]) {
+          return 'Place_to_RFID_reader';
+        }
+        if (states_keys.length == 1 && this.item_bib.states['Status/not_checked_out']) return 'Place_to_bin_OK';
         else return 'Place_to_bin_ODD';
       }
       return 'Place_to_bin_OK';
@@ -68,5 +72,14 @@ export default {
 <style scoped>
 .itemcard {
   margin: auto;
+}
+.overlay_notification {
+  padding: 20px;
+}
+.overlay_notification h1 {
+  margin-bottom: 20px;
+}
+.overlay_notification div.v-image {
+  margin-top: 20px;
 }
 </style>

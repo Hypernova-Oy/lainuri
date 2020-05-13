@@ -18,6 +18,7 @@ const i18n_messages = {
       Errors: "Errors",
       Place_to_bin_OK: "Place to shelf 'normal'",
       Place_to_bin_ODD: "Place to shelf 'strange'",
+      Place_to_RFID_reader: "Place the item back to the reader platform",
     },
     CheckOut: {
       Checking_out: "Checking out",
@@ -32,6 +33,7 @@ const i18n_messages = {
       Errors: "Errors",
       Check_out_failed: "Checkout failed",
       'Be_advised!': "Be advised!",
+      Place_to_RFID_reader: "Place the item back to the reader platform",
     },
     Exception: {
       ILSConnectionFailure: "Connection to the library system temporarily failed. Please try again.",
@@ -89,6 +91,7 @@ const i18n_messages = {
       Errors: "Virheet",
       Place_to_bin_OK: "Paikka hyllyyn 'normaali'",
       Place_to_bin_ODD: "Paikka hyllylle 'outo'",
+      Place_to_RFID_reader: "Aseta nide takaisin lukualustalle",
     },
     CheckOut: {
       Checking_out: "Lainataan",
@@ -103,6 +106,7 @@ const i18n_messages = {
       Errors: "Virheet",
       Check_out_failed: "Lainaaminen epäonnistui",
       'Be_advised!': "Huomioikaa!",
+      Place_to_RFID_reader: "Aseta nide takaisin lukualustalle",
     },
     Exception: {
       ILSConnectionFailure: "Yhteys kirjastojärjestelmään epäonnistui. Yritä uudelleen.",
@@ -160,6 +164,7 @@ const i18n_messages = {
       Errors: "Misstag",
       Place_to_bin_OK: "Plats på hyllan 'normal'",
       Place_to_bin_ODD: "Plats att hyllas 'konstigt'",
+      Place_to_RFID_reader: "Placera artikeln tillbaka till läsarplattformen",
     },
     CheckOut: {
       Checking_out: "Checkar ut",
@@ -174,6 +179,7 @@ const i18n_messages = {
       Errors: "Misstag",
       Check_out_failed: "Utcheckning misslyckas",
       'Be_advised!': "Rådas!",
+      Place_to_RFID_reader: "Placera artikeln tillbaka till läsarplattformen",
     },
     Exception: {
       ILSConnectionFailure: "Anslutningen till bibliotekssystemet misslyckades tillfälligt. Var god försök igen.",
@@ -231,6 +237,7 @@ const i18n_messages = {
       Errors: "ошибки",
       Place_to_bin_OK: "Место на полке 'нормально'",
       Place_to_bin_ODD: "Место на полке 'странно'",
+      Place_to_RFID_reader: "Поместите предмет обратно на платформу считывателя",
     },
     CheckOut: {
       Checking_out: "Проверка",
@@ -245,6 +252,7 @@ const i18n_messages = {
       Errors: "ошибки",
       Check_out_failed: "Не удалось оформить заказ",
       Be_advised: "Быть посоветованным",
+      Place_to_RFID_reader: "Поместите предмет обратно на платформу считывателя",
     },
     Exception: {
       ILSConnectionFailure: "Подключение к библиотечной системе временно не удалось. Пожалуйста, попробуйте еще раз.",
