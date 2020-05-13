@@ -14,7 +14,7 @@ import traceback
 def set_tag_alarm(event):
 
   try:
-    lainuri.rfid_reader.set_tag_gate_alarm(event, event.on)
+    lainuri.rfid_reader.set_tag_gate_alarm(event.item_barcode, event.on)
     lainuri.event_queue.push_event(
       lainuri.event.LESetTagAlarmComplete(
         item_barcode=event.item_barcode,

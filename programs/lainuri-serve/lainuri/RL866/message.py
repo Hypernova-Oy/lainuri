@@ -120,17 +120,17 @@ def parseMessage(self, bs: bytes):
   self.INF = bs[4:-2]
 
   if not self.CHK == lainuri.RL866.CRC16.crc16(self.LEN + self.RID + self.PCB + self.INF):
-    raise Exception("CRC not matches")
+    raise exception_rfid.RFIDCommand('ERR_CRC', "CRC not matches")
 
 def parseIBlockResponseINF(self):
-  if not getattr(self, 'INF', None): raise Exception(f"Trying to parse IBlock INF but the given message '{self}' is missing self.INF")
-  if not getattr(self, 'CMD', None): raise Exception(f"Trying to parse IBlock INF but the given message '{self}' is missing self.CMD")
+  if not getattr(self, 'INF', None): raise exception_rfid.RFIDCommand('ERR_READ', f"Trying to parse IBlock INF but the given message '{self}' is missing self.INF")
+  if not getattr(self, 'CMD', None): raise exception_rfid.RFIDCommand('ERR_READ', f"Trying to parse IBlock INF but the given message '{self}' is missing self.CMD")
 
   CMD = bytes([self.INF[0]])
   self.STA = self.INF[1:3] # Extract WORD bytes
   self.PARM = self.INF[3:]
 
-  if not self.CMD == CMD: raise Exception(f"Trying to parse IBlock INF but the given message '{self}' has conflicting CMDs? Class instance CMD='{self.CMD}'. INF contains CMD='{CMD}'?")
+  if not self.CMD == CMD: raise exception_rfid.RFIDCommand('ERR_READ', f"Trying to parse IBlock INF but the given message '{self}' has conflicting CMDs? Class instance CMD='{self.CMD}'. INF contains CMD='{CMD}'?")
 
   if self.STA[0] or self.STA[1]:
     status = helpers.word_to_int(self.STA)

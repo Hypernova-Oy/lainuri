@@ -13,7 +13,7 @@ import lainuri.event_queue
 import lainuri.exception
 import lainuri.websocket_server
 
-thread_wait_sleep = 0.5
+thread_wait_sleep = 1.5
 
 def tezt_manually_barcode_reader():
   bcr = lainuri.barcode_reader.get_BarcodeReader()

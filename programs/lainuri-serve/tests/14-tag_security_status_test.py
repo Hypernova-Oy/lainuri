@@ -19,6 +19,31 @@ import lainuri.rfid_reader as rfid
 good_item_barcode = '1620154429'
 good_user_barcode = '23529000035676'
 
+def test__finally_tag_disconnect(subtests, caplog):
+  rfid_reader = None
+  tag = None
+
+  with subtests.test("Given an rfid_reader and a tag"):
+    rfid_reader = rfid.get_rfid_reader()
+    assert rfid_reader.do_inventory(no_events=True)
+    tags_present = rfid.get_current_inventory_status()
+    assert len(tags_present) > 0
+    tag = tags_present[0]
+
+  def throw(*args, **kwargs):
+    raise lainuri.exception.rfid.RFIDCommand("id-mock", f"mocked-to-fail: args='{args}' kwargs='{kwargs}'")
+  with unittest.mock.patch('lainuri.RL866.iblock.parseIBlockResponseINF', side_effect=throw) as mock_parseIBlockResponseINF:
+
+    with subtests.test("When a low-level failure happens with the RFID reader"):
+      assert mock_parseIBlockResponseINF
+
+    with subtests.test("Then setting the tag_gate_alarm fails gracefully"):
+      context.assert_raises("set_tag_gate_alarm excepts!", lainuri.exception.rfid.RFIDCommand, "mocked-to-fail", lambda: rfid.set_tag_gate_alarm(tag.iso25680_get_primary_item_identifier(), True))
+
+  with subtests.test("And the operation was retried a few times"):
+    pass #TODO: Why does this caplog not record log messages?
+    #assert 'Retries over' in ' '.join([''.join(str(t)) for t in caplog.record_tuples])
+
 def test_flip_flop_gate_security_status_via_event_queue(subtests):
   global good_item_barcode
   tag = None

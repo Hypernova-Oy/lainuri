@@ -183,7 +183,7 @@ def get_current_inventory_status():
   return tags_present
 
 
-def set_tag_gate_alarm(event, flag_on):
+def set_tag_gate_alarm(item_barcode: str, flag_on: bool):
   """
   @throws exception.rfid.TagNotDetected
           exception.rfid.RFIDCommand
@@ -198,8 +198,8 @@ def set_tag_gate_alarm(event, flag_on):
       try:
         # Find the RFID tag instance
         tags = get_current_inventory_status()
-        tags = [t for t in tags if t.iso25680_get_primary_item_identifier() == event.item_barcode]
-        if not tags: raise exception_rfid.TagNotDetected(event.item_barcode)
+        tags = [t for t in tags if t.iso25680_get_primary_item_identifier() == item_barcode]
+        if not tags: raise exception_rfid.TagNotDetected(item_barcode)
         tag = tags[0]
 
         afi = get_config('devices.rfid-reader.afi-checkout') # just checking if AFI is enabled in general
@@ -207,18 +207,20 @@ def set_tag_gate_alarm(event, flag_on):
         eas = get_config('devices.rfid-reader.eas')
         if eas: _set_tag_gate_alarm_eas(rfid_reader, tag, flag_on)
 
-        return 1 # Break away from the retry-loop
+        return tag # Break away from the retry-loop
 
-      except exception_rfid.RFIDCommand as e:
-        _handle_retriable_exception(e, try_count, rfid_reader, event.item_barcode, tag)
-      except exception_rfid.GateSecurityStatusVerification as e:
-        _handle_retriable_exception(e, try_count, rfid_reader, event.item_barcode, tag)
       except Exception as e:
-        if tag: _finally_tag_disconnect(rfid_reader, event.item_barcode, tag)
-        raise e
-  return 1
+        log.exception(f"Exception {type(e)}")
+        if type(e) == exception_rfid.RFIDCommand:
+          _handle_retriable_exception(e, try_count, rfid_reader, tag)
+        elif type(e) == exception_rfid.GateSecurityStatusVerification:
+          _handle_retriable_exception(e, try_count, rfid_reader, tag)
+        else:
+          if tag: _finally_tag_disconnect(rfid_reader, tag)
+          raise e
+  return None
 
-def _finally_tag_disconnect(rfid_reader, item_barcode: str, tag: Tag) -> Tag:
+def _finally_tag_disconnect(rfid_reader: RFID_Reader, tag: Tag) -> Tag:
   """
   @returns Tag on success, None on failure
   """
@@ -228,16 +230,16 @@ def _finally_tag_disconnect(rfid_reader, item_barcode: str, tag: Tag) -> Tag:
     IBlock_TagDisconnect_Response(rfid_reader.read(''), tag)
     return tag
   except Exception as e:
-    log.warn(f"Finally disconnecting tag item_barcode='{item_barcode}' failed: {e.__class__}:> {e}")
+    log.exception(f"Finally disconnecting failed '{tag}':>")
     return None
 
-def _handle_retriable_exception(e: Exception, try_count: int, rfid_reader, item_barcode: str, tag: Tag):
+def _handle_retriable_exception(e: Exception, try_count: int, rfid_reader, tag: Tag):
   if try_count < 3:
-    log.warn(f"{e.__class__}:> Retrying '{try_count}'. {str(e)}")
+    log.warn(f"Retrying '{try_count}'. {str(e)}")
   else:
-    log.warn(f"{e.__class__}:> Retries over '{try_count}'. Raising {str(e)}")
+    log.warn(f"Retries over '{try_count}'. Raising {str(e)}")
     if tag.get_connection_handle():
-      if tag: _finally_tag_disconnect(rfid_reader, item_barcode, tag)
+      if tag: _finally_tag_disconnect(rfid_reader, tag)
     raise e
 
 def _set_tag_gate_alarm_direct_memory_access(rfid_reader, tag, flag_on):

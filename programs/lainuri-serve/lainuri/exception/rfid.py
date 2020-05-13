@@ -2,7 +2,7 @@ import lainuri.exception
 
 class RFIDCommand(lainuri.exception.RFID):
   """
-  RFID command failed with a response error code
+  RFID command failed with a response error code or response structure was invalid
   """
   def __init__(self, id: str, description: str):
     self.id = id
