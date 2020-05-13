@@ -61,3 +61,12 @@ def test_get_public_config(subtests):
     assert type(event) == le.LEConfigGetpublic_Response
     assert event.config['i18n']['default_locale']
     assert event.config['ui']['use_bookcovers']
+
+def test_get_server_status():
+  assert lainuri.event_queue.flush_all()
+
+  lainuri.websocket_handlers.status.status_request(
+    lainuri.event.LEServerStatusRequest()
+  )
+  event = lainuri.event_queue.history[0]
+  assert event.statuses['software_version'] not in [Status.ERROR, None]

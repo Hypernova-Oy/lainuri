@@ -12,6 +12,9 @@ let events = {};
 
 
 const lainuri_ws = new Lainuri('ws://localhost:53153');
+window.addEventListener("beforeunload", function(e){
+  logger_manager.websocketAppenderInstance.sendMessageQueue();
+}, false);
 let interval_server_status_polling = 0;
 
 
@@ -41,7 +44,7 @@ function start_ws () {
   if (! interval_server_status_polling) {
     interval_server_status_polling = window.setInterval(() => lainuri_ws.dispatch_event(
       new LEServerStatusRequest()
-    ), 30000);
+    ), 10000);
   }
 
   logger_manager.setWebsocketHandlers((log_records_chunk) => {

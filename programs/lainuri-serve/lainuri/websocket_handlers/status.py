@@ -27,6 +27,7 @@ def get_rfid_tags_present(event = None):
 
 def status_request(event):
   try:
+    lainuri.status.poll_software_version()
     lainuri.event_queue.push_event(
       lainuri.event.LEServerStatusResponse(
         statuses=lainuri.status.statuses

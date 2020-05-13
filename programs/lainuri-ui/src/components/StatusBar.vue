@@ -78,6 +78,12 @@ export default {
     });
     lainuri_ws.attach_event_listener(LEServerStatusResponse, this, function(event) {
       log.info(`[StatusBar.vue]:> Event 'LEServerStatusResponse' received.`);
+      if (this.$data.software_version && event.statuses.software_version != this.$data.software_version) {
+        log.info(`New software version detected. '${this.$data.software_version}' upgrading to '${event.statuses.software_version}'`)
+        window.location.reload(true) // Force reload since a new software version was detected.
+      }
+      this.$data.software_version = event.statuses.software_version
+      delete event.statuses.software_version
       this.$data.status = event.statuses;
     });
   },
@@ -86,6 +92,7 @@ export default {
     Status: Status,
 
     server_connected: Status.ERROR,
+    software_version: null,
     status: {
       barcode_reader_status: Status.ERROR,
       thermal_printer_status: Status.ERROR,
