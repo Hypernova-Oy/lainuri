@@ -3,64 +3,63 @@
     v-show="statusbar_width"
     class="status-bar error v-snack__wrapper"
     @click="show_tooltips = !show_tooltips"
-    :style="{minWidth: statusbar_width + 'px'}"
   >
   <div class="v-snack__content">
-    <v-tooltip v-if="server_connected != Status.SUCCESS" bottom v-model="show_tooltips">
+    <v-tooltip v-if="server_connected != Status.SUCCESS" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-server-off</v-icon>
       </template>
       {{t('StatusBar/Lainuri_server_connection_lost')}}
     </v-tooltip>
-    <v-tooltip v-if="status.thermal_printer_status != Status.SUCCESS" left v-model="show_tooltips">
+    <v-tooltip v-if="status.thermal_printer_status != Status.SUCCESS" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-printer-off</v-icon>
       </template>
       {{t('StatusBar/Printer_off')}}
     </v-tooltip>
-    <v-tooltip v-if="status.thermal_printer_paper_status == Status.ERROR" bottom v-model="show_tooltips">
+    <v-tooltip v-if="status.thermal_printer_paper_status == Status.ERROR" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-paper-roll</v-icon>
       </template>
       {{t('StatusBar/Printer_paper_runout')}}
     </v-tooltip>
-    <v-tooltip v-else-if="status.thermal_printer_paper_status == Status.PENDING" left v-model="show_tooltips">
+    <v-tooltip v-else-if="status.thermal_printer_paper_status == Status.PENDING" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon color="yellow darken-2" v-on="on">mdi-paper-roll-outline</v-icon>
       </template>
       {{t('StatusBar/Printer_paper_low')}}
     </v-tooltip>
-    <v-tooltip v-if="status.rfid_reader_status != Status.SUCCESS" left v-model="show_tooltips">
+    <v-tooltip v-if="status.rfid_reader_status != Status.SUCCESS" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-access-point</v-icon>
       </template>
       {{t('StatusBar/RFID_reader_off')}}
     </v-tooltip>
-    <v-tooltip v-if="status.barcode_reader_status != Status.SUCCESS" bottom v-model="show_tooltips">
+    <v-tooltip v-if="status.barcode_reader_status != Status.SUCCESS" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-barcode</v-icon>
       </template>
       {{t('StatusBar/Barcode_reader_off')}}
     </v-tooltip>
-    <v-tooltip v-if="status.ils_connection_status == Status.ERROR" left v-model="show_tooltips">
+    <v-tooltip v-if="status.ils_connection_status == Status.ERROR" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-server-network-off</v-icon>
       </template>
       {{t('StatusBar/ILS_connection_lost')}}
     </v-tooltip>
-    <v-tooltip v-if="status.ils_connection_status == Status.PENDING" left v-model="show_tooltips">
+    <v-tooltip v-if="status.ils_connection_status == Status.PENDING" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon color="yellow darken-2" v-on="on">mdi-server-network-off</v-icon>
       </template>
       {{t('StatusBar/ILS_connection_lost')}}
     </v-tooltip>
-    <v-tooltip v-if="status.ils_credentials_status == Status.ERROR" left v-model="show_tooltips">
+    <v-tooltip v-if="status.ils_credentials_status == Status.ERROR" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon v-on="on">mdi-shield-key</v-icon>
       </template>
       {{t('StatusBar/ILS_missing_credentials')}}
     </v-tooltip>
-    <v-tooltip v-if="status.ils_credentials_status == Status.PENDING" left v-model="show_tooltips">
+    <v-tooltip v-if="status.ils_credentials_status == Status.PENDING" right v-model="show_tooltips">
       <template v-slot:activator="{ on }">
         <v-icon color="yellow darken-2" v-on="on">mdi-shield-key</v-icon>
       </template>
@@ -136,6 +135,15 @@ export default {
   top: 0px;
   left: 0px;
   z-index: 99;
-  margin: 3px;
+  margin: 10px;
+  min-width: 32px;
+}
+.status-bar .v-snack__content {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+}
+.status-bar .v-icon {
+  padding: 4px;
 }
 </style>
