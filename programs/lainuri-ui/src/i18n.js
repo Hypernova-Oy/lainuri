@@ -71,6 +71,8 @@ const i18n_messages = {
       RFID_reader_off: "RFID",
       Barcode_reader_off: "Barcode",
       ILS_connection_lost: "ILS lost",
+      ILS_missing_credentials: "ILS missing credentials",
+      ILS_missing_premissions: "ILS missing permissions",
     },
   },
 /*
@@ -144,6 +146,8 @@ const i18n_messages = {
       RFID_reader_off: "RFID",
       Barcode_reader_off: "Viivakoodi",
       ILS_connection_lost: "Kirjastojärjestelmä hävisi",
+      ILS_missing_credentials: "Puutteelliset kirjautumistunnukset",
+      ILS_missing_premissions: "Puutteelliset käyttöoikeudet",
     },
   },
 /*
@@ -217,6 +221,8 @@ const i18n_messages = {
       RFID_reader_off: "RFID av",
       Barcode_reader_off: "Streckkod av",
       ILS_connection_lost: "ILS förlorade",
+      ILS_missing_credentials: "Saknade intyg",
+      ILS_missing_premissions: "Saknar behörigheter",
     },
   },
 /*
@@ -290,6 +296,8 @@ const i18n_messages = {
       RFID_reader_off: "RFID выключен",
       Barcode_reader_off: "Штрих-код выключен",
       ILS_connection_lost: "ILS потерял",
+      ILS_missing_credentials: "Недостающие учетные данные",
+      ILS_missing_premissions: "Отсутствующие разрешения",
     },
   },
 };

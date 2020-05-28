@@ -65,3 +65,16 @@ export function in_list(lookup, list) {
   });
   return false
 }
+
+export function deepMerge(mergeObject, inObject) {
+  if (typeof inObject !== "object" || inObject === null) {
+    return inObject // Return the value if inObject is not an object
+  }
+
+  for (let key in inObject) {
+    console.log(mergeObject, inObject, key)
+    mergeObject[key] = deepMerge(mergeObject[key], inObject[key])
+  }
+
+  return mergeObject
+}

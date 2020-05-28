@@ -42,13 +42,15 @@ function start_ws () {
   lainuri_ws.open_websocket_connection();
 
   if (! interval_server_status_polling) {
-    interval_server_status_polling = window.setInterval(() => lainuri_ws.dispatch_event(
-      new LEServerStatusRequest()
-    ), 10000);
+    interval_server_status_polling = window.setInterval(() => {
+      if (lainuri_ws.ws.readyState === WebSocket.OPEN) {
+        lainuri_ws.dispatch_event(new LEServerStatusRequest());
+      }
+    }, 60000);
   }
 
   logger_manager.setWebsocketHandlers((log_records_chunk) => {
-    if (lainuri_ws.ws.readyState == WebSocket.OPEN) {
+    if (lainuri_ws.ws.readyState === WebSocket.OPEN) {
       lainuri_ws.dispatch_event(
         new LELogSend(log_records_chunk),
       );

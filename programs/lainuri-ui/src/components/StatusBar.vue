@@ -54,6 +54,18 @@
       </template>
       {{t('StatusBar/ILS_connection_lost')}}
     </v-tooltip>
+    <v-tooltip v-if="status.ils_credentials_status == Status.ERROR" left v-model="show_tooltips">
+      <template v-slot:activator="{ on }">
+        <v-icon v-on="on">mdi-shield-key</v-icon>
+      </template>
+      {{t('StatusBar/ILS_missing_credentials')}}
+    </v-tooltip>
+    <v-tooltip v-if="status.ils_credentials_status == Status.PENDING" left v-model="show_tooltips">
+      <template v-slot:activator="{ on }">
+        <v-icon color="yellow darken-2" v-on="on">mdi-shield-key</v-icon>
+      </template>
+      {{t('StatusBar/ILS_missing_premissions')}}
+    </v-tooltip>
   </div>
   </div>
 </template>
@@ -100,6 +112,7 @@ export default {
       rfid_reader_status: Status.ERROR,
       touch_screen_status: Status.ERROR,
       ils_connection_status: Status.ERROR,
+      ils_credentials_status: Status.ERROR,
     },
 
     show_tooltips: false,

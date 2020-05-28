@@ -405,7 +405,7 @@ export default {
       this.show_overlay_notification(item_bib); //The transaction ends here for a rfid-tag-Item.
     },
     show_overlay_notification: function (item_bib) {
-      if (Object.keys(item_bib.states_check_out).length) {
+      if (Object.keys(item_bib.states).length) {
         this.overlay_notifications.push(item_bib);
 
         if (item_bib._overlay_notificated) log.warn(`show_overlay_notification() item_barcode '${item_bib.item_barcode}', duplicate overlay notification!`);

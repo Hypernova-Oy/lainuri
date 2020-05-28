@@ -13,7 +13,7 @@
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.SUCCESS">{{t('CheckOut/Be_advised!')}}</h1>
     <ItemCard :item_bib="item_bib"/>
     <v-img
-      v-if="mode === 'checkin'"
+      v-if="mode === 'checkin' || (mode === 'checkout' && notification_type === 'Place_to_RFID_reader')"
       :src="notification_type && $appConfigGetImageOverload(notification_type)"
       contain
       class="white--text align-end"

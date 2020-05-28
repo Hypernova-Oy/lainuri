@@ -42,6 +42,8 @@ export default {
   },
   methods: {
   },
+  data: () => ({
+  }),
 }
 </script>
 
