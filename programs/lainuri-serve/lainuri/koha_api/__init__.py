@@ -125,7 +125,9 @@ class KohaAPI():
   def _maybe_missing_permission(self, payload):
     if isinstance(payload, dict) and payload.get('error', None):
       if payload.get('required_permissions'):
+        lainuri.status.update_status('ils_credentials_status', Status.PENDING)
         raise exception_ils.PermissionMissing(payload.get('required_permissions'))
+    lainuri.status.update_status('ils_credentials_status', Status.SUCCESS)
 
   def _transparent_reauthentication(self):
     self.authenticate()
@@ -168,6 +170,7 @@ class KohaAPI():
     payload = self._receive_json(r)
     error = payload.get('error', None)
     if error:
+      lainuri.status.update_status('ils_credentials_status', Status.ERROR)
       if 'Login failed' in error: raise exception_ils.InvalidUser(get_config('koha.userid'))
       else: raise Exception(f"Unknown error '{error}'")
     self.sessionid = payload['sessionid']

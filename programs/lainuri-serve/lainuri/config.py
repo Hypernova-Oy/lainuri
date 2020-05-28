@@ -45,16 +45,20 @@ def instantiate_jsonschema_validator():
   jsonschema_validator.check_schema(config_schema)
   return jsonschema_validator
 
-try:
-  validate_environment()
-  jsonschema_validator = instantiate_jsonschema_validator()
-  c = slurp_yaml(path_to_config_file)
-  jsonschema_validator.validate(c)
+def init():
+  global c, log, path_to_config_file
+  try:
+    validate_environment()
+    jsonschema_validator = instantiate_jsonschema_validator()
+    c = slurp_yaml(path_to_config_file)
+    if not c: c = {}
+    jsonschema_validator.validate(c)
 
-  from lainuri.logging_context import logging
-  log = logging.getLogger(__name__)
-except Exception as e:
-  raise type(e)(f"Loading configuration failed!\n  - System context='{get_system_context()}'\n  - Exception='{traceback.format_exc()}'")
+    from lainuri.logging_context import logging
+    log = logging.getLogger(__name__)
+  except Exception as e:
+    raise type(e)(f"Loading configuration failed!\n  - System context='{get_system_context()}'\n  - Exception='{traceback.format_exc()}'")
+init()
 ########                                                                                               ########
 ##                                                                                                           ##
 # Logging and config has been set up and the app is now properly operational to behave uniformly from now on. #

@@ -9,6 +9,7 @@ import time
 import _thread as thread
 import traceback
 
+from lainuri.constants import Status
 import lainuri.event as le
 import lainuri.event_queue
 import lainuri.exception.rfid as exception_rfid
@@ -18,6 +19,7 @@ from lainuri.RL866.iblock import IBlock_ReadSystemConfigurationBlock, IBlock_Rea
 from lainuri.RL866.tag import Tag
 from lainuri.RL866.tag_memory_access_command import TagMemoryAccessCommand
 import lainuri.RL866.state as rfid_state
+import lainuri.status
 from lainuri.threadbase import Threadbase
 
 
@@ -37,14 +39,22 @@ class RFID_Reader():
     self.tags_present: Tag = []
     self.tags_lost: Tag = []
     self.tags_new: Tag = []
-    self.serial = self.connect_serial()
 
-    log.info("Connecting serial():> RESYNC")
-    self.write(SBlock_RESYNC())
-    SBlock_RESYNC_Response(self.read(SBlock_RESYNC_Response))
+    self.reconnect()
+    self.reset()
 
     self.inventory_polling_interval = get_config('devices.rfid-reader.polling_interval')
     self.err_repeated = 0
+
+  def reconnect(self):
+    log.info('reconnect():>')
+    if getattr(self, 'serial', None): self.serial.close()
+    self.serial = self.connect_serial()
+
+  def reset(self):
+    log.info("reset():>")
+    self.write(SBlock_RESYNC())
+    SBlock_RESYNC_Response(self.read(SBlock_RESYNC_Response))
 
   def access_lock(self) -> thread.LockType:
     return self.lock
@@ -78,7 +88,7 @@ class RFID_Reader():
       time.sleep(0.1)
       slept += 0.1
       if slept > timeout:
-        raise Exception("read timeout")
+        raise exception_rfid.RFIDTimeout(f"read timeout for message class '{msg_class}'")
 
     rv_a = bytearray()
     while self.serial.in_waiting:
@@ -106,13 +116,18 @@ class RFID_Reader():
     try:
       self.do_inventory()
       time.sleep(self.inventory_polling_interval or 1) # TODO: This should be something like 0.1 or maybe even no sleep?
+
       self.err_repeated = 0
+      lainuri.status.update_status('rfid_reader_status', Status.SUCCESS)
     except Exception as e:
-      log.exception("RFID Reader - Getting inventory failed")
       self.err_repeated = self.err_repeated + 1
-      if self.err_repeated > 10:
-        log.error("RFID reading loop fails too frequently, killing it. The server must be restarted.")
-        self.kill()
+      log.exception(f"RFID Reader - Getting inventory failed. Sleeping for {self.err_repeated * 2}s and resetting connection.")
+      lainuri.status.update_status('rfid_reader_status', Status.ERROR)
+      time.sleep(self.err_repeated * 2)
+
+      if type(e) == exception_rfid.RFIDTimeout:
+        self.reconnect()
+      self.reset()
 
   def do_inventory(self, no_events: bool = False):
     with self.access_lock():

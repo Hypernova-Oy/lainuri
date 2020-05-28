@@ -158,3 +158,9 @@ def slurp_json(path: str):
 def slurp_yaml(path: str):
   with open(path, 'r', encoding='UTF-8') as f:
     return yaml.safe_load(f.read())
+
+def append_path_to_dir(src: str, path: str, strict: bool = False):
+  p = pathlib.Path(src).resolve()
+  if not p.is_dir():
+    p = p / '..'
+  return (p / path).resolve(strict=strict)

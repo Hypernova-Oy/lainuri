@@ -3,6 +3,7 @@ from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 from pprint import pprint
+import time
 
 def handle_signal_SIGUSR1(signum, frame):
   import lainuri.event_queue
@@ -17,4 +18,4 @@ if __name__ == '__main__':
   signal.signal(signal.SIGUSR1, handle_signal_SIGUSR1)
 
   import lainuri.websocket_server
-  lainuri.websocket_server.start()
+  lainuri.websocket_server.start(ws_daemon=False)

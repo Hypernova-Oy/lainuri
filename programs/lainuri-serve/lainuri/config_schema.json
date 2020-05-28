@@ -183,21 +183,21 @@
             },
             "printing-speed": {
               "type": "integer",
-              "default": "9",
+              "default": 9,
               "minimum": 0,
               "maximum": 255,
               "description": "How many dots the printer prints simultaneously."
             },
             "printing-heat": {
               "type": "integer",
-              "default": "80",
+              "default": 80,
               "minimum": 3,
               "maximum": 255,
               "description": "How long a dot is heated. Too high values burn through, too low values leave a blank page."
             },
             "printing-precision": {
               "type": "integer",
-              "default": "32",
+              "default": 32,
               "minimum": 0,
               "maximum": 255,
               "description": "Increase print precision at the cost of speed. Should not be more than 64"
@@ -321,6 +321,7 @@
         },
         "default_locale": {
           "type": "string",
+          "default": "en",
           "description": "The locale which is loaded by default"
         },
         "messages": {

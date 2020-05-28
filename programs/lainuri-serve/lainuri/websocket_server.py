@@ -24,6 +24,7 @@ import lainuri.printer.status
 import lainuri.rfid_reader
 import lainuri.barcode_reader
 import lainuri.rtttl_player
+from lainuri.threadbase import Threadbase
 
 ## Import all handlers, because the handle_events_loop dynamically invokes them
 import lainuri.websocket_handlers.auth
@@ -107,9 +108,18 @@ def register_client(event):
   global clients
   clients.append(event.client)
 
-  lainuri.websocket_handlers.status.get_rfid_tags_present(event)
-
-  lainuri.websocket_handlers.config.get_public_configs()
+  try:
+    lainuri.websocket_handlers.config.get_public_configs()
+  except Exception:
+    log.exception("Exception registering client, get_public_configs()")
+  try:
+    lainuri.websocket_handlers.status.get_rfid_tags_present(event)
+  except Exception:
+    log.exception("Exception registering client, get_rfid_tags_present()")
+  try:
+    lainuri.websocket_handlers.status.status_request()
+  except Exception:
+    log.exception("Exception registering client, status_request()")
 
   log.info(f"Registered client: '{event}'. Clients present '{len(clients)}'")
 
@@ -157,22 +167,22 @@ class SimpleChat(WebSocket):
     except Exception as e2:
       log.exception(e2)
 
-def start():
+subthreads = {}
+def start(ws_daemon: bool = False) -> bool:
+  global subthreads
 
   lainuri.locale.verify_locales_installed()
   lainuri.config.image_overloads_handle()
 
-  # Other devices need data from the Koha API, so we need to make sure we have a working connection before
-  # letting device threads to fork.
-  if koha_api:
-    koha_api.authenticate()
+  try:
+    if get_config('devices.rfid-reader.enabled'):
+      lainuri.rfid_reader.get_rfid_reader().start_polling_rfid_tags()
+    else:
+      log.info("RFID reader is disabled by config")
+  except Exception as e:
+    log.exception("Failed to start the RFID reader during webserver boot!")
 
-  if get_config('devices.rfid-reader.enabled'):
-    lainuri.rfid_reader.get_rfid_reader().start_polling_rfid_tags()
-  else:
-    log.info("RFID reader is disabled by config")
-
-  bcr = lainuri.barcode_reader.init(lainuri.websocket_server.handle_barcode_read).start_polling_barcodes()
+  lainuri.barcode_reader.init(lainuri.websocket_server.handle_barcode_read).start_polling_barcodes()
 
   lainuri.event_queue.init(event_handler=lainuri.websocket_server.handle_one_event_daemon).start()
 
@@ -183,8 +193,30 @@ def start():
   port = int(get_config('server.port'))
   hostname = get_config('server.hostname')
   log.info(f"Starting WebSocketServer on '{hostname}:{port}'")
-  server = WebSocketServer(hostname, port, SimpleChat)
-  server.serve_forever()
+  ws_server = WebSocketServer(hostname, port, SimpleChat)
+  if (ws_daemon):
+    subthreads['server'] = Threadbase(name='WebSocketServer', worker_method=ws_server.handle_request())
+    subthreads['server'].start()
+  else:
+    ws_server.serve_forever()
+
+  return True
+
+def stop() -> bool:
+  lainuri.rfid_reader.get_rfid_reader().stop_polling_rfid_tags()
+  lainuri.barcode_reader.get_BarcodeReader().stop_polling_barcodes()
+  lainuri.event_queue.get_daemon().kill()
+  lainuri.rtttl_player.get_player().kill()
+  lainuri.printer.status.get_daemon().kill()
+  subthreads['server'].kill()
+
+  lainuri.rfid_reader.get_rfid_reader().daemon.join(10)
+  lainuri.barcode_reader.get_BarcodeReader().daemon.join(10)
+  lainuri.event_queue.get_daemon().join(10)
+  lainuri.rtttl_player.get_player().join(10)
+  lainuri.printer.status.get_daemon().join(10)
+  subthreads['server'].join(10)
+  return True
 
 def handle_barcode_read(bcr: lainuri.barcode_reader.BarcodeReader, barcode: str):
   if (lainuri.websocket_server.state == 'user-logging-in'):

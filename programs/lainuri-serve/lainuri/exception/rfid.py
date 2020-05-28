@@ -1,5 +1,12 @@
 import lainuri.exception
 
+class GateSecurityStatusVerification(lainuri.exception.RFID):
+  """
+  Gate security status couldn't be confirmed
+  """
+  def __init__(self, id: str):
+    self.id = id
+
 class RFIDCommand(lainuri.exception.RFID):
   """
   RFID command failed with a response error code or response structure was invalid
@@ -15,9 +22,5 @@ class TagNotDetected(lainuri.exception.RFID):
   def __init__(self, id: str):
     self.id = id
 
-class GateSecurityStatusVerification(lainuri.exception.RFID):
-  """
-  Gate security status couldn't be confirmed
-  """
-  def __init__(self, id: str):
-    self.id = id
+class RFIDTimeout(lainuri.exception.RFID):
+  pass

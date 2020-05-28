@@ -15,8 +15,8 @@ def get_rfid_tags_present(event = None):
   except Exception as e:
     log.exception(f"Exception at {__name__}")
     lainuri.event_queue.push_event(
-      lainuri.event.LEServerStatusResponse(
-        statuses=lainuri.status.statuses,
+      lainuri.event.LERFIDTagsPresent(
+        tags_present=[],
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,
@@ -25,7 +25,7 @@ def get_rfid_tags_present(event = None):
       )
     )
 
-def status_request(event):
+def status_request(event = None):
   try:
     lainuri.status.poll_software_version()
     lainuri.event_queue.push_event(

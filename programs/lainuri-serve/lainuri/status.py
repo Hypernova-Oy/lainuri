@@ -8,6 +8,8 @@ from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 from lainuri.constants import Status
+import lainuri.event
+import lainuri.event_queue
 
 import subprocess
 
@@ -16,6 +18,13 @@ def update_status(status: str, value: Status):
   if statuses[status] != value:
     log.info(f"status '{status}' set from '{statuses[status]}' to '{value}'")
     statuses[status] = value
+
+    lainuri.status.poll_software_version()
+    lainuri.event_queue.push_event(
+      lainuri.event.LEServerStatusResponse(
+        statuses=statuses
+      )
+    )
 
 software_version_check_countdown = 0 # Don't check for version every time status is updated
 def poll_software_version():
@@ -40,6 +49,6 @@ statuses = {
   'rfid_reader_status': Status.SUCCESS,
   'touch_screen_status': Status.SUCCESS,
   'ils_connection_status': Status.SUCCESS,
+  'ils_credentials_status': Status.SUCCESS,
   'software_version': None,
 }
-statuses['software_version'] = poll_software_version()
