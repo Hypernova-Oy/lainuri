@@ -243,17 +243,28 @@ export default {
     transactions_queue: function () {
       let filtered_statuses = [Status.PENDING, Status.NOT_SET]
 
-      let rfid_tags_filtered = {}
+      let queue = {}
       for (let item_bib of this.rfid_tags_present) {
-        if (filtered_statuses.includes(item_bib.status_check_out)) rfid_tags_filtered[item_bib.item_barcode] = item_bib;
+        // For existing transactions use the existing object instance and it's statuses, for example if the barcode read was upgraded to rfid.
+        let item_bib_already_in_transaction = this.transactions[item_bib.item_barcode]
+        if (item_bib_already_in_transaction) {
+          if (filtered_statuses.includes(item_bib_already_in_transaction.status_check_out)) {
+            queue[item_bib_already_in_transaction.item_barcode] = item_bib_already_in_transaction
+          }
+        }
+        else {
+          if (filtered_statuses.includes(item_bib.status_check_out)) {
+            queue[item_bib.item_barcode] = item_bib
+          }
+        }
       }
 
       for (let item_bib of Object.values(this.transactions)) {
-        if (!(this.rfid_tags_present[item_bib.item_barcode]) && filtered_statuses.includes(item_bib.status_check_out)) {
-          rfid_tags_filtered[item_bib.item_barcode] = item_bib
+        if (!(queue[item_bib.item_barcode]) && filtered_statuses.includes(item_bib.status_check_out)) {
+          queue[item_bib.item_barcode] = item_bib
         }
       }
-      return rfid_tags_filtered
+      return queue
     },
     column_width: function () {
       let visible_columns = 0;

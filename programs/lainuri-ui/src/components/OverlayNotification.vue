@@ -7,6 +7,7 @@
     }"
     @click="close_notification"
   >
+    <v-icon class="close-overlay-icon">mdi-close-box</v-icon>
     <h1 v-if="     mode === 'checkin'">{{t('CheckIn/'+notification_type)}}</h1>
     <h1 v-else-if="mode === 'checkout' && notification_type === 'Place_to_RFID_reader'">{{t('CheckOut/'+notification_type)}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.ERROR">{{t('CheckOut/Check_out_failed')}}</h1>
@@ -81,5 +82,10 @@ export default {
 }
 .overlay_notification div.v-image {
   margin-top: 20px;
+}
+.overlay_notification .close-overlay-icon {
+  position: absolute;
+  right: 0px;
+  top: 0px;
 }
 </style>
