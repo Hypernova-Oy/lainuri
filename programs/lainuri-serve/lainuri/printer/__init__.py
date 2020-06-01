@@ -1,15 +1,16 @@
-from lainuri.config import get_config, get_lainuri_conf_dir
+from lainuri.config import get_config, get_lainuri_conf_dir, log_dir
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 from lainuri.constants import Status
 import lainuri.hs_k33
 from lainuri.koha_api import koha_api
+import lainuri.locale
 import lainuri.status
+from lainuri.printer.printjob import PrintJob
 
 from jinja2 import Template
 from datetime import datetime
-import lainuri.locale
 import os
 import time
 import traceback
@@ -18,35 +19,36 @@ import subprocess
 
 cli_print_command = ['lp', '-']
 
-def print_check_out_receipt(user_barcode: str, items: list):
-  receipt_template = get_config('devices.thermal-printer.check-out-receipt')
+def test_print(pj: PrintJob, real_print: bool = False) -> PrintJob:
+  _render_jinja2_template(pj)
+  _generate_receipt_png(
+    _prepare_weasy_doc(pj),
+    pj)
+  if real_print: _print_thermal_receipt(doc, pj)
+  return pj
 
-  borrower = koha_api.get_borrower(user_barcode)
+def print_check_out_receipt(pj: PrintJob):
+  pj._template_backend = get_config('devices.thermal-printer.check-out-receipt')
 
-  printable_sheet = None
-  if receipt_template.lower() == 'koha':
-    printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'qslip')
+  if pj._template_backend == 'koha':
+    pj._printable_html = koha_api.receipt(pj.data['user']['borrowernumber'], 'qslip')
   else:
-    printable_sheet = get_sheet(receipt_template, items, borrower)
+    get_sheet(pj)
 
-  print_html(printable_sheet)
-  return printable_sheet
+  print_html(pj)
+  return pj
 
-def print_check_in_receipt(items: list, user_barcode: str = None):
-  printable_sheet = get_sheet('checkin', items, {})
-  print_html(printable_sheet)
-  return printable_sheet
+def print_check_in_receipt(pj: PrintJob):
+  get_sheet(pj)
+  print_html(pj)
+  return pj
 
-def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
-  """
-  page_increment: Granularity to look for the minimum height of the document to fit all the content. the bigger the faster, but more paper is wasted with trailing margin.
-
-  css_dict: Overload config.yaml's 'devices.thermal-printer.css' with this. Mostly useful for testing.
-  """
-  log.debug(f"print_html text='{html_text}'")
+def print_html(pj: PrintJob):
+  log.debug(f"print_html PrintJob={pj.__dict__}")
   try:
     _print_thermal_receipt(
-      _prepare_weasy_doc(html_text=html_text, page_increment=page_increment, css_dict=css_dict)
+      _prepare_weasy_doc(pj),
+      pj
     )
     lainuri.status.update_status('thermal_printer_status', Status.SUCCESS)
   except Exception as e:
@@ -54,27 +56,25 @@ def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
     raise e
   return 1
 
-def get_sheet(receipt_template_name: str, items: list, borrower: dict, header: str = None, footer: str = None) -> str:
-  if receipt_template_name not in ('checkin', 'checkout'): raise ValueError(f"Unknown receipt template '{receipt_template_name}'!")
-  template_file_path = None
+def get_sheet(pj: PrintJob) -> str:
   try:
-    template_file_path = (get_lainuri_conf_dir() / 'templates' / f"{receipt_template_name}-{lainuri.locale.get_locale()}.j2")
-    receipt_template = template_file_path.read_text()
+    pj._template_file_path = (get_lainuri_conf_dir() / 'templates' / f"{pj._type}-{lainuri.locale.get_locale()}.j2")
+    pj._receipt_template = pj._template_file_path.read_text()
   except Exception as e:
-    raise type(e)(e, f"Exception when get_sheet():> receipt template lookup path='{template_file_path}' get_lainuri_conf_dir() {get_lainuri_conf_dir()}, receipt_template_name '{receipt_template_name}'")
-  return _render_jinja2_template(receipt_template=receipt_template, items=items, borrower=borrower, header=header, footer=footer)
+    raise type(e)(e, f"Exception when get_sheet():> PrintJob={pj.__dict__}")
+  _render_jinja2_template(pj)
+  return pj._printable_html
 
-def _prepare_weasy_doc(html_text: str, page_increment: int = 10, css_dict: dict = None) -> weasyprint.Document:
+def _prepare_weasy_doc(pj: PrintJob) -> weasyprint.Document:
   doc = None
   start_time = time.time()
 
-  weasy_html = weasyprint.HTML(string=html_text)
+  weasy_html = weasyprint.HTML(string=pj._printable_html)
 
   pages = 256
   heigth = 20 # Keep looping to find the correct page size to fit all the content
-  i = 0
   while pages != 1:
-    i += 1
+    pj._page_size_lookups += 1
     default_css = weasyprint.CSS(string=' \
       body {\
         width: 72mm;\
@@ -89,7 +89,7 @@ def _prepare_weasy_doc(html_text: str, page_increment: int = 10, css_dict: dict 
       }\
     ')
     doc = weasy_html.render(
-      stylesheets=[default_css, *[weasyprint.CSS(string=css) for css in _format_css_rules_from_config(css_dict)]],
+      stylesheets=[default_css, *[weasyprint.CSS(string=css) for css in _format_css_rules_from_config(pj.css)]],
       enable_hinting = True,
       presentational_hints = True,
     )
@@ -97,34 +97,37 @@ def _prepare_weasy_doc(html_text: str, page_increment: int = 10, css_dict: dict 
 
     # Simple heuristics to quickly detect the proper document length
     old_height = heigth
-    if i == 1: heigth = heigth * (pages*0.9 if pages > 2 else pages)
-    else: heigth = heigth + (page_increment * (pages-1))
-    log.debug(f"Sampling to fit content on one document: i='{i}', old_height='{old_height}', pages='{pages}', new height='{heigth}'")
+    if pj._page_size_lookups == 1: heigth = heigth * (pages*0.9 if pages > 2 else pages)
+    else: heigth = heigth + (pj._page_increment * (pages-1))
+    log.debug(f"Sampling to fit content on one document: i='{pj._page_size_lookups}', old_height='{old_height}', pages='{pages}', new height='{heigth}'")
 
   end_time = time.time()
-  log.info(f"print_html():> pages='{len(doc.pages)}', page_increment='{page_increment}px', html processing runtime='{end_time - start_time}s' iterations='{i}' page0='{doc.pages and doc.pages[0].__dict__}'")
+  pj._run_time = end_time - start_time
+  log.info(f"print_html():> pages='{len(doc.pages)}', page_increment='{pj._page_increment}px', html processing runtime='{pj._run_time}s' iterations='{pj._page_size_lookups}' page0='{doc.pages and doc.pages[0].__dict__}'")
   return doc
 
-def _format_css_rules_from_config(css_dict: dict = None):
-  if not css_dict: css_dict = get_config('devices.thermal-printer.css')
-  if not css_dict: return []
+def _format_css_rules_from_config(css: str = None):
+  css_dict = get_config('devices.thermal-printer.css')
 
-  css = "body {\n"
+  css_dict_str = "body {\n"
   for css_directive, value in css_dict.items():
     if value[-1] != ';': value += ';'
-    css += f"  {css_directive}: {value}\n"
-  css += "}\n"
+    css_dict_str += f"  {css_directive}: {value}\n"
+  css_dict_str += "}\n"
 
   css_string = get_config('devices.thermal-printer.css_string')
-  return [stylesheet for stylesheet in [css, css_string] if stylesheet]
+  return [stylesheet for stylesheet in [css_dict_str, css_string, css] if stylesheet]
 
-def _print_thermal_receipt(doc: weasyprint.Document):
+def _print_thermal_receipt(doc: weasyprint.Document, pj: PrintJob):
   #TODO: Piloting ESC/POS raster image printing instead of using the rather slow and cumbersome CUPS. Using CUPS with ESC/POS might be impossible due to USB device congestion issues
-  png_file_path = os.environ.get('LAINURI_LOG_DIR')+'/receipt.'+datetime.today().isoformat()+'.png'
-  doc.write_png(target=png_file_path, resolution=203) # HS-K33 manual states the resolution to be 203 DPI
-  _print_via_escpos_raster(png_file_path)
+  return _print_via_escpos_raster(_generate_receipt_png(doc, pj))
   #if (get_config('devices.thermal-printer.cups')):
   #  _print_via_cups(doc.to_pdf())
+
+def _generate_receipt_png(doc: weasyprint.Document, pj: PrintJob):
+  pj._png_file_path = log_dir() / f"receipt.{datetime.today().isoformat()}.{pj._type}.png"
+  doc.write_png(target=str(pj._png_file_path), resolution=203) # HS-K33 manual states the resolution to be 203 DPI
+  return pj._png_file_path
 
 def _print_via_escpos_raster(png_file_path: str):
   if get_config('devices.thermal-printer.enabled'):
@@ -144,11 +147,6 @@ def update_paper_status():
 
 def _print_via_cups(byttes: bytes):
   global cli_print_command
-  ## Save to log the receipt document
-  open(
-    os.environ.get('LAINURI_LOG_DIR')+'/receipt.'+datetime.today().isoformat()+'.pdf',
-    'wb',
-  ).write(byttes)
 
   ## Invoke system CUPS printer
   if get_config('devices.thermal-printer.enabled'):
@@ -160,11 +158,6 @@ def _print_via_cups(byttes: bytes):
   else:
     log.info(f"Thermal printer is disabled from configuration.")
 
-def _render_jinja2_template(receipt_template: str, items: list, borrower: dict, header: str = None, footer: str = None):
-  return Template(receipt_template).render(
-    items=items,
-    borrower=borrower,
-    today=lainuri.locale.today(),
-    header=header,
-    footer=footer,
-  )
+def _render_jinja2_template(pj: PrintJob):
+  pj._printable_html = Template(pj._receipt_template).render(today=lainuri.locale.today(), **pj.data)
+  return pj._printable_html

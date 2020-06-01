@@ -13,10 +13,12 @@ import lainuri.hs_k33
 import lainuri.koha_api
 import lainuri.locale
 import lainuri.printer as lp
+from lainuri.printer import PrintJob
 import lainuri.printer.status
 
 from datetime import datetime
 import os
+import re
 import threading
 import time
 import unittest.mock
@@ -161,7 +163,7 @@ def test_print_template_locales(subtests):
   lainuri.config.write_config('devices.thermal-printer.enabled', False)
   with unittest.mock.patch('lainuri.printer.print_html') as mock_print_html:
     def do_get_sheet_check(locale: str, expectations: str):
-      printable_sheet = None
+      pj = None
       for i in range(2):
         mode, expected = ['checkin', 'checkout'][i:i+1] + expectations[i:i+1]
         with subtests.test(f"Scenario: Get {locale} {mode} templates"):
@@ -169,23 +171,60 @@ def test_print_template_locales(subtests):
             lainuri.locale.set_locale(locale)
 
           with subtests.test("When the sheet is generated"):
-            printable_sheet = lp.get_sheet(mode, items=context.items.items1, borrower=context.users.user1)
+            pj = PrintJob(mode, data={"items": context.items.items1, "user": context.users.user1})
+            lp.get_sheet(pj)
 
           with subtests.test("Then the sheet is translated properly"):
-            assert expected in printable_sheet
-            assert lp.print_html(printable_sheet)
+            assert expected in pj._printable_html
+            assert lp.print_html(pj)
     do_get_sheet_check('en', ['Returns', 'Your loans'])
     do_get_sheet_check('fi', ['Palautuksesi', 'Lainasi'])
     do_get_sheet_check('ru', ['Ваши возвращения', 'Ваши кредиты'])
     do_get_sheet_check('sv', ['Dina checkins', 'Dina utcheckningar'])
 
+def test_test_printer_template(subtests):
+  assert lainuri.event_queue.flush_all()
+  lainuri.config.write_config('devices.thermal-printer.enabled', False)
+  event, response_event = (None, None)
+
+  with subtests.test("Given a LEPrintTestRequest-event"):
+    event = lainuri.event.LEPrintTestRequest(
+      template=(lainuri.config.get_lainuri_conf_dir() / 'templates' / 'checkin-fi.j2').read_text(),
+      data={
+        "user": context.users.user1,
+        "items": context.items.items1,
+        "header": "HEADER CONTENTS",
+        "footer": "FOOTER CONTENTS",
+      },
+      css="""
+      font-size: 24px
+      """,
+      real_print=False)
+    lainuri.event_queue.push_event(event)
+
+  with subtests.test("When the LEPrintTestRequest-event is handled"):
+    assert lainuri.websocket_server.handle_one_event(5) == event
+
+  with subtests.test("Then a LEPrintTestResponse-event is generated"):
+    response_event = lainuri.websocket_server.handle_one_event(5)
+    assert type(response_event) == lainuri.event.LEPrintTestResponse
+    assert response_event.states == {}
+    assert response_event.status == Status.SUCCESS
+    assert type(response_event.image) == type(bytes())
+
+  with subtests.test("And the image-attribute is hidden from log serialization"):
+    as_text = response_event.to_string()
+    assert re.compile('\'image\': \d+').search(as_text)
+
 def test_print_koha_check_in_receipt(subtests):
   assert lainuri.event_queue.flush_all()
   lainuri.config.write_config('devices.thermal-printer.enabled', False)
-  with unittest.mock.patch('lainuri.printer.print_html') as mock_print_html:
-    with subtests.test("When a check-in print request is handled"):
-      lainuri.websocket_handlers.printer.print_receipt(lainuri.event.LEPrintRequest('check-in', items=[], user_barcode=None))
-      assert lainuri.event_queue.history[0].states == {} # Catch a possible exception from handling of the event
+  with subtests.test("When a check-in print request is handled"):
+    pj = PrintJob('checkin', data={"items": [], "user": {}})
+    lainuri.printer.print_check_in_receipt(pj)
+    assert pj._png_file_path.exists()
+    assert pj._run_time > 0
+    assert pj._type == "checkin"
 
 def test_printer_status_polling(subtests):
   printer_thr = None
@@ -242,7 +281,7 @@ def test_print_koha_api(subtests):
     with subtests.test("And the receipt is not torn away"):
       assert not lainuri.hs_k33.get_printer().is_paper_torn_away()
 
-  with subtests.test("Scenario: Print check-in -receipt via Koha API"):
+  with subtests.test("Scenario: Print check-in -receipt"):
     with subtests.test("Given a check-in print request"):
       event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-in', items=[], user_barcode=None))
       assert lainuri.websocket_server.handle_one_event(5) == event

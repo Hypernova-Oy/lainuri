@@ -103,6 +103,9 @@ def get_config(lookup: str):
 def get_lainuri_conf_dir() -> pathlib.Path:
   return pathlib.Path(os.environ.get('LAINURI_CONF_DIR'))
 
+def log_dir() -> pathlib.Path:
+  return pathlib.Path(os.environ.get('LAINURI_LOG_DIR'))
+
 def image_types(all: bool = False):
   if all:
     return [

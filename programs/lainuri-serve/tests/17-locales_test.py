@@ -8,6 +8,7 @@ import lainuri.event
 import lainuri.event_queue
 import lainuri.locale
 import lainuri.printer
+from lainuri.printer import PrintJob
 import lainuri.websocket_server
 
 from datetime import datetime
@@ -53,7 +54,8 @@ def test_print_template_with_locales(subtests):
     assert en_date
 
   with subtests.test("When a template is processed"):
-    printable_sheet = lainuri.printer.get_sheet('checkout', items=context.items.item2, borrower={})
+    pj = PrintJob('checkout', data={"items": context.items.item2, "user":{}})
+    printable_sheet = lainuri.printer.get_sheet(pj)
     assert printable_sheet
 
   with subtests.test("Then the date format matches the locale 'en'"):
@@ -68,7 +70,8 @@ def test_print_template_with_locales(subtests):
     assert fi_date
 
   with subtests.test("When a template is processed"):
-    printable_sheet = lainuri.printer.get_sheet('checkout', items=context.items.item2, borrower={})
+    pj = PrintJob('checkout', data={"items": context.items.item2, "user":{}})
+    printable_sheet = lainuri.printer.get_sheet(pj)
     assert printable_sheet
 
   with subtests.test("Then the date format matches the locale 'fi'"):

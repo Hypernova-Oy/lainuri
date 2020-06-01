@@ -20,7 +20,7 @@ def start_polling_for_receipt_torn(req_event: lainuri.event.LEPrintRequest):
   return daemon
 
 def printer_status_daemon(req_event: lainuri.event.LEPrintRequest):
-  global daemon
+  daemon = get_daemon()
   hs_k33 = lainuri.hs_k33.get_printer()
 
   while(threading.main_thread().is_alive()):

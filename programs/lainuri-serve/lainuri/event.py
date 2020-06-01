@@ -348,6 +348,44 @@ class LEPrintResponse(LEvent):
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
+class LEPrintTestRequest(LEvent):
+  event = 'print-test-request'
+  default_handler = 'lainuri.websocket_handlers.printer.test_print'
+  default_recipient = 'server'
+
+  serializable_attributes = ['template', 'data', 'css', 'real_print']
+  template = ''
+  data = {}
+  css = ''
+  real_print = False
+
+  def __init__(self, template: str, data: dict, css: str, real_print: bool, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.template = template
+    self.data = data
+    self.css = css
+    self.real_print = real_print
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
+class LEPrintTestResponse(LEvent):
+  event = 'print-test-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['image', 'states', 'status']
+  image = bytes()
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, image: bytes, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.image = image
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
+  def to_string(self): #image can be massive, so skip it
+    s2 = dict(self.__dict__)
+    s2['image'] = len(self.image)
+    return lp.pformat(s2)
+
 class LERFIDTagsLost(LEvent):
   event = 'rfid-tags-lost'
   default_recipient = 'client'
