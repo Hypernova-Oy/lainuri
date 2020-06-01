@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import context
+import context.items
+import context.users
 
 from lainuri.config import get_config
 from lainuri.constants import Status
@@ -9,6 +11,7 @@ import lainuri.event
 import lainuri.event_queue
 import lainuri.hs_k33
 import lainuri.koha_api
+import lainuri.locale
 import lainuri.printer as lp
 import lainuri.printer.status
 
@@ -118,24 +121,6 @@ poem = """
 </body>
 """
 
-items = [
-  {
-    'title': 'Titteli 12 mestari',
-    'author': 'Matti Meikäläinen',
-    'item_barcode': '167N01010101',
-  },
-  {
-    'title': 'Huone 105',
-    'author': 'Matti Meikäläinen',
-    'item_barcode': '167N21212121',
-  },
-  {
-    'title': 'Svengabeibe soittaa taas levyjä',
-    'author': 'Matti Meikäläinen ja humppaorkesteri',
-    'item_barcode': 'e00401003f382624',
-  }
-]
-
 def tezt_print_fonts():
   """
   This "test" is used to only print cool receipts to test out fonts and stylings and such.
@@ -172,31 +157,35 @@ def test_format_css_rules_from_config():
     "}\n"
   ]
 
-def test_print_template_check_in():
+def test_print_template_locales(subtests):
   lainuri.config.write_config('devices.thermal-printer.enabled', False)
-  global items
   with unittest.mock.patch('lainuri.printer.print_html') as mock_print_html:
-    event = lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
-    printable_sheet = lp.get_sheet(lainuri.config.get_config('devices.thermal-printer.check-in-receipt'), items=event.items, borrower={})
-    assert lp.print_html(printable_sheet)
+    def do_get_sheet_check(locale: str, expectations: str):
+      printable_sheet = None
+      for i in range(2):
+        mode, expected = ['checkin', 'checkout'][i:i+1] + expectations[i:i+1]
+        with subtests.test(f"Scenario: Get {locale} {mode} templates"):
+          with subtests.test("Given locale"):
+            lainuri.locale.set_locale(locale)
+
+          with subtests.test("When the sheet is generated"):
+            printable_sheet = lp.get_sheet(mode, items=context.items.items1, borrower=context.users.user1)
+
+          with subtests.test("Then the sheet is translated properly"):
+            assert expected in printable_sheet
+            assert lp.print_html(printable_sheet)
+    do_get_sheet_check('en', ['Returns', 'Your loans'])
+    do_get_sheet_check('fi', ['Palautuksesi', 'Lainasi'])
+    do_get_sheet_check('ru', ['Ваши возвращения', 'Ваши кредиты'])
+    do_get_sheet_check('sv', ['Dina checkins', 'Dina utcheckningar'])
 
 def test_print_koha_check_in_receipt(subtests):
   assert lainuri.event_queue.flush_all()
   lainuri.config.write_config('devices.thermal-printer.enabled', False)
-  global items
   with unittest.mock.patch('lainuri.printer.print_html') as mock_print_html:
-    with subtests.test("Given the check-in receipt template backend is set to 'koha'"):
-      lainuri.config.write_config('devices.thermal-printer.check-in-receipt', 'koha')
-    with subtests.test("And the check-in receipt template default borrower is set"):
-      lainuri.config.write_config('devices.thermal-printer.check-in-receipt-koha-borrower', 19)
-
-    with subtests.test("When a check-in print request is handled using 'koha' as backend receipt template source"):
+    with subtests.test("When a check-in print request is handled"):
       lainuri.websocket_handlers.printer.print_receipt(lainuri.event.LEPrintRequest('check-in', items=[], user_barcode=None))
       assert lainuri.event_queue.history[0].states == {} # Catch a possible exception from handling of the event
-
-    with subtests.test("Then the check-in receipt contains the information from the receipt template default borrower"):
-      #TODO: Should intelligently know what is in the test servers check-in template. assert get_config('devices.thermal-printer.check-in-receipt-koha-borrower') in mock_print_html.call_args.args[0]
-      assert 'Acevedo' in mock_print_html.call_args[0][0]
 
 def test_printer_status_polling(subtests):
   printer_thr = None
@@ -275,7 +264,6 @@ def test_print_koha_api(subtests):
     assert not printer_thr.is_alive()
 
 def test_print_exception_bad_cli_command():
-  global items
   assert lainuri.event_queue.flush_all()
   return "SKIPPED: Piloting deprecation of CUPS and using ESC/POS raster printing"
 
@@ -283,7 +271,7 @@ def test_print_exception_bad_cli_command():
   lainuri.printer.cli_print_command = ['lp-not-exists']
 
   event = lainuri.event_queue.push_event(
-    lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=items)
+    lainuri.event.LEPrintRequest(receipt_type='check-in', user_barcode='', items=context.items.items1)
   )
   assert lainuri.websocket_server.handle_one_event(5) == event
   assert lainuri.event_queue.history[0] == event

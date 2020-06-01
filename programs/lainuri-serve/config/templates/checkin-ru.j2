@@ -1,0 +1,10 @@
+<body>
+  {{ header }}
+  <h4>Ваши возвращения {{ today }}</h4>
+  <ul>
+  {% for item in items %}
+    <li>{{ item.title }}, {{ item.author }} : {{ item.item_barcode }}</li>
+  {% endfor %}
+  </ul>
+  {{ footer }}
+</body>

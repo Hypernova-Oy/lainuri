@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+from datetime import datetime
 import locale
 import os
 import subprocess
@@ -49,3 +50,6 @@ def get_locale(iso639_1: bool = False, iso639_1_iso3166: bool = False):
 
 def normalize_2_char_to_POSIX(locale_2_char) -> str:
   return locale.normalize(locale_2_char+'.UTF-8')
+
+def today():
+  return datetime.today().strftime(locale.nl_langinfo(locale.D_FMT) + ' ' + locale.nl_langinfo(locale.T_FMT))

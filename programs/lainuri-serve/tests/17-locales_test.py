@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import context
+import context.items
 
 import lainuri.config
 import lainuri.event
@@ -38,24 +39,12 @@ def test_set_locale(subtests):
 
 
 def test_print_template_with_locales(subtests):
-  items = [
-    {
-      'title': 'Svengabeibe soittaa taas levyjä',
-      'author': 'Matti Meikäläinen ja humppaorkesteri',
-      'item_barcode': 'e00401003f382624',
-    }
-  ]
   en_date = None
   fi_date = None
   printable_sheet = None
   new_locale = None
-  sheet_filename = None
 
-  with subtests.test("Given the check-in receipt template backend is set to './templates/check_in.j2'"):
-    lainuri.config.write_config('devices.thermal-printer.check-in-receipt', './templates/check_in.j2')
-    sheet_filename = lainuri.config.get_config('devices.thermal-printer.check-in-receipt')
-
-  with subtests.test("And locale 'en'"):
+  with subtests.test("Given locale 'en'"):
     new_locale = lainuri.locale.set_locale('en')
     assert new_locale
 
@@ -64,7 +53,7 @@ def test_print_template_with_locales(subtests):
     assert en_date
 
   with subtests.test("When a template is processed"):
-    printable_sheet = lainuri.printer.get_sheet(sheet_filename, items=items, borrower={})
+    printable_sheet = lainuri.printer.get_sheet('checkout', items=context.items.item2, borrower={})
     assert printable_sheet
 
   with subtests.test("Then the date format matches the locale 'en'"):
@@ -79,7 +68,7 @@ def test_print_template_with_locales(subtests):
     assert fi_date
 
   with subtests.test("When a template is processed"):
-    printable_sheet = lainuri.printer.get_sheet(sheet_filename, items=items, borrower={})
+    printable_sheet = lainuri.printer.get_sheet('checkout', items=context.items.item2, borrower={})
     assert printable_sheet
 
   with subtests.test("Then the date format matches the locale 'fi'"):

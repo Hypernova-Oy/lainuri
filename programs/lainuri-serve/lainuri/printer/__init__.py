@@ -9,7 +9,7 @@ import lainuri.status
 
 from jinja2 import Template
 from datetime import datetime
-import locale
+import lainuri.locale
 import os
 import time
 import traceback
@@ -33,23 +33,7 @@ def print_check_out_receipt(user_barcode: str, items: list):
   return printable_sheet
 
 def print_check_in_receipt(items: list, user_barcode: str = None):
-  receipt_template = get_config('devices.thermal-printer.check-in-receipt')
-
-  default_receipt_borrowernumber = get_config('devices.thermal-printer.check-in-receipt-koha-borrower')
-  if user_barcode:
-    borrower = koha_api.get_borrower(user_barcode=user_barcode)
-  elif default_receipt_borrowernumber:
-    borrower = koha_api.get_borrower(borrowernumber=get_config('devices.thermal-printer.check-in-receipt-koha-borrower'))
-  else:
-    borrower = {}
-
-  printable_sheet = None
-  if receipt_template.lower() == 'koha':
-    if not borrower['borrowernumber']: raise TypeError("config('devices.thermal-printer.check-in-receipt') is 'koha', but there is no default borrower?")
-    printable_sheet = koha_api.receipt(borrower['borrowernumber'], 'checkinslip')
-  else:
-    printable_sheet = get_sheet(receipt_template, items, borrower)
-
+  printable_sheet = get_sheet('checkin', items, {})
   print_html(printable_sheet)
   return printable_sheet
 
@@ -71,10 +55,13 @@ def print_html(html_text: str, page_increment: int = 10, css_dict: dict = None):
   return 1
 
 def get_sheet(receipt_template_name: str, items: list, borrower: dict, header: str = None, footer: str = None) -> str:
+  if receipt_template_name not in ('checkin', 'checkout'): raise ValueError(f"Unknown receipt template '{receipt_template_name}'!")
+  template_file_path = None
   try:
-    receipt_template = (get_lainuri_conf_dir() / receipt_template_name).read_text()
+    template_file_path = (get_lainuri_conf_dir() / 'templates' / f"{receipt_template_name}-{lainuri.locale.get_locale()}.j2")
+    receipt_template = template_file_path.read_text()
   except Exception as e:
-    raise type(e)(e, f"Exception when get_sheet():> receipt template lookup path='{get_lainuri_conf_dir() / receipt_template_name}' get_lainuri_conf_dir() {get_lainuri_conf_dir()}, receipt_template_name '{receipt_template_name}'")
+    raise type(e)(e, f"Exception when get_sheet():> receipt template lookup path='{template_file_path}' get_lainuri_conf_dir() {get_lainuri_conf_dir()}, receipt_template_name '{receipt_template_name}'")
   return _render_jinja2_template(receipt_template=receipt_template, items=items, borrower=borrower, header=header, footer=footer)
 
 def _prepare_weasy_doc(html_text: str, page_increment: int = 10, css_dict: dict = None) -> weasyprint.Document:
@@ -177,7 +164,7 @@ def _render_jinja2_template(receipt_template: str, items: list, borrower: dict, 
   return Template(receipt_template).render(
     items=items,
     borrower=borrower,
-    today=datetime.today().strftime(locale.nl_langinfo(locale.D_FMT) + ' ' + locale.nl_langinfo(locale.T_FMT)),
+    today=lainuri.locale.today(),
     header=header,
     footer=footer,
   )

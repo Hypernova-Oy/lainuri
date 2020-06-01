@@ -158,28 +158,11 @@
               "description": "This is a full css-document that overloads other css-directives",
               "examples": ["body {border: 2px solid;}"]
             },
-            "check-in-receipt": {
-              "type": "string",
-              "default": "templates/check_in.j2",
-              "description": "MUST BE 'koha'. Need to implement check-in login to get borrowernumber of the user. This might be undesirable. which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
-              "examples": [
-                "koha",
-                "templates/check_in.j2"
-              ]
-            },
-            "check-in-receipt-koha-borrower": {
-              "type": "number",
-              "default": 0,
-              "description": "The borrowernumber of the user to use to render the check-in template in Koha. Only used if configuration parameter 'check-in-receipt'='koha'. Koha cannot render a check-in -receipt without an attached borrower. Without this configuration the user returning books, would have to log in to Lainuri, and boy that would be dull. It is bestest to remove all borrower-dependent information from Koha's check-in receipt template."
-            },
             "check-out-receipt": {
               "type": "string",
               "default": "koha",
-              "description": "Which jinja2 template to use to render check-in receipts? Use 'koha' to use Koha's receipt printing feature.",
-              "examples": [
-                "koha",
-                "templates/check_in.j2"
-              ]
+              "description": "System used to render check-in receipts? Use 'koha' to use Koha's receipt printing feature. Use 'lainuri' to define receipt templates in Lainuri.",
+              "enum": ["koha", "lainuri"]
             },
             "printing-speed": {
               "type": "integer",
@@ -202,9 +185,7 @@
               "maximum": 255,
               "description": "Increase print precision at the cost of speed. Should not be more than 64"
             }
-          },
-          "if": {"properties": {"check-in-receipt": {"const": "koha"}}},
-          "then": {"required": ["check-in-receipt-koha-borrower"]}
+          }
         }
       }
     },
