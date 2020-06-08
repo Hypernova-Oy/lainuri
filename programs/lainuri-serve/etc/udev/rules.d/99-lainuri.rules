@@ -1,5 +1,6 @@
 ## RL866 via USB
-SUBSYSTEM=="usb", ATTR{idVendor}=="fffe", ATTR{idProduct}=="0091", OWNER="lainuri", GROUP="lainuri"
+#SUBSYSTEM=="usb", ATTR{idVendor}=="fffe", ATTR{idProduct}=="0091", OWNER="lainuri", GROUP="lainuri" # Old RS-232 to USB adapter
+SUBSYSTEM=="usb", ATTR{idVendor}=="0403", ATTR{idProduct}=="6001", OWNER="lainuri", GROUP="lainuri"
 
 ## RL866 using pl2303
 SUBSYSTEM=="tty", ATTRS{idVendor}=="067b", ATTRS{idProduct}=="2303", OWNER="lainuri", GROUP="lainuri", SYMLINK+="ttyRL866"
