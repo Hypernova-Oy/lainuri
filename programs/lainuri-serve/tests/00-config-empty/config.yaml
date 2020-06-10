@@ -1,0 +1,6 @@
+---
+
+  devices:
+    barcode-reader: {}
+
+  i18n: {}

@@ -3,6 +3,7 @@ from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 import lainuri.pretty as lp
 
+import base64
 from simple_websocket_server import WebSocket
 import json
 import time
@@ -348,6 +349,59 @@ class LEPrintResponse(LEvent):
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
+class LEPrintTemplateList(LEvent):
+  event = 'print-template-list'
+  default_handler = 'lainuri.websocket_handlers.printer.list_templates'
+  default_recipient = 'server'
+
+class LEPrintTemplateListResponse(LEvent):
+  event = 'print-template-list-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['templates']
+  templates = {}
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, templates: dict, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.templates = templates
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
+class LEPrintTemplateSave(LEvent):
+  event = 'print-template-save'
+  default_handler = 'lainuri.websocket_handlers.printer.save_template'
+  default_recipient = 'server'
+
+  serializable_attributes = ['template', 'template_type', 'locale_code']
+  template = ''
+  template_type = ''
+  locale_code = ''
+
+  def __init__(self, template: str, template_type: str, locale_code: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.template = template
+    self.template_type = template_type
+    self.locale_code = locale_code
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
+class LEPrintTemplateSaveResponse(LEvent):
+  event = 'print-template-save-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['template_type', 'locale_code']
+  template_type = ''
+  locale_code = ''
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, template_type: str, locale_code: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.template_type = template_type
+    self.locale_code = locale_code
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+
 class LEPrintTestRequest(LEvent):
   event = 'print-test-request'
   default_handler = 'lainuri.websocket_handlers.printer.test_print'
@@ -376,7 +430,7 @@ class LEPrintTestResponse(LEvent):
   status = Status.NOT_SET
 
   def __init__(self, image: bytes, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.image = image
+    self.image = base64.b64encode(image).decode('utf-8')
     self.states = states
     self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)

@@ -347,6 +347,109 @@ class LEPrintResponse extends LEvent {
     this.validate_params()
   }
 }
+class LEPrintTemplateList extends LEvent {
+  static event = 'print-template-list'
+  default_dispatch = 'server'
+
+  static serializable_attributes = []
+
+  constructor(sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEPrintTemplateListResponse extends LEvent {
+  static event = 'print-template-list-response'
+
+  static serializable_attributes = ['templates']
+  templates;
+  states;
+  status;
+
+  constructor(templates, status, states, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.templates = templates
+    this.states = states
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEPrintTemplateSave extends LEvent {
+  static event = 'print-template-save'
+  default_dispatch = 'server'
+
+  static serializable_attributes = ['template', 'template_type', 'locale_code']
+  template;
+  template_type;
+  locale_code;
+
+  constructor(template, template_type, locale_code, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.template = template
+    this.template_type = template_type
+    this.locale_code = locale_code
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEPrintTemplateSaveResponse extends LEvent {
+  static event = 'print-template-save-response'
+
+  static serializable_attributes = ['template_type', 'locale_code']
+  template_type;
+  locale_code;
+  states;
+  status;
+
+  constructor(template_type, locale_code, status, states, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.template_type = template_type
+    this.locale_code = locale_code
+    this.states = states
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEPrintTestRequest extends LEvent {
+  static event = 'print-test-request'
+  default_dispatch = 'server'
+
+  static serializable_attributes = ['template', 'data', 'css', 'real_print']
+  template;
+  data;
+  css;
+  real_print;
+
+  constructor(template, data, css, real_print, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.template = template
+    this.data = data
+    this.css = css
+    this.real_print = real_print
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEPrintTestResponse extends LEvent {
+  static event = 'print-test-response'
+
+  static serializable_attributes = ['image', 'states', 'status']
+  image;
+  states;
+  status;
+
+  constructor(image, status, states, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.image = image
+    this.states = states
+    this.status = status
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
 class LERFIDTagsNew extends LEvent {
   static event = 'rfid-tags-new';
 
@@ -526,5 +629,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LELocaleSet, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
+  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LELocaleSet, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
 }

@@ -9,15 +9,30 @@ import lainuri.locale
 import lainuri.status
 from lainuri.printer.printjob import PrintJob
 
-from jinja2 import Template
+import jinja2
 from datetime import datetime
 import os
+import pathlib
+import re
+import subprocess
 import time
 import traceback
 import weasyprint
-import subprocess
 
 cli_print_command = ['lp', '-']
+
+list_templates_matcher = re.compile('^(\w+)-(\w\w).j2$')
+def list_templates():
+  templates = {}
+  templates_dir = get_lainuri_conf_dir() / 'templates'
+  for f in templates_dir.iterdir():
+    match = list_templates_matcher.search(f.name)
+    if match:
+      template_type = match[1]
+      locale_code = match[2]
+      if not templates.get(template_type, None): templates[template_type] = {}
+      templates[template_type][locale_code] = f.read_text(encoding='utf-8')
+  return templates
 
 def test_print(pj: PrintJob, real_print: bool = False) -> PrintJob:
   _render_jinja2_template(pj)
@@ -26,6 +41,10 @@ def test_print(pj: PrintJob, real_print: bool = False) -> PrintJob:
     pj)
   if real_print: _print_thermal_receipt(doc, pj)
   return pj
+
+def save_template(template: str, template_type: str, locale_code: str):
+  jinja2.Environment().parse(source=template) #validate template
+  get_template_filename(template_type=template_type, locale_code=locale_code).write_text(template, encoding='utf-8')
 
 def print_check_out_receipt(pj: PrintJob):
   pj._template_backend = get_config('devices.thermal-printer.check-out-receipt')
@@ -58,12 +77,17 @@ def print_html(pj: PrintJob):
 
 def get_sheet(pj: PrintJob) -> str:
   try:
-    pj._template_file_path = (get_lainuri_conf_dir() / 'templates' / f"{pj._type}-{lainuri.locale.get_locale()}.j2")
-    pj._receipt_template = pj._template_file_path.read_text()
+    pj._receipt_template = get_template(pj._type, lainuri.locale.get_locale())
   except Exception as e:
     raise type(e)(e, f"Exception when get_sheet():> PrintJob={pj.__dict__}")
   _render_jinja2_template(pj)
   return pj._printable_html
+
+def get_template_filename(template_type: str, locale_code: str) -> pathlib.Path:
+  return (get_lainuri_conf_dir() / 'templates' / f"{template_type}-{locale_code}.j2")
+
+def get_template(template_type: str, locale_code: str) -> str:
+  return get_template_filename(template_type=template_type, locale_code=locale_code).read_text()
 
 def _prepare_weasy_doc(pj: PrintJob) -> weasyprint.Document:
   doc = None
@@ -159,5 +183,5 @@ def _print_via_cups(byttes: bytes):
     log.info(f"Thermal printer is disabled from configuration.")
 
 def _render_jinja2_template(pj: PrintJob):
-  pj._printable_html = Template(pj._receipt_template).render(today=lainuri.locale.today(), **pj.data)
+  pj._printable_html = jinja2.Template(pj._receipt_template).render(today=lainuri.locale.today(), **pj.data)
   return pj._printable_html

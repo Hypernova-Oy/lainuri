@@ -12,6 +12,28 @@ from lainuri.koha_api import koha_api
 import lainuri.printer
 from lainuri.printer.printjob import PrintJob
 
+def list_templates(event: le.LEPrintTemplateList):
+  try:
+    lainuri.event_queue.push_event(
+      le.LEPrintTemplateListResponse(
+        templates=lainuri.printer.list_templates(),
+        status=Status.SUCCESS,
+      )
+    )
+
+  except Exception as e:
+    log.exception(f"Exception during list_templates")
+    lainuri.event_queue.push_event(
+      le.LEPrintTemplateListResponse(
+        templates={},
+        status=Status.ERROR,
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': str(e)}
+        },
+      )
+    )
+
 def test_print(event: le.LEPrintTestRequest):
   pj = None
 
@@ -40,7 +62,7 @@ def test_print(event: le.LEPrintTestRequest):
         },
       )
     )
-    return pj
+  return pj
 
 def print_receipt(event):
   pj = None
@@ -76,4 +98,30 @@ def print_receipt(event):
         },
       )
     )
-    return pj
+  return pj
+
+def save_template(event):
+  try:
+    lainuri.printer.save_template(template=event.template, template_type=event.template_type, locale_code=event.locale_code)
+
+    lainuri.event_queue.push_event(
+      le.LEPrintTemplateSaveResponse(
+        template_type=event.template_type,
+        locale_code=event.locale_code,
+        status=Status.SUCCESS,
+      )
+    )
+
+  except Exception as e:
+    log.exception(f"Exception saving template")
+    lainuri.event_queue.push_event(
+      le.LEPrintTemplateSaveResponse(
+        template_type=event.template_type,
+        locale_code=event.locale_code,
+        status=Status.ERROR,
+        states={'exception': {
+          'type': type(e).__name__,
+          'trace': str(e)}
+        },
+      )
+    )

@@ -56,6 +56,7 @@
       }"
     >
     </div>
+    <TemplateEditor/>
     <v-container fluid max-height="800">
       <StatusBar/>
       <Exception v-if="exceptions.length"
@@ -83,7 +84,7 @@
       color="blue-grey"
       class="white--text"
     >
-      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git <span class="footer-tech-name" @click="repl_active = true">RTTTL</span>
+      Hypernova Linux Perl Python wiringPi <span class="footer-tech-name" @click="template_editor_active = true">WebSocket</span> CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git <span class="footer-tech-name" @click="repl_active = true">RTTTL</span>
       <v-spacer></v-spacer>
       <span>&copy; 2020</span>
     </v-footer>
@@ -133,6 +134,7 @@ import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
 import MainMenuView from './components/MainMenuView.vue'
 import StatusBar from './components/StatusBar.vue'
+import TemplateEditor from './components/TemplateEditor.vue'
 
 import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array} from './helpers'
@@ -159,6 +161,7 @@ export default {
     LanguagePicker,
     MainMenuView,
     StatusBar,
+    TemplateEditor,
   },
   created: function () {
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
@@ -177,17 +180,17 @@ export default {
       log.info(`Event 'LERFIDTagsPresent' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
       this.rfid_tags_present = event.tags_present.reduce((reducer, elem) => {reducer.push(new ItemBib(elem)); return reducer}, []);
     });
-  },
 
-  mounted: function () {
-    log.info('mounted()');
     try {
       start_ws();
     } catch (e) {
       log.fatal(`start_ws() :> ${e}`);
     }
-  },
 
+  },
+  mounted: function () {
+    log.info('mounted()');
+  },
   beforeDestroy: function () {
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
     lainuri_ws.ws.close();
@@ -226,6 +229,8 @@ export default {
 
       repl_active: false,
       repl: '',
+
+      template_editor_active: false,
     }
   },
   // define methods under the `methods` object
