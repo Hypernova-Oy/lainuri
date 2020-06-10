@@ -88,3 +88,11 @@ def test_iso28560_3_mv():
   assert dob.set_information['ordinal_part_number'] == 1
   assert dob.isil == 'FI-Mamk-M'
   assert dob.crc == b'\xC4\xCF'
+
+def test_iso28560_3_encode_1():
+  dob = iso28560.new_data_object(afi=0x07, dsfid=0x3E, block_size=3, memory_capacity_blocks=16)
+  assert type(dob) == iso28560.ISO28560_3_Object
+
+  dob.encode(content_parameter=1, type_of_usage=1, numbers_of_parts_in_item=1, ordinal_part_number=1, primary_item_identifier='kapinakapina', isil='FI-Jns')
+
+  assert dob.get_primary_item_identifier() == 'kapinakapina'
