@@ -135,7 +135,7 @@
     <PrintNotification :receipt_printing="receipt_printing"
       v-on:close_notification="print_receipt_complete"
     />
-    <v-overlay :value="overlay_notifications.length">
+    <v-overlay :value="overlay_notifications.length" opacity="1">
       <OverlayNotification
         :item_bib="overlay_notifications[0]"
         :mode="'checkout'"
