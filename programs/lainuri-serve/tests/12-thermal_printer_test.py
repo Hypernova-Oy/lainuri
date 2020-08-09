@@ -3,6 +3,9 @@
 import context
 import context.items
 import context.users
+import lainuri.db
+lainuri.db.init(test_mode=True)
+lainuri.db.create_database()
 from context.env import MockEnv
 
 from lainuri.config import get_config
@@ -17,11 +20,9 @@ import lainuri.printer as lp
 from lainuri.printer import PrintJob
 import lainuri.printer.status
 
-import base64
 from datetime import datetime
 import os
 import pathlib
-import re
 import tempfile
 import threading
 import time
@@ -185,101 +186,6 @@ def test_print_template_locales(subtests):
     do_get_sheet_check('fi', ['Palautuksesi', 'Lainasi'])
     do_get_sheet_check('ru', ['Ваши возвращения', 'Ваши кредиты'])
     do_get_sheet_check('sv', ['Dina checkins', 'Dina utcheckningar'])
-
-def test_test_printer_template(subtests):
-  assert lainuri.event_queue.flush_all()
-  lainuri.config.write_config('devices.thermal-printer.enabled', False)
-  event, response_event = (None, None)
-
-  with subtests.test("Given a LEPrintTestRequest-event"):
-    event = lainuri.event.LEPrintTestRequest(
-      template=(lainuri.config.get_lainuri_conf_dir() / 'templates' / 'checkin-fi.j2').read_text(),
-      data={
-        "user": context.users.user1,
-        "items": context.items.items1,
-        "header": "HEADER CONTENTS",
-        "footer": "FOOTER CONTENTS",
-      },
-      css="""
-      font-size: 24px
-      """,
-      real_print=False)
-    lainuri.event_queue.push_event(event)
-
-  with subtests.test("When the LEPrintTestRequest-event is handled"):
-    assert lainuri.websocket_server.handle_one_event(5) == event
-
-  with subtests.test("Then a LEPrintTestResponse-event is generated"):
-    response_event = lainuri.websocket_server.handle_one_event(5)
-    assert type(response_event) == lainuri.event.LEPrintTestResponse
-    assert response_event.states == {}
-    assert response_event.status == Status.SUCCESS
-    assert type(response_event.image) == str
-    assert base64.b64decode(response_event.image)
-
-  with subtests.test("And the image-attribute is hidden from log serialization"):
-    as_text = response_event.to_string()
-    assert re.compile('\'image\': \d+').search(as_text)
-
-def test_save_print_template(subtests):
-  with tempfile.TemporaryDirectory() as temp_conf_dir:
-    (pathlib.Path(temp_conf_dir) / 'templates').mkdir()
-    with MockEnv(LAINURI_CONF_DIR=temp_conf_dir):
-      with subtests.test("Scenario: Save a template"):
-        event = lainuri.event.LEPrintTemplateSave(template="asd", template_type='checkin', locale_code='fi')
-        lainuri.printer.save_template(template=event.template, template_type=event.template_type, locale_code=event.locale_code)
-        assert 'asd' in lainuri.printer.get_template(template_type=event.template_type, locale_code=event.locale_code)
-
-        lainuri.event_queue.push_event(event)
-        assert lainuri.websocket_server.handle_one_event(5) == event
-
-        response_event = lainuri.websocket_server.handle_one_event(5)
-        assert response_event.states == {}
-        assert response_event.status == Status.SUCCESS
-        assert type(response_event) == lainuri.event.LEPrintTemplateSaveResponse
-
-      with subtests.test("Scenario: Saving a template fails"):
-        event, resp_event = (None, None)
-
-        with subtests.test("Given a LEPrintTemplateSave-event"):
-          event = lainuri.event.LEPrintTemplateSave(template="asd2", template_type='checkin', locale_code='fi')
-
-        with subtests.test("And bad file permissions"):
-          lainuri.printer.get_template_filename(template_type=event.template_type, locale_code=event.locale_code).chmod(0o400)
-
-        with subtests.test("When the event has been handled"):
-          assert event == lainuri.event_queue.push_event(event)
-          assert lainuri.websocket_server.handle_one_event(5)
-
-        with subtests.test("Then a response event is generated"):
-          resp_event = lainuri.websocket_server.handle_one_event(5)
-
-        with subtests.test("And the response is a failure"):
-          assert resp_event.status == Status.ERROR
-          assert resp_event.states['exception']['type'] == 'PermissionError'
-
-def test_list_print_templates(subtests):
-  event, resp_event = (None, None)
-
-  with subtests.test("Given a LEPrintTemplateList-event"):
-    event = lainuri.event.LEPrintTemplateList()
-
-  with subtests.test("When the event has been handled"):
-    assert event == lainuri.event_queue.push_event(event)
-    assert lainuri.websocket_server.handle_one_event(5)
-
-  with subtests.test("Then a response event is generated"):
-    resp_event = lainuri.websocket_server.handle_one_event(5)
-    assert resp_event
-
-  with subtests.test("And the response has a list of all the receipt templates"):
-    assert resp_event.states == {}
-    assert resp_event.status == Status.SUCCESS
-    assert type(resp_event) == lainuri.event.LEPrintTemplateListResponse
-    assert len(resp_event.templates['checkin']) >= 4
-    assert len(resp_event.templates['checkout']) >= 4
-    assert resp_event.templates['checkin']['fi'] == lainuri.printer.get_template(template_type='checkin', locale_code='fi')
-    assert resp_event.templates['checkout']['ru'] == lainuri.printer.get_template(template_type='checkout', locale_code='ru')
 
 def test_print_koha_check_in_receipt(subtests):
   assert lainuri.event_queue.flush_all()

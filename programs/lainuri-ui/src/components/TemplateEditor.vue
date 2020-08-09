@@ -24,8 +24,8 @@
           <v-toolbar-title>Receipt types</v-toolbar-title>
         </v-list-item>
         <v-list-item
-          v-for="(item, i) in template_types"
-          :key="i"
+          v-for="item of template_types"
+          :key="item"
           @click="template_type = item"
         >
           <v-list-item-title>{{ item }}</v-list-item-title>
@@ -33,33 +33,26 @@
       </v-list>
     </v-menu>
 
-    <v-toolbar-title>Template editor - {{ template_type }}</v-toolbar-title>
-
+    <v-toolbar-title>Template editor - {{ template_type }} {{ this.$appConfig.i18n.enabled_locales[this.tab] }}</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-switch v-model="easy_mode" label="Easy mode"></v-switch>
+      <v-btn icon color="primary" x-large
+        @click="close_template_editor">
+        <v-icon>mdi-close-circle</v-icon>
+      </v-btn>
       <template v-slot:extension>
         <v-tabs
           v-model="tab"
           align-with-title
         >
           <v-tabs-slider color="yellow"></v-tabs-slider>
-          <v-tab v-for="item in items" :key="item">
-            {{ item }}
+          <v-tab v-for="locale_code in $appConfig.i18n.enabled_locales" :key="template_type + locale_code">
+            {{ locale_code }}
           </v-tab>
         </v-tabs>
       </template>
     </v-toolbar>
 
-    <v-tabs-items v-model="tab">
-      <v-tab-item
-        v-for="item in items"
-        :key="item"
-      >
-      </v-tab-item>
-    </v-tabs-items>
     <v-card flat>
-      <v-card-text v-text="templates[template_type][items[tab]]"></v-card-text>
-
       <v-container class="grey lighten-5">
         <v-row>
           <v-col>
@@ -67,6 +60,8 @@
               <v-col>
                 <v-textarea
                   label="Template"
+                  :error-messages="template_content_error"
+                  :success="!template_content_error || true"
                   auto-grow
                   v-model="template_content"
                   @change="maybe_lazy_test_print"
@@ -77,6 +72,8 @@
               <v-col>
                 <v-textarea
                   label="Template data"
+                  :error-messages="template_data_validation"
+                  :success="!template_data_validation || true"
                   auto-grow
                   v-model="template_data"
                 ></v-textarea>
@@ -87,17 +84,27 @@
             <v-row>
               <v-icon v-if="test_print_timer_running">mdi-timer</v-icon>
               <img v-if="template_content_rendering" :src="template_content_rendering"/>
-              <v-textarea v-if="template_content_error"
-                label="Template error"
-                auto-grow
-                v-model="template_content_error"
-              ></v-textarea>
+            </v-row><v-row>
+              <v-col>
+                <v-btn icon color="primary" x-large
+                  @click="save_template">
+                  <v-icon>mdi-content-save</v-icon>
+                </v-btn>
+              </v-col><v-col>
+                <v-btn icon color="primary" x-large
+                  @click="test_print">
+                  <v-icon>mdi-test-tube</v-icon>
+                </v-btn>
+              </v-col>
             </v-row>
             <v-row>
               <v-textarea
-                label="Template data validation"
-                auto-grow
-                v-model="template_data_validation"
+                :label="template_action_title"
+                :error-messages="template_action_error"
+                :success="!template_action_error || true"
+                rows=0
+                :no-resize="true"
+                :readonly="true"
               ></v-textarea>
             </v-row>
           </v-col>
@@ -126,16 +133,40 @@ export default {
       if (event.status === Status.SUCCESS) {
         this.$data.template_content_rendering = 'data:image/png;base64,' + event.image;
         this.$data.template_content_error = null
+        this.$data.template_action_error = null;
+        this.$data.template_action_title = "👍 LEPrintTestResponse"
       }
       else {
         this.$data.template_content_rendering = null
-        this.$data.template_content_error = event.states
+        this.$data.template_content_error = JSON.stringify(event.states)
+        this.$data.template_action_error = JSON.stringify(event.states);
+        this.$data.template_action_title = "👎 LEPrintTestResponse"
+      }
+    });
+    lainuri_ws.attach_event_listener(LEPrintTemplateSaveResponse, this, function(event) {
+      log.info(`[TemplateEditor.vue]:> Event 'LEPrintTemplateSaveResponse' received.`);
+      if (event.status === Status.SUCCESS) {
+        this.$data.template_action_error = null;
+        this.$data.template_action_title = "👍 LEPrintTemplateSaveResponse"
+      }
+      else {
+        this.$data.template_action_error = JSON.stringify(event.states);
+        this.$data.template_action_title = "👎 LEPrintTemplateSaveResponse"
       }
     });
     lainuri_ws.attach_event_listener(LEPrintTemplateListResponse, this, function(event) {
       log.info(`[TemplateEditor.vue]:> Event 'LEPrintTemplateListResponse' received.`);
       if (event.status === Status.SUCCESS) {
-        this.$data.templates = event.templates
+        let templates_ordered = {}
+        for (let t of event.templates) {
+          if (! templates_ordered[t.type]) templates_ordered[t.type] = {}
+          templates_ordered[t.type][t.locale_code] = t
+        }
+        this.$data.templates = templates_ordered
+        // Trigger global reactivity
+        for (let key in templates_ordered) {
+          this.$set(this.templates, key, templates_ordered[key])
+        }
         this.$data.template_content_error = null
       }
       else {
@@ -144,7 +175,9 @@ export default {
     });
   },
   mounted: function () {
-    lainuri_ws.dispatch_event(new LEPrintTemplateList('client', 'server')) // Seed the initial templates from server
+    window.setTimeout(function() {
+      lainuri_ws.dispatch_event(new LEPrintTemplateList('client', 'server')) // Seed the initial templates from server
+    }, 2000)
   },
   beforeDestroy: function () {
     Timeout.terminate();
@@ -157,21 +190,15 @@ export default {
       template_types: [
         'checkin', 'checkout',
       ],
-      items: [
-        'fi', 'en', 'ru', 'sv', 'de',
-      ],
       text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
       templates: {
         checkin: {
-          'fi': "asdasdasd",
-          'en': "asdasdasdasdasdasd",
+          'en': {"template": "loading {% today %}"},
         },
         checkout: {
-          'fi': "asdasdasd123123",
-          'en': "asdasdasdasdasdasd123123",
+          'en': {"template": "loading {% today %}"},
         },
       },
-      template_content: "",
       template_content_rendering: null,
       template_content_error: null,
       template_data: JSON.stringify({
@@ -198,37 +225,73 @@ export default {
         ],
         "today": new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString()
       }, null, 2),
+      template_action_error: '',
+      template_action_title: '',
       test_print_timer_running: false,
     }
   },
   computed: {
+    template_active: function () {
+      return this.templates[this.template_type][this.$appConfig.i18n.enabled_locales[this.tab]] || this.templates['checkin']['en']
+    },
+    template_content: {
+      get: function () {
+        return this.template_active.template
+      },
+      set: function (newVal) {
+        this.template_active.template = newVal
+      },
+    },
     template_data_validation: function () {
       try {
         parseJson(this.template_data)
       } catch (e) {
-        return e
+        return e + ""
       }
-      return '👍'
+      return null
     },
   },
   methods: {
+    close_template_editor: function () {
+      log.info('close_template_editor():>');
+      this.$emit('close_template_editor')
+    },
     maybe_lazy_test_print: function () {
       Timeout.terminate()
+
+
       Timeout.start(() => {
         this.$data.test_print_timer_running = false
         this.test_print();
       }, 1);
       this.$data.test_print_timer_running = true
     },
+    save_template: function () {
+      lainuri_ws.dispatch_event(new LEPrintTemplateSave(
+        this.template_active.id,
+        this.template_type,
+        this.$appConfig.i18n.enabled_locales[this.tab],
+        this.template_active.template, 'client', 'server'))
+    },
     test_print: function () {
-      lainuri_ws.dispatch_event(new LEPrintTestRequest(this.template_content, this.template_data, '', false, 'client', 'server'))
+      lainuri_ws.dispatch_event(new LEPrintTestRequest(
+        this.template_content,
+        this.template_data,
+        '',
+        false, 'client', 'server'))
     },
   }
 }
 </script>
 
 <style>
-.template-editor textarea {
+.template-editor {
+  z-index: 100
+}
+.template-editor .v-textarea textarea {
   font-family: monospace;
+  overflow: initial;
+  font-size: 0.75rem;
+  line-height: 1rem;
 }
 </style>

@@ -358,12 +358,12 @@ class LEPrintTemplateListResponse(LEvent):
   event = 'print-template-list-response'
   default_recipient = 'client'
 
-  serializable_attributes = ['templates']
+  serializable_attributes = ['templates', 'status', 'states']
   templates = {}
   states = {}
   status = Status.NOT_SET
 
-  def __init__(self, templates: dict, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, templates: list, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.templates = templates
     self.states = states
     self.status = status
@@ -374,32 +374,36 @@ class LEPrintTemplateSave(LEvent):
   default_handler = 'lainuri.websocket_handlers.printer.save_template'
   default_recipient = 'server'
 
-  serializable_attributes = ['template', 'template_type', 'locale_code']
-  template = ''
-  template_type = ''
+  serializable_attributes = ['id', 'type', 'locale_code', 'template']
+  id = None,
+  type = '',
   locale_code = ''
+  template = ''
 
-  def __init__(self, template: str, template_type: str, locale_code: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.template = template
-    self.template_type = template_type
+  def __init__(self, id: int, type: str, locale_code: str, template: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.id = id
+    self.type = type
     self.locale_code = locale_code
+    self.template = template
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEPrintTemplateSaveResponse(LEvent):
   event = 'print-template-save-response'
   default_recipient = 'client'
 
-  serializable_attributes = ['template_type', 'locale_code']
-  template_type = ''
+  serializable_attributes = ['id', 'type', 'locale_code', 'status', 'states']
+  id = None
+  type = ''
   locale_code = ''
   states = {}
   status = Status.NOT_SET
 
-  def __init__(self, template_type: str, locale_code: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.template_type = template_type
+  def __init__(self, id: int, type: str, locale_code: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.id = id
+    self.type = type
     self.locale_code = locale_code
-    self.states = states
     self.status = status
+    self.states = states
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LEPrintTestRequest(LEvent):

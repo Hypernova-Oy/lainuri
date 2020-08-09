@@ -362,7 +362,7 @@ class LEPrintTemplateList extends LEvent {
 class LEPrintTemplateListResponse extends LEvent {
   static event = 'print-template-list-response'
 
-  static serializable_attributes = ['templates']
+  static serializable_attributes = ['templates', 'status', 'states']
   templates;
   states;
   status;
@@ -380,16 +380,18 @@ class LEPrintTemplateSave extends LEvent {
   static event = 'print-template-save'
   default_dispatch = 'server'
 
-  static serializable_attributes = ['template', 'template_type', 'locale_code']
-  template;
-  template_type;
+  static serializable_attributes = ['id', 'type', 'locale_code', 'template']
+  id;
+  type;
   locale_code;
+  template;
 
-  constructor(template, template_type, locale_code, sender, recipient, event_id = undefined) {
+  constructor(id, type, locale_code, template, sender, recipient, event_id = undefined) {
     super(event_id);
-    this.template = template
-    this.template_type = template_type
+    this.id = id
+    this.type = type
     this.locale_code = locale_code
+    this.template = template
     this.construct(sender, recipient);
     this.validate_params()
   }
@@ -397,18 +399,20 @@ class LEPrintTemplateSave extends LEvent {
 class LEPrintTemplateSaveResponse extends LEvent {
   static event = 'print-template-save-response'
 
-  static serializable_attributes = ['template_type', 'locale_code']
-  template_type;
+  static serializable_attributes = ['id', 'type', 'locale_code', 'status', 'states']
+  id;
+  type;
   locale_code;
-  states;
   status;
+  states;
 
-  constructor(template_type, locale_code, status, states, sender, recipient, event_id = undefined) {
+  constructor(id, type, locale_code, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
-    this.template_type = template_type
+    this.id = id
+    this.type = type
     this.locale_code = locale_code
-    this.states = states
     this.status = status
+    this.states = states
     this.construct(sender, recipient);
     this.validate_params()
   }
@@ -436,7 +440,7 @@ class LEPrintTestRequest extends LEvent {
 class LEPrintTestResponse extends LEvent {
   static event = 'print-test-response'
 
-  static serializable_attributes = ['image', 'states', 'status']
+  static serializable_attributes = ['image', 'status', 'states']
   image;
   states;
   status;

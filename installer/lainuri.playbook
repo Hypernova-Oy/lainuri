@@ -69,6 +69,7 @@
           - matchbox-keyboard
           - iceweasel # chromium-browser has unresolved issues with automatic upgrade failed popup
           - xdotool
+          - sqlite3
 
     - name: Configure LXDE autostart to trigger our startup script
       lineinfile:

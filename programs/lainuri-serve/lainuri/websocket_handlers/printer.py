@@ -2,6 +2,7 @@ from lainuri.config import get_config
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
+import json
 import subprocess
 import traceback
 
@@ -38,7 +39,7 @@ def test_print(event: le.LEPrintTestRequest):
   pj = None
 
   try:
-    pj = PrintJob('test', data=event.data)
+    pj = PrintJob('test', data=json.loads(event.data))
     pj.css = event.css
     pj._receipt_template = event.template
     pj = lainuri.printer.test_print(pj, real_print=event.real_print)
@@ -102,11 +103,12 @@ def print_receipt(event):
 
 def save_template(event):
   try:
-    lainuri.printer.save_template(template=event.template, template_type=event.template_type, locale_code=event.locale_code)
+    lainuri.printer.save_template(event)
 
     lainuri.event_queue.push_event(
       le.LEPrintTemplateSaveResponse(
-        template_type=event.template_type,
+        id=event.id,
+        type=event.type,
         locale_code=event.locale_code,
         status=Status.SUCCESS,
       )
@@ -116,7 +118,8 @@ def save_template(event):
     log.exception(f"Exception saving template")
     lainuri.event_queue.push_event(
       le.LEPrintTemplateSaveResponse(
-        template_type=event.template_type,
+        id=None,
+        type=event.type,
         locale_code=event.locale_code,
         status=Status.ERROR,
         states={'exception': {

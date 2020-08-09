@@ -56,7 +56,8 @@
       }"
     >
     </div>
-    <TemplateEditor/>
+    <TemplateEditor
+      v-on:close_template_editor="close_template_editor"/>
     <v-container fluid max-height="800">
       <StatusBar/>
       <Exception v-if="exceptions.length"
@@ -258,6 +259,9 @@ export default {
     },
     show_exception: function (event) {
       this.$data.exceptions.push(event);
+    },
+    close_template_editor: function () {
+
     },
 
     repl_execute: function () {

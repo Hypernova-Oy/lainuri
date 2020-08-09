@@ -132,3 +132,7 @@ logs
 node_modules
 
 .vscode
+
+
+
+lainuri.sqlite3.db
