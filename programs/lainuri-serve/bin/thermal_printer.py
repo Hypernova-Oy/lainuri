@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, __file__+'/../..')
+
 import usb.core
 import usb.util
 

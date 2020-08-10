@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+import sys
+sys.path.insert(0, __file__+'/../..')
+
 """
 Simple manual test program to test the barcode reader
 """

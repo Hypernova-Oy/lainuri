@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, __file__+'/../..')
+
 from datetime import datetime
 import os
 from pprint import pprint
@@ -29,7 +32,7 @@ pprint("is_paper_torn_away(): "+str(hsk.is_paper_torn_away()))
 pprint(hsk.real_time_transmission_status(printer_status=True).__dict__)
 pprint(hsk.real_time_transmission_status(send_offline_status=True, transmission_error_status=True, transmission_paper_sensor_status=True).__dict__)
 
-printable_sheet = lainuri.printer.print_check_in_receipt(items=[])
+#printable_sheet = lainuri.printer.print_check_in_receipt(items=[])
 time.sleep(2)
 #hsk.escpos_printer.image('/tmp/weasy.png', impl=u'graphics')
 #time.sleep(1)
