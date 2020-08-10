@@ -136,11 +136,11 @@ class HSK_Printer():
     Reimplementation of escpos paper_status()
     """
     rtts = self.real_time_transmission_status(transmission_paper_sensor_status=True)
-    if rtts.paper_adequate: return 2
-    if rtts.paper_ending: return 1
     if rtts.paper_out: return 0
+    if rtts.paper_ending: return 1
+    if rtts.paper_adequate: return 2
 
-  def paper_cut(one_point_left: bool = True, three_points_left: bool = False):
+  def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False):
     if three_points_left: return self._transaction(b'\x1B\x6D')
     if one_point_left: return self._transaction(b'\x1B\x69')
 
