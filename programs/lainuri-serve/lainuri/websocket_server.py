@@ -24,6 +24,7 @@ import lainuri.printer.status
 import lainuri.rfid_reader
 import lainuri.barcode_reader
 import lainuri.rtttl_player
+import lainuri.status
 from lainuri.threadbase import Threadbase
 
 ## Import all handlers, because the handle_events_loop dynamically invokes them
@@ -40,21 +41,8 @@ import lainuri.websocket_handlers.tag_alarm
 import lainuri.websocket_handlers.test
 
 
-
 clients = []
 
-"""
-states:
-get_items: rfid tags and barcodes are interpreted as item barcodes and are pushed to the UI
-           with enriched information from the library system
-user-logging-in: barcode reads are interpreted as user reading his/hers library card.
-                 Thus we try to login to library system and return with results.
-"""
-state = 'get_items'
-def set_state(new_state: str):
-  global state
-  log.info(f"New state '{new_state}'")
-  state = new_state
 
 def handle_one_event_daemon():
   try:
@@ -71,9 +59,9 @@ def handle_one_event(timeout: int = None, event: lainuri.event.LEvent = None) ->
   if event.recipient == 'server' or (not(event.recipient) and event.default_recipient == 'server'):
     if event.default_handler: eval(event.default_handler)(event)
     elif event.event == 'user-logging-in':
-      set_state('user-logging-in')
+      lainuri.status.set_lainuri_state('user-logging-in')
     elif event.event == 'user-login-abort':
-      set_state('get_items')
+      lainuri.status.set_lainuri_state('get_items')
     elif event.event == 'register-client':
       register_client(event)
     elif event.event == 'deregister-client':
@@ -86,7 +74,7 @@ def handle_one_event(timeout: int = None, event: lainuri.event.LEvent = None) ->
   # Messages from the server to the UI
   elif event.recipient == 'client' or (not(event.recipient) and event.default_recipient == 'client'):
     if event.event in ['user-login-complete'] and event.status == Status.SUCCESS:
-      set_state('get_items')
+      lainuri.status.set_lainuri_state('get_items')
     message_clients(event)
 
   else:
@@ -219,7 +207,9 @@ def stop() -> bool:
   return True
 
 def handle_barcode_read(bcr: lainuri.barcode_reader.BarcodeReader, barcode: str):
-  if (lainuri.websocket_server.state == 'user-logging-in'):
+  if get_config('admin.master-barcode') == barcode:
+    lainuri.status.set_lainuri_state('admin', barcode)
+  elif (lainuri.status.lainuri_state == 'user-logging-in'):
     lainuri.websocket_handlers.auth.login_user(barcode)
   else:
     lainuri.event_queue.push_event(lainuri.event.LEBarcodeRead(barcode))

@@ -35,10 +35,6 @@
 
     <v-toolbar-title>Template editor - {{ template_type }} {{ this.$appConfig.i18n.enabled_locales[this.tab] }}</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn icon color="primary" x-large
-        @click="close_template_editor">
-        <v-icon>mdi-close-circle</v-icon>
-      </v-btn>
       <template v-slot:extension>
         <v-tabs
           v-model="tab"
@@ -115,15 +111,15 @@
 </template>
 
 <script>
-import {get_logger} from '../logger'
-let log = get_logger('TemplateEditor.vue');
+import {get_logger} from '../../logger'
+let log = get_logger('Admin/TemplateEditor.vue');
 
 const parseJson = require('json-parse-better-errors')
 
-import {lainuri_ws} from '../lainuri'
-import {Status, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse} from '../lainuri_events.js'
+import {lainuri_ws} from '../../lainuri'
+import {Status, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse} from '../../lainuri_events.js'
 
-import * as Timeout from '../timeout_poller'
+import * as Timeout from '../../timeout_poller'
 
 export default {
   name: 'TemplateEditor',
@@ -175,12 +171,11 @@ export default {
     });
   },
   mounted: function () {
-    window.setTimeout(function() {
-      lainuri_ws.dispatch_event(new LEPrintTemplateList('client', 'server')) // Seed the initial templates from server
-    }, 2000)
+    window.setTimeout(function() {lainuri_ws.dispatch_event(new LEPrintTemplateList('client', 'server'))}, 2000) // Seed the initial templates from server
   },
   beforeDestroy: function () {
     Timeout.terminate();
+    lainuri_ws.flush_listeners_for_component(this, this.$options.name);
   },
   data () {
     return {

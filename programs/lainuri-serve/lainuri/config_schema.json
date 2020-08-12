@@ -1,23 +1,39 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Lainuri core config",
+  "title": "Lainuri configuration",
+  "description": "Do carefully alter these configurations. If in doubt, ask for help.",
   "type": "object",
   "publicProperties": [
     "ui",
     "i18n"
   ],
   "properties": {
+    "admin": {
+      "title": "Admin",
+      "type": "object",
+      "description": "Settings related to the Admin-mode.",
+      "properties": {
+        "master-barcode": {
+          "type": "string",
+          "default": "masterbarcode",
+          "description": "Reading this barcode forces the Lainuri-UI to enter the Admin-mode"
+        }
+      }
+    },
     "devices": {
+      "title": "Devices",
       "type": "object",
       "description": "Device configurations",
       "properties": {
         "barcode-reader": {
+          "title": "Barcode reader",
           "type": "object",
           "description": "Barcode reader configurations",
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "Enable the barcode reader"
             },
             "model": {
               "type": "string",
@@ -27,6 +43,7 @@
           }
         },
         "rfid-reader": {
+          "title": "RFID reader",
           "type": "object",
           "description": "RFID reader configurations",
           "dependencies": {
@@ -35,7 +52,8 @@
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "Enable the RFID reader"
             },
             "model": {
               "type": "string",
@@ -97,12 +115,14 @@
           }
         },
         "ringtone-player": {
+          "title": "Ringtone player",
           "type": "object",
           "description": "RTTTL Player configurations",
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "Enable ringtones"
             },
             "ringtone_types": {
               "type": "object",
@@ -132,12 +152,14 @@
           }
         },
         "thermal-printer": {
+          "title": "Thermal printer",
           "type": "object",
           "description": "Thermal printer configurations",
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": true
+              "default": true,
+              "description": "Enable the thermal receipt printer"
             },
             "css": {
               "type": "object",
@@ -190,6 +212,7 @@
       }
     },
     "koha": {
+      "title": "Koha",
       "type": "object",
       "description": "Koha ILS configurations",
       "properties": {
@@ -229,6 +252,7 @@
       }
     },
     "server": {
+      "title": "Lainuri server",
       "type": "object",
       "description": "Backend server configurations. You shouldn't change these.",
       "properties": {
@@ -245,6 +269,7 @@
       }
     },
     "ui": {
+      "title": "User interface",
       "type": "object",
       "description": "User interface configurations",
       "properties": {
@@ -289,6 +314,7 @@
       }
     },
     "i18n": {
+      "title": "Internationalization and localization",
       "type": "object",
       "description": "i18n configurations",
       "properties": {
@@ -296,13 +322,16 @@
           "type": "array",
           "description": "2-character language codes to enable for Lainuri. Lainuri makes sure the langauge codes are installed if they exists.",
           "items": {
-            "type": "string"
+            "type": "string",
+            "default": "en",
+            "enum": ["en", "fi", "ru", "sv"]
           },
           "default": ["en", "fi", "ru", "sv"]
         },
         "default_locale": {
           "type": "string",
           "default": "en",
+          "enum": ["en", "fi", "ru", "sv"],
           "description": "The locale which is loaded by default"
         },
         "messages": {
@@ -311,7 +340,7 @@
           "examples": [{
             "fi": {
               "CheckIn": {
-                "Place_to_bin_OK": "Vie nide saunan taakse",
+                "Place_to_bin_OK": "Vie nide saunaan",
                 "Place_to_bin_ODD": "Laita omaan lokeroon"
               },
               "CheckOut": {

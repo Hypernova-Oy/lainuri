@@ -6,6 +6,8 @@ var Globalize = require( "globalize" );
 import {lainuri_ws} from './lainuri'
 import {Status, LEConfigGetpublic_Response} from './lainuri_events'
 
+import lainuri_config_schema from './config_schema.json'
+
 /**
  * Vue plugin install function
  */
@@ -73,6 +75,7 @@ export default function (Vue) {
       },
     }
   });
+  Vue.prototype.$lainuriConfigSchema = lainuri_config_schema
   Vue.prototype.$appConfig = vm.$data.app_config
   Vue.prototype.$appConfigSetLocale = vm.set_locale
   Vue.prototype.$appConfigGetImageOverload = vm.get_image_overload

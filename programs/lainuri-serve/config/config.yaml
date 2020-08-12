@@ -1,3 +1,5 @@
+admin:
+  master-barcode: "0030026776"
 devices:
   barcode-reader:
     enabled: true

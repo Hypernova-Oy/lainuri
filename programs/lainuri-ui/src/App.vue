@@ -43,6 +43,12 @@
         hover dark x-large
         v-on:click="enter_checkin_mode"
       ><h1>{{(app_mode === 'mode_main_menu') ? t('App/Check_in') : t('CheckIn/Checking_in')}}</h1></v-btn>
+      <v-btn v-if="app_mode === 'mode_admin_menu'"
+        id="admin_mode_button"
+        :width="app_mode === 'mode_admin_menu' ? 770 : 325"
+        :color="app_mode === 'mode_admin_menu' ? 'secondary' : 'primary'"
+        hover dark x-large
+      ><h1>Admin</h1></v-btn>
 
       <v-spacer></v-spacer>
 
@@ -56,8 +62,12 @@
       }"
     >
     </div>
-    <TemplateEditor
-      v-on:close_template_editor="close_template_editor"/>
+
+    <AdminMenu
+      v-if="app_mode === 'mode_admin_menu'"
+      v-on:close_admin_menu="enter_main_menu"
+    />
+
     <v-container fluid max-height="800">
       <StatusBar/>
       <Exception v-if="exceptions.length"
@@ -85,7 +95,7 @@
       color="blue-grey"
       class="white--text"
     >
-      Hypernova Linux Perl Python wiringPi <span class="footer-tech-name" @click="template_editor_active = true">WebSocket</span> CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git <span class="footer-tech-name" @click="repl_active = true">RTTTL</span>
+      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git <span class="footer-tech-name" @click="repl_active = true">RTTTL</span>
       <v-spacer></v-spacer>
       <span>&copy; 2020</span>
     </v-footer>
@@ -127,6 +137,7 @@ let log = get_logger('App.vue');
 
 import Globalize from 'globalize'
 
+import AdminMenu from './components/Admin/AdminMenu.vue'
 import BottomMenu from './components/BottomMenu.vue'
 import Exception from './components/Exception.vue'
 import ItemCard from './components/ItemCard'
@@ -135,12 +146,11 @@ import CheckIn from './components/CheckIn.vue'
 import CheckOut from './components/CheckOut.vue'
 import MainMenuView from './components/MainMenuView.vue'
 import StatusBar from './components/StatusBar.vue'
-import TemplateEditor from './components/TemplateEditor.vue'
 
 import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
-import {Status, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
+import {Status, LEAdminModeEnter, LEAdminModeLeave, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
 
 
 let shared = {
@@ -156,15 +166,23 @@ let preseed = 1;
 export default {
   name: 'App',
   components: {
+    AdminMenu,
     CheckIn,
     CheckOut,
     Exception,
     LanguagePicker,
     MainMenuView,
     StatusBar,
-    TemplateEditor,
   },
   created: function () {
+    lainuri_ws.attach_event_listener(LEAdminModeEnter, this, function(event) {
+      log.info(`Event 'LEAdminModeEnter' received.`);
+      this.app_mode = 'mode_admin_menu'
+    });
+    lainuri_ws.attach_event_listener(LEAdminModeLeave, this, function(event) {
+      log.info(`Event 'LEAdminModeLeave' received.`);
+      this.app_mode = 'mode_main_menu'
+    });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       log.info(`Event 'LERFIDTagsNew' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
       event.tags_new.forEach((item_bib) => {
@@ -190,7 +208,7 @@ export default {
 
   },
   mounted: function () {
-    log.info('mounted()');
+
   },
   beforeDestroy: function () {
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
@@ -230,8 +248,6 @@ export default {
 
       repl_active: false,
       repl: '',
-
-      template_editor_active: false,
     }
   },
   // define methods under the `methods` object
@@ -260,10 +276,6 @@ export default {
     show_exception: function (event) {
       this.$data.exceptions.push(event);
     },
-    close_template_editor: function () {
-
-    },
-
     repl_execute: function () {
       let resp = eval(this.$data.repl);
       console.log(resp);
@@ -318,7 +330,7 @@ body::-webkit-scrollbar {
   height: 400px;
 }
 #app-bar-spacer-helper.other_view {
-  height: 86px;
+  height: 96px;
 }
 
 .app-navigation-bar button.v-size--x-large {

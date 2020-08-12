@@ -51,6 +51,27 @@ class LEvent():
     #return f"event_id='{self.event_id}' " + str({key: getattr(self, key) for key in self.serializable_attributes})
     return lp.pformat(self.__dict__)
 
+class LEAdminModeEnter(LEvent):
+  event = 'admin-mode-enter'
+  default_recipient = 'client'
+
+  serializable_attributes = []
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEAdminModeLeave(LEvent):
+  event = 'admin-mode-leave'
+  default_handler = 'lainuri.websocket_handlers.status.admin_mode_leave'
+  default_recipient = 'server'
+
+  serializable_attributes = []
+
+  def __init__(self, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
 class LECheckOut(LEvent):
   event = 'check-out'
   default_handler = 'lainuri.websocket_handlers.checkout.checkout'

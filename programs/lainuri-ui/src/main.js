@@ -28,6 +28,15 @@ Vue.use(VueGlobalize, {
 import AppConfig from './AppConfig.js'
 Vue.use(AppConfig)
 
+import VJsf from '@koumoul/vjsf';
+import '@koumoul/vjsf/dist/main.css';
+// import this module if you want to be sure that you get all dependancies
+// used by vjsf functionalities (color picker, etc.)
+import Draggable from 'vuedraggable'
+const _global = (typeof window !== 'undefined' && window) || (typeof global !== 'undefined' && global) || {}
+_global.markdownit = require('markdown-it')
+Vue.component('draggable', Draggable)
+Vue.component('VJsf', VJsf)
 
 //run_test_suite();
 Vue.config.productionTip = false

@@ -1,6 +1,6 @@
 """
 Keeps track of the device and app statuses
-Separate this from the weboscket_handler implementation to reduce coupling between components
+Separate this from the websocket_handler implementation to reduce coupling between components
 """
 
 from lainuri.config import get_config, get_lainuri_conf_dir
@@ -12,6 +12,28 @@ import lainuri.event
 import lainuri.event_queue
 
 import subprocess
+
+"""
+lainuri_states:
+get_items: rfid tags and barcodes are interpreted as item barcodes and are pushed to the UI
+           with enriched information from the library system
+user-logging-in: barcode reads are interpreted as user reading his/hers library card.
+                 Thus we try to login to library system and return with results.
+admin: admin mode to parametrize Lainuri via the UI.
+"""
+lainuri_state = 'get_items'
+def set_lainuri_state(new_state: str, context=None):
+  global lainuri_state
+
+  if new_state == 'admin':
+    if not get_config('admin.master-barcode') == context:
+      raise Error(f"Trying to set_lainuri_state('{new_state}') but provided master-barcode is invalid.")
+    else:
+      lainuri.event_queue.push_event(lainuri.event.LEAdminModeEnter())
+
+  log.info(f"New Lainuri state '{new_state}'")
+  lainuri_state = new_state
+
 
 def update_status(status: str, value: Status):
   global statuses

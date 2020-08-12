@@ -62,6 +62,30 @@ class LEvent {
   }
 }
 
+class LEAdminModeEnter extends LEvent {
+  static event = 'admin-mode-enter';
+  default_dispatch = 'client';
+
+  static serializable_attributes = [];
+
+  constructor(sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.construct(sender, recipient);
+  }
+}
+
+class LEAdminModeLeave extends LEvent {
+  static event = 'admin-mode-leave';
+  default_dispatch = 'server';
+
+  static serializable_attributes = [];
+
+  constructor(sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.construct(sender, recipient);
+  }
+}
+
 class LECheckOut extends LEvent {
   static event = 'check-out';
 
@@ -633,5 +657,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  Status, LEvent, LEException, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LELocaleSet, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
+  Status, LEvent, LEException, LEAdminModeLeave, LEAdminModeEnter, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LELocaleSet, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
 }

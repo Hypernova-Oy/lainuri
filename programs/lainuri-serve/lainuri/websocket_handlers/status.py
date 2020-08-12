@@ -8,6 +8,9 @@ import lainuri.event_queue
 import lainuri.status
 import lainuri.rfid_reader
 
+def admin_mode_leave(event = None):
+  import lainuri.websocket_server
+  lainuri.status.set_lainuri_state('get_items')
 
 def get_rfid_tags_present(event = None):
   try:

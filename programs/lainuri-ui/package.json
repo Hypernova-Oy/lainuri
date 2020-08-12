@@ -9,6 +9,7 @@
     "prod": "node_modules/serve/bin/serve.js -s dist"
   },
   "dependencies": {
+    "@koumoul/vjsf": "^1.11.3",
     "axios": "^0.19.0",
     "cldr-data": "^36.0.0",
     "core-js": "^3.4.4",
