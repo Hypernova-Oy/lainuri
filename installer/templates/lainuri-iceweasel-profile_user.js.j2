@@ -1,0 +1,12 @@
+// Turn on all possible GPU accelerations
+user_pref("dom.webgpu.enabled", true);
+user_pref("layers.gpu-process.enabled", true);
+
+// These don't work on Raspberry Pi 4
+user_pref("webgl.enable-webgl2", false);
+user_pref("webgl.force-enabled", false);
+user_pref("gfx.webrender.all", false);
+user_pref("gfx.xrender.enabled", false);
+
+// For benchmarking
+user_pref("layers.acceleration.draw-fps", false);
