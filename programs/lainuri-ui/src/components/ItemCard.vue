@@ -6,6 +6,8 @@
         error: item_bib.status === Status.ERROR,
         success: item_bib.status === Status.SUCCESS,
         pending: item_bib.status === Status.PENDING,
+        'itemcard-layout-bookcover': $appConfig.ui.use_bookcovers === true,
+        'itemcard-layout-rows': $appConfig.ui.use_bookcovers === false,
       }"
       class="itemcard"
       @click="overlay = !overlay"
@@ -36,19 +38,25 @@
       <div class="itemcard-content">
         <v-card-text class="v-title-fix" v-text="item_bib.title || '...'"></v-card-text>
         <v-card-subtitle>
-          <div>{{item_bib.author || 'x'}}</div>
-          <div>{{item_bib.edition || 'x'}}</div>
+          <div>{{item_bib.author}}</div>
+          <div>{{item_bib.edition}}</div>
           <div>{{item_bib.item_barcode}}</div>
         </v-card-subtitle>
       </div>
       <v-progress-circular
-        v-if="item_bib.status === Status.PENDING"
+        v-if="$appConfig.ui.use_bookcovers === true && item_bib.status === Status.PENDING"
         class="progress"
         size="150"
         width="25"
         color="primary"
         indeterminate
       ></v-progress-circular>
+      <v-progress-linear
+        v-if="$appConfig.ui.use_bookcovers === false && item_bib.status === Status.PENDING"
+        class="progress"
+        indeterminate
+      ></v-progress-linear>
+
       <v-overlay absolute :value="overlay"
         v-if="Object.keys(item_bib.states).length"
       >
@@ -89,39 +97,64 @@ export default {
 </script>
 
 <style scoped>
-.itemcard {
+.itemcard-layout-bookcover.itemcard {
   width: 240px;
 /*  height: 350px;*/
 }
-.itemcard .iconosphere {
+.itemcard-layout-bookcover.itemcard .iconosphere {
   max-height: 24px;
 }
-.itemcard .v-image {
+.itemcard-layout-bookcover.itemcard .v-image {
   height: 170px;
   max-height: 170px;
 }
-.itemcard-content {
+.itemcard-layout-bookcover .itemcard-content {
   height: 156px;
   max-height: 156px;
   white-space: wrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.itemcard-content .v-card__title {
+.itemcard-layout-bookcover .itemcard-content .v-card__title {
   overflow: hidden;
 }
-.itemcard .item-states {
+.itemcard-layout-bookcover.itemcard .item-states {
   font-size: 1.4em;
   /*font-weight: bold;*/
 }
-.progress {
+.itemcard-layout-bookcover .progress {
   position: absolute;
   top: 20%;
   left: 20%;
 }
-.v-title-fix {
+.itemcard-layout-bookcover .v-title-fix {
   font-size: 1.24rem;
   overflow: hidden;
   padding-bottom: 0px;
 }
+
+.itemcard-layout-rows {
+  width: 880px;
+}
+.itemcard-layout-rows .itemcard-content {
+  display: flex;
+}
+.itemcard-layout-rows .v-card__text {
+  width: initial;
+  float: left;
+  font-size: 1.4em;
+}
+.itemcard-layout-rows .v-card__subtitle {
+  float: left;
+  font-size: 1.2em;
+}
+.itemcard-layout-rows .v-card__subtitle div {
+  float: left;
+  margin: 0px 10px 0px 0px;
+}
+.itemcard-layout-rows .iconosphere {
+  padding: 15px 16px 14px 0px;
+  float: right;
+}
+
 </style>
