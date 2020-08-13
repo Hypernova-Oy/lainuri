@@ -7,6 +7,9 @@
       <v-tab>
         <v-icon>mdi-cog</v-icon>Config Editor
       </v-tab>
+      <v-tab @click="enable_repl">
+        <v-icon>mdi-console</v-icon>REPL
+      </v-tab>
       <v-tab @click="close_admin_menu">
         <v-icon>mdi-close-circle</v-icon>Exit
       </v-tab>
@@ -16,10 +19,15 @@
           />
       </v-tab-item>
       <v-tab-item>
-        <!-- Disabled due to a bug in vjfs (vuetify json-schema forms) -->
+        Disabled due to a bug in vjfs (vuetify json-schema forms)
         <ConfigEditor
           v-if="view === 9999"
           />
+      </v-tab-item>
+      <v-tab-item>
+        <p>REPL allows you to run code against the running GUI. This is sometimes needed to debug and develop the application. You can try writing</p>
+        <p>alert("Hello World")</p>
+        <p>to the REPL-panel</p>
       </v-tab-item>
     </v-tabs>
   </v-card>
@@ -45,11 +53,11 @@ export default {
 
   },
   methods: {
-    close_template_editor: function () {
-
-    },
     close_admin_menu: function () {
       this.$emit('close_admin_menu')
+    },
+    enable_repl: function () {
+      this.$emit('enable_repl')
     },
   }
 }

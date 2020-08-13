@@ -66,6 +66,7 @@
     <AdminMenu
       v-if="app_mode === 'mode_admin_menu'"
       v-on:close_admin_menu="enter_main_menu"
+      v-on:enable_repl="repl_active = true"
     />
 
     <v-container fluid max-height="800">
@@ -89,16 +90,6 @@
         v-on:exception="show_exception"
       />
     </v-container>
-
-    <v-footer
-      app
-      color="blue-grey"
-      class="white--text"
-    >
-      Hypernova Linux Perl Python wiringPi WebSocket CernOHL Vuetify ECMAScript6 RFID ESC/POS Ansible ISO18000-3M3 Git <span class="footer-tech-name" @click="repl_active = true">RTTTL</span>
-      <v-spacer></v-spacer>
-      <span>&copy; 2020</span>
-    </v-footer>
 
     <v-snackbar
       v-model="repl_active"
