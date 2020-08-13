@@ -33,6 +33,7 @@ export default function (Vue) {
             images: {},
             session_inactivity_timeout_s: 120,
             use_bookcovers: true,
+            show_item_statuses: false,
           },
           i18n: {
             default_locale: 'en',

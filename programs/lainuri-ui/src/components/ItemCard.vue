@@ -80,9 +80,10 @@ export default {
     // Include imports
     Status: Status,
 
-    overlay: true,
+    overlay: false,
   }),
   created: function () {
+    this.$data.overlay = this.$appConfig.ui.show_item_statuses // seed the initial value from the app config
   },
 }
 </script>

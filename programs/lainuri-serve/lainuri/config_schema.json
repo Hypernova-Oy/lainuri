@@ -310,6 +310,11 @@
           "type": "integer",
           "default": 120,
           "description": "In seconds, how quickly the user's check-in/out session is canceled and the UI returned to the main menu, if the user doesn't do any actions."
+        },
+        "show_item_statuses": {
+          "type": "boolean",
+          "default": false,
+          "description": "By default show Item checkout/in statuses. Status display can be toggled by clicking the Item card."
         }
       }
     },
