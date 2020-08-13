@@ -5,7 +5,9 @@
 ## Launch the browser GUI
 # {{ansible_managed}}
 
-GEOMETRY=($(DISPLAY=:0 xrandr | grep -P '^HDMI-\d' | perl -ne '$_ =~ /connected primary (\d+)x(\d+)\+(\d+)\+(\d+)/; print "$1 $2 $3 $4"'))
+export DISPLAY=:0
+
+GEOMETRY=($(xrandr | grep -P '^HDMI-\d' | perl -ne '$_ =~ /connected primary (\d+)x(\d+)\+(\d+)\+(\d+)/; print "$1 $2 $3 $4"'))
 SCREEN_WIDTH=${GEOMETRY[0]}
 SCREEN_HEIGHT=${GEOMETRY[1]}
 SCREEN_MARGIN_LEFT=${GEOMETRY[2]}
@@ -22,35 +24,35 @@ FIREFOX_PROFILE_DIR="/home/pi/lainuri-iceweasel-profile"
 # see:
 #   xrandr
 # for the display name
-DISPLAY=:0 xrandr --output HDMI-1 --rotate left
+sleep 1
+xrandr --output HDMI-1 --rotate left
 # As the display is rotated, force the touch screen to rotate with the screen
 # see:
 #   xinput --list
 # for the device name
-#DISPLAY=:0 xinput --set-prop 'ILITEK ILITEK-TP' 'Coordinate Transformation Matrix' 0 1 0 -1 0 1 0 0 1 # inverted?
-DISPLAY=:0 xinput --set-prop 'ILITEK ILITEK-TP' 'Coordinate Transformation Matrix' 0 -1 1 1 0 0 0 0 1
+sleep 1
+xinput --set-prop 'ILITEK ILITEK-TP' 'Coordinate Transformation Matrix' 0 -1 1 1 0 0 0 0 1
 # Disable screen saving
+sleep 1
 xset s off
 xset -dpms
 xset s noblank
 
+sleep 1
 if [ -n "$USE_FIREFOX" ]; then # Start with Firefox
-  DISPLAY=:0 /usr/bin/iceweasel --profile $FIREFOX_PROFILE_DIR --no-remote --private-window $LAINURI_UI_URL &
-  sleep 5
-  DISPLAY=:0 xdotool search --sync "Firefox Safe Mode" && DISPLAY=:0 xdotool key Return
-  sleep 5
-  DISPLAY=:0 xdotool search --sync "Mozilla Firefox" && DISPLAY=:0 xdotool key F11
+  /usr/bin/iceweasel --profile $FIREFOX_PROFILE_DIR --no-remote --private-window $LAINURI_UI_URL &
+  sleep 10
+  xdotool search --sync "Mozilla Firefox" && xdotool key F11
 elif [-n "$USE_CHROMIUM" ]; then # Start with chromium-browser (Has an unresolved issue with "update failed"-popup notifications)
   mkdir "$CHROMIUM_CACHE_DIR"
-  DISPLAY=:0 /usr/bin/chromium-browser
-              --disable-features=TranslateUI \
-              --disable-infobars --disable-pinch \
-              --disable-restore-session-state \
-              --disable-session-crashed-bubble --disable-sync-preferences \
-              --disk-cache-dir="$CHROMIUM_CACHE_DIR" \
-              --hide-scrollbars --incognito --kiosk --kiosk-printing \
-              --noerrdialogs --no-first-run --no-touch-pinch --window-position=0,0 \
-              --window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT} \
-              $LAINURI_UI_URL
+  /usr/bin/chromium-browser
+    --disable-features=TranslateUI \
+    --disable-infobars --disable-pinch \
+    --disable-restore-session-state \
+    --disable-session-crashed-bubble --disable-sync-preferences \
+    --disk-cache-dir="$CHROMIUM_CACHE_DIR" \
+    --hide-scrollbars --incognito --kiosk --kiosk-printing \
+    --noerrdialogs --no-first-run --no-touch-pinch --window-position=0,0 \
+    --window-size=${SCREEN_WIDTH},${SCREEN_HEIGHT} \
+    $LAINURI_UI_URL
 fi
-
