@@ -30,7 +30,7 @@
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_out_and_get_receipt"
-              v-if="is_user_logged_in"
+              v-if="is_user_logged_in && Object.keys(items_checked_out_successfully).length"
               x-large color="secondary"
             >
               {{t('CheckOut/Finish+Receipt')}}
