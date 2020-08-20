@@ -299,6 +299,9 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+* {
+  cursor: none !important
+}
 
 .item_scrollview {
   max-height: 1500px;
