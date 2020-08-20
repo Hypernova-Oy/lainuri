@@ -42,7 +42,9 @@ sleep 1
 if [ -n "$USE_FIREFOX" ]; then # Start with Firefox
   /usr/bin/iceweasel --profile $FIREFOX_PROFILE_DIR --no-remote --private-window $LAINURI_UI_URL &
   sleep 10
-  xdotool search --sync "Mozilla Firefox" && xdotool key F11
+  xdotool search --sync "Mozilla Firefox"
+  sleep 1
+  xdotool key F11
 elif [-n "$USE_CHROMIUM" ]; then # Start with chromium-browser (Has an unresolved issue with "update failed"-popup notifications)
   mkdir "$CHROMIUM_CACHE_DIR"
   /usr/bin/chromium-browser
