@@ -91,7 +91,7 @@ def print_receipt(event):
     log.exception(f"Exception with PrintJob={pj.__dict__}")
     lainuri.event_queue.push_event(
       le.LEPrintResponse(
-        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=printable_sheet or None,
+        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=pj._printable_html or None,
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,
