@@ -9,6 +9,5 @@ pytest_subtests
 pyusb
 pyyaml
 simple_websocket_server
-sqlite3
 urllib3
 WeasyPrint
