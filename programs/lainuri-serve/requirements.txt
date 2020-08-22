@@ -2,6 +2,7 @@ beautifulsoup4
 colorlog
 coloredlogs
 escpos
+inline
 jinja2
 jsonschema
 lxml
@@ -9,6 +10,7 @@ pytest
 pytest_subtests
 pyusb
 pyyaml
+qrcode
 simple_websocket_server
 urllib3
 WeasyPrint
