@@ -4,9 +4,9 @@ import re
 
 endian='little'
 default_encoding='iso-8859-1'
-bin00  = frozenbitarray(initial='00',  endian='big')
-bin01  = frozenbitarray(initial='01',  endian='big')
-bin010 = frozenbitarray(initial='010', endian='big')
+bin00  = frozenbitarray('00',  endian='big')
+bin01  = frozenbitarray('01',  endian='big')
+bin010 = frozenbitarray('010', endian='big')
 
 """
 Overload this from your program to define you application specific compaction scheme.

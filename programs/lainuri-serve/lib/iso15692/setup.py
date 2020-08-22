@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="iso15692-OLLI-ANTTI-KIVILAHTI", # Replace with your own username
-    version="0.0.2",
+    version="0.0.3",
     author="Olli-Antti Kivilahti",
     author_email="olli-antti.kivilahti@hypernova.fi",
     description="ISO 15692 compaction algorithm implementations",
