@@ -1,6 +1,7 @@
 beautifulsoup4
 colorlog
 coloredlogs
+escpos
 jinja2
 jsonschema
 lxml
