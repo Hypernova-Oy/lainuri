@@ -145,7 +145,7 @@ class LECheckInComplete(LEvent):
 class LELocaleSet(LEvent):
   event = 'locale-set'
   default_handler = 'lainuri.websocket_handlers.locale.set_locale'
-  default_recipient = 'client'
+  default_recipient = 'server'
 
   serializable_attributes = ['locale_code']
   locale_code = ''

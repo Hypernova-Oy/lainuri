@@ -28,7 +28,7 @@ def test_set_locale(subtests):
     assert lainuri.locale.get_locale() == 'en'
 
   with subtests.test("When a LELocaleSet-event is received"):
-    event = lainuri.event.LELocaleSet(locale_code='fi', recipient='server')
+    event = lainuri.event.LELocaleSet(locale_code='fi')
     assert lainuri.event_queue.push_event(event) == event
     assert lainuri.websocket_server.handle_one_event(5) == event
     assert event == lainuri.event_queue.history[0]
