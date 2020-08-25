@@ -1,13 +1,13 @@
 beautifulsoup4
 colorlog
 coloredlogs
-escpos
 inline
 jinja2
 jsonschema
 lxml
 pytest
 pytest_subtests
+python-escpos
 pyusb
 pyyaml
 qrcode
