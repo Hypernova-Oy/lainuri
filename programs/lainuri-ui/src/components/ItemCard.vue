@@ -1,6 +1,6 @@
 <template>
     <v-card
-      ripple
+      :ripple="ripple_show"
       raised
       v-bind:class="{
         error: item_bib.status === Status.ERROR,
@@ -83,6 +83,10 @@ export default {
   },
   props: {
     item_bib: ItemBib,
+    ripple_show: {
+      type: Boolean,
+      default: true,
+    },
   },
   data: () => ({
     // Include imports

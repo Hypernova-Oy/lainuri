@@ -1,6 +1,7 @@
 <template>
   <v-card
     raised
+    :ripple="false"
     v-bind:class="{
       error: item_bib.status === Status.ERROR,
       overlay_notification: true,
@@ -12,7 +13,7 @@
     <h1 v-else-if="mode === 'checkout' && notification_type === 'Place_to_RFID_reader'">{{t('CheckOut/'+notification_type)}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.ERROR">{{t('CheckOut/Check_out_failed')}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.SUCCESS">{{t('CheckOut/Be_advised!')}}</h1>
-    <ItemCard :item_bib="item_bib"/>
+    <ItemCard :item_bib="item_bib" :ripple_show="true"/>
     <v-img
       v-if="mode === 'checkin' || (mode === 'checkout' && notification_type === 'Place_to_RFID_reader')"
       :src="notification_type && $appConfigGetImageOverload(notification_type)"
