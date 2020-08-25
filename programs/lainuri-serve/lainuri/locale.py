@@ -16,6 +16,8 @@ def verify_locales_installed():
       enable_locale(missing_locale)
     install_locales(missing_locales)
 
+  set_locale(get_config('i18n.default_locale'))
+
 def get_missing_locales(locale_codes: list = None):
   if not locale_codes: locale_codes = get_config('i18n.enabled_locales')
   installed_locales = {l.replace('utf8', 'UTF-8'):True for l in subprocess.run(['localectl','list-locales'], capture_output=True, check=True).stdout.decode('UTF-8').split("\n")}
