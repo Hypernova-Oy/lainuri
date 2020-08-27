@@ -37,7 +37,7 @@
       ></v-img>
       <div class="itemcard-content">
         <v-card-text class="v-title-fix" v-text="item_bib.title || '...'"></v-card-text>
-        <v-card-subtitle>
+        <v-card-subtitle class="ic-miscinfo">
           <div>{{item_bib.author}}</div>
           <div>{{item_bib.edition}}</div>
         </v-card-subtitle>
@@ -119,9 +119,6 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.itemcard-layout-bookcover .itemcard-content .v-card__title {
-  overflow: hidden;
-}
 .itemcard-layout-bookcover.itemcard .item-states {
   font-size: 1.4em;
   /*font-weight: bold;*/
@@ -131,10 +128,19 @@ export default {
   top: 20%;
   left: 20%;
 }
+.itemcard-layout-bookcover .v-card__text, .itemcard-layout-bookcover .v-card__subtitle {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
 .itemcard-layout-bookcover .v-title-fix {
   font-size: 1.24rem;
   overflow: hidden;
   padding-bottom: 0px;
+  max-height: 54px;
+}
+.itemcard-layout-bookcover .ic-miscinfo {
+  line-height: 1;
+  max-height: 60px;
 }
 
 .itemcard-layout-rows {
