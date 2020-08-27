@@ -56,7 +56,11 @@ export default {
         if (this.item_bib.states['Exception/RFIDCommand'] || this.item_bib.states["Exception/TagNotDetected"]) {
           return 'Place_to_RFID_reader';
         }
-        if (states_keys.length == 1 && this.item_bib.states['Status/not_checked_out']) return 'Place_to_bin_OK';
+        if ((states_keys.length == 1 && this.item_bib.states['State/not_checked_out']) || // TODO refactor this silly decision tree.
+            (states_keys.length == 1 && this.item_bib.states['State/outstanding_fines']) ||
+            (states_keys.length == 2 && this.item_bib.states['State/outstanding_fines']
+                                     && this.item_bib.states['State/not_checked_out']))
+          return 'Place_to_bin_OK';
         else return 'Place_to_bin_ODD';
       }
       return 'Place_to_bin_OK';
