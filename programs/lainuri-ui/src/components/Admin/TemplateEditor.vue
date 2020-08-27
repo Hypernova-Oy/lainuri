@@ -49,7 +49,7 @@
     </v-toolbar>
 
     <v-card flat>
-      <v-container class="grey lighten-5">
+      <v-container fluid class="grey lighten-5">
         <v-row>
           <v-col>
             <v-row>
@@ -85,11 +85,13 @@
                 <v-btn icon color="primary" x-large
                   @click="save_template">
                   <v-icon>mdi-content-save</v-icon>
+                  SAVE
                 </v-btn>
               </v-col><v-col>
                 <v-btn icon color="primary" x-large
                   @click="test_print">
                   <v-icon>mdi-test-tube</v-icon>
+                  TEST
                 </v-btn>
               </v-col>
             </v-row>
@@ -286,7 +288,7 @@ export default {
 .template-editor .v-textarea textarea {
   font-family: monospace;
   overflow: initial;
-  font-size: 0.75rem;
+  font-size: 1rem;
   line-height: 1rem;
 }
 </style>
