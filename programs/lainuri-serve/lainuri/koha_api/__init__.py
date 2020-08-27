@@ -285,7 +285,7 @@ class KohaAPI():
     log.info(f"Checkin: barcode='{barcode}'")
     (response, soup) = self._request(
       'POST',
-      self.koha_baseurl + '/cgi-bin/koha/circ/returns.pl',
+      self.koha_baseurl + '/cgi-bin/koha/circ/returns.pl?language=en',
       fields={
         'barcode': barcode
       },
@@ -348,7 +348,7 @@ class KohaAPI():
     log.info(f"Checkout: barcode='{barcode}' borrowernumber='{borrowernumber}'")
     (response, soup) = self._request(
       'POST',
-      self.koha_baseurl + '/cgi-bin/koha/circ/circulation.pl',
+      self.koha_baseurl + '/cgi-bin/koha/circ/circulation.pl?language=en',
       fields={
         'restoreduedatespec': '',
         'barcode': barcode,
@@ -407,11 +407,13 @@ class KohaAPI():
     if slip_type not in ['qslip','checkinslip']:
       raise TypeError(f"Receipt:> borrowernumber='{borrowernumber}' slip_type='{slip_type}' has invalid slip_type. Allowed values ['qslip','checkinslip']")
 
+    language = lainuri.locale.get_locale(iso639_1=False, iso639_1_iso3166=True)
+
     (response, soup) = self._request(
       'GET',
-      self.koha_baseurl + f'/cgi-bin/koha/members/printslip.pl?borrowernumber={borrowernumber}&print={slip_type}',
+      self.koha_baseurl + f'/cgi-bin/koha/members/printslip.pl?borrowernumber={borrowernumber}&print={slip_type}&language={language}',
       headers = {
-        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={lainuri.locale.get_locale(iso639_1=False, iso639_1_iso3166=True)}',
+        'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage={language}',
       },
       expect_html=True,
     )
