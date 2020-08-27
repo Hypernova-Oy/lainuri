@@ -163,6 +163,9 @@ export default {
   float: left;
   margin: 0px 10px 0px 0px;
 }
+.itemcard-layout-rows .ic-barcode {
+  margin-left: auto;
+}
 .itemcard-layout-rows .iconosphere {
   padding: 15px 16px 14px 0px;
   float: right;
