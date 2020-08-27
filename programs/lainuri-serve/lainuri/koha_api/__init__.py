@@ -104,7 +104,7 @@ class KohaAPI():
     return soup
 
   def _parse_html(self, soup: BeautifulSoup):
-    alerts = soup.select('.dialog.alert')
+    alerts = soup.select('.dialog.alert, .audio-alert-action')
     # Filter away hidden alerts
     alerts = [m.prettify() for m in alerts if not(m.attrs.get('style')) or not(re.match(r'(?i:display:\s*none)', m.attrs.get('style')))]
     messages = soup.select('.dialog.message')
@@ -295,12 +295,15 @@ class KohaAPI():
       expect_html=True,
     )
 
-    (alerts, messages) = self._parse_html(soup)
+    (status, states) = self._checkin_check_statuses(soup, *self._parse_html(soup))
+    log.info(f"Checkin complete: item_barcode='{barcode}' with status='{status}' states='{states}'")
+    return (status, states)
 
+  def _checkin_check_statuses(self, barcode, soup, alerts, messages):
     states = {}
     status = None
-    alerts = [a for a in alerts if not self.checkin_has_status(a, states, barcode)]
-    messages = [a for a in messages if not self.checkin_has_status(a, states, barcode)]
+    alerts = [a for a in alerts if not self._checkin_has_status(a, states, barcode)]
+    messages = [a for a in messages if not self._checkin_has_status(a, states, barcode)]
 
     # Check if the checkin actually went through in Koha, this is indicated by the #checkedintable contents
     # The alerts and messages don't have a clear status indication of success or failure.
@@ -315,10 +318,9 @@ class KohaAPI():
       states['unhandled'] = [*(alerts or []), *(messages or [])]
     if states.get('status', None):
       status = states.pop('status')
-    log.info(f"Checkin complete: item_barcode='{barcode}' with status='{status}' states='{states}'")
     return (status, states)
 
-  def checkin_has_status(self, message, states, barcode):
+  def _checkin_has_status(self, message, states, barcode):
     m_not_checked_out = re.compile('Not checked out', re.S | re.M)
     match = m_not_checked_out.search(message)
     if match:
@@ -341,6 +343,18 @@ class KohaAPI():
     match = m_fines.search(message)
     if match:
       states['outstanding_fines'] = match.group('fine_amount')
+      return 'outstanding_fines'
+
+    m_holds = re.compile(f'id="hold-found2".+?biblionumber=(?P<biblionumber>\d+)">\s+{re.escape(barcode)}:', re.S | re.M)
+    match = m_holds.search(message)
+    if match:
+      states['hold_found'] = match.group('biblionumber')
+
+      m_transfer = re.compile('<h4>\s+<strong>\s+Transfer to:\s+</strong>\s+(?P<branchname>.+?)\s+</h4>', re.S | re.M)
+      match = m_transfer.search(message)
+      if match:
+        states['return_to_another_branch'] = match.group('branchname')
+      return 'hold_found'
 
     return None
 
