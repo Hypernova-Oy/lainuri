@@ -71,3 +71,4 @@ ui:
     src: ../../../lainuri-ui/public/images/shared_gallery/xamk-logo-small.png
   use_bookcovers: true
   session_inactivity_timeout_s: 120
+  show_item_statuses: True
