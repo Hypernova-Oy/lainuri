@@ -295,7 +295,7 @@ class KohaAPI():
       expect_html=True,
     )
 
-    (status, states) = self._checkin_check_statuses(soup, *self._parse_html(soup))
+    (status, states) = self._checkin_check_statuses(barcode, soup, *self._parse_html(soup))
     log.info(f"Checkin complete: item_barcode='{barcode}' with status='{status}' states='{states}'")
     return (status, states)
 
