@@ -390,6 +390,7 @@ export default {
     },
     close_notification: function () {
       log.debug("Closing notification");
+      Timeout.prod();
       this.$data.overlay_notifications.shift();
     },
   },

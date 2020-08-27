@@ -443,6 +443,7 @@ export default {
     },
     close_notification: function () {
       log.info("Closing notification");
+      Timeout.prod();
       this.$data.overlay_notifications.shift();
     },
   },
