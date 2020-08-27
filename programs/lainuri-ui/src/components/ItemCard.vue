@@ -145,6 +145,7 @@ export default {
 
 .itemcard-layout-rows {
   width: 880px;
+  text-align: left;
 }
 .itemcard-layout-rows .itemcard-content {
   display: flex;
