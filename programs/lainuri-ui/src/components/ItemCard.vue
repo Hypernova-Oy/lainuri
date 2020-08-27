@@ -40,8 +40,8 @@
         <v-card-subtitle>
           <div>{{item_bib.author}}</div>
           <div>{{item_bib.edition}}</div>
-          <div>{{item_bib.item_barcode}}</div>
         </v-card-subtitle>
+        <v-card-subtitle class="ic-barcode" v-if="item_bib.item_barcode">{{item_bib.item_barcode}}</v-card-subtitle>
       </div>
       <v-progress-circular
         v-if="$appConfig.ui.use_bookcovers === true && item_bib.status === Status.PENDING"
