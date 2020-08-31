@@ -54,6 +54,9 @@ class KohaAPI():
           fields,
           headers,
         )
+        if r.status >= 500:
+          raise exception_ils.ILSConnectionFailure(r.data)
+
         lainuri.status.update_status('ils_connection_status', Status.SUCCESS)
 
         if expect_html: return self._maybe_not_logged_in(r, self._receive_html(r))
@@ -62,7 +65,12 @@ class KohaAPI():
         break # from the retry loop
 
       except Exception as e:
+        if "TRANSPARENT_REAUTHENTICATION" in str(e):
+          headers['Cookie'] = f'CGISESSID={self.sessionid}'
+          pass # Continue to the next retry loop
+
         log.exception(f"Exception requesting Koha API '{url}'")
+
         if retries_left == 0:
           raise exception_ils.ILSConnectionFailure(str(e))
         if isinstance(e, urllib3.exceptions.NewConnectionError):
@@ -74,9 +82,6 @@ class KohaAPI():
         elif isinstance(e, urllib3.exceptions.ReadTimeoutError):
           lainuri.status.update_status('ils_connection_status', Status.PENDING)
           time.sleep(1)
-        elif "TRANSPARENT_REAUTHENTICATION" in str(e):
-          headers['Cookie'] = f'CGISESSID={self.sessionid}'
-          pass # Continue to the next retry loop
         else:
           lainuri.status.update_status('ils_connection_status', Status.ERROR)
           raise e
