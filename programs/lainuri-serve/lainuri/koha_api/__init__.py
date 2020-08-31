@@ -95,8 +95,8 @@ class KohaAPI():
     data = r.data.decode('utf-8')
     try:
       soup = BeautifulSoup(data, features="html.parser")
-      for e in soup.select('script'): e.decompose() # Remove all script-tags
-      log_scrape.info(self._scrape_log_header(r) + "\n" + soup.select_one('body').prettify())
+      for e in soup.select('script, style, meta, link'): e.decompose() # Remove all script-tags
+      log_scrape.info(self._scrape_log_header(r) + "\n" + soup.prettify())
     except Exception as e:
       log_scrape.info(f"event_id='{self.current_event_id}'\n" + data)
       log.error(f"Failed to parse HTML for event_id='{self.current_event_id}': {traceback.format_exc()}")
