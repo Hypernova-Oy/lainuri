@@ -375,14 +375,18 @@ class KohaAPI():
         'borrowernumber': borrowernumber,
         'branch': get_config('koha.branchcode'),
         'debt_confirmed': 0,
+        'issueconfirmed': 1,
       },
       headers = {
         'Cookie': f'CGISESSID={self.sessionid};KohaOpacLanguage=en',
       },
       expect_html=True,
     )
-    (alerts, messages) = self._parse_html(soup)
+    (status, states) = self._checkout_check_statuses(barcode, soup, *self._parse_html(soup))
+    log.info(f"Checkout complete: item_barcode='{barcode}' borrowernumber='{borrowernumber}' with states='{states}'")
+    return (status, states)
 
+  def _checkout_check_statuses(self, barcode, soup, alerts, messages):
     states = {}
     status = None
     alerts = [a for a in alerts if not self.checkout_has_status(a, states)]
@@ -401,7 +405,6 @@ class KohaAPI():
       states['unhandled'] = [*(alerts or []), *(messages or [])]
     if states.get('status', None):
       status = states.pop('status')
-    log.info(f"Checkout complete: item_barcode='{barcode}' borrowernumber='{borrowernumber}' with states='{states}'")
     return (status, states)
 
   def checkout_has_status(self, message, states):

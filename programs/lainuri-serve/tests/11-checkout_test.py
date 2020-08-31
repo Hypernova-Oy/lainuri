@@ -6,6 +6,8 @@ from lainuri.config import get_config
 import time
 import pytest_subtests
 
+import context.mock_koha_api_checkout_responses
+
 import lainuri.websocket_server
 import lainuri.koha_api
 from lainuri.constants import Status
@@ -17,6 +19,25 @@ import lainuri.rfid_reader as rfid
 
 good_item_barcode = '1620154429'
 good_user_barcode = '23529000035676'
+
+def mock_handle_html(html_data_source):
+  api = lainuri.koha_api.koha_api
+  (barcode, soup) = html_data_source()
+  return api._checkout_check_statuses(barcode, soup, *api._parse_html(soup))
+
+def test_statuses_mock_checkout__needs_confirmation_01():
+  (status, states) = mock_handle_html(context.mock_koha_api_checkout_responses.needs_confirmation_01)
+
+  assert status == Status.ERROR
+  assert states['needs_confirmation'] == True
+  assert len(states) == 1
+
+def test_statuses_mock_checkout__issueconfirmed_01():
+  (status, states) = mock_handle_html(context.mock_koha_api_checkout_responses.issueconfirmed_01)
+
+  assert status == Status.SUCCESS
+  assert len(states) == 0
+
 
 def test_checkout_barcode_via_event_queue(subtests):
   global good_item_barcode, good_user_barcode

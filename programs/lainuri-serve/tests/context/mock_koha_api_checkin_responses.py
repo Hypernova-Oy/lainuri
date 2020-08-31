@@ -1,3 +1,7 @@
+"""
+These examples are copied from live scraper.log entries
+"""
+
 from bs4 import BeautifulSoup
 
 def soupify(html_doc):
