@@ -14,7 +14,7 @@ Buy from us at [Hypernova](https://www.hypernova.fi/lainuri-self-checkout-machin
 
 ### Place an order
 
-- Choose your colour and engravings
+- Choose your colour and engravings from [Cotter](https://cotter.co/materials/)
 
 ### Preparations in your Koha instance
 
