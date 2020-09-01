@@ -40,25 +40,11 @@ def checkout(event):
         )
       )
       return
-    # if availability.confirmations?.Checkout::Renew
-    if availability.get('confirmations', {}).get("Checkout::Renew", None) != None: # Sorry for Pythonisms
-      #Skip renewing the Item because it is already checked out to this patron
-      status = Status.SUCCESS if availability['available'] else Status.ERROR
-      states = {}
-    else:
+
+    status = _check_availability_statuses(availability)
+    if status == None:
       # Checkout to Koha
       (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
-      if status != Status.SUCCESS:
-        lainuri.event_queue.push_event(
-          lainuri.event.LECheckOutComplete(
-            item_barcode=event.item_barcode,
-            user_barcode=borrower['cardnumber'],
-            tag_type=event.tag_type,
-            status=status,
-            states=_merge_availability_to_states(availability, states),
-          )
-        )
-        return
 
     lainuri.event_queue.push_event(
       lainuri.event.LECheckOutComplete(
@@ -86,6 +72,19 @@ def checkout(event):
     )
     return
 
+def _check_availability_statuses(availability):
+  status = None
+  confirmations = availability.get('confirmations', None)
+  # if availability.confirmations?.Checkout::Renew
+  if confirmations and confirmations.get("Checkout::Renew", None) != None: # Sorry for Pythonisms
+    # Skip renewing the Item because it is already checked out to this patron
+    status = Status.SUCCESS if availability['available'] else Status.ERROR
+  elif confirmations and confirmations.get("Item::Held", {}).get("status", None) == "Waiting":
+    # A hold is already caught and waiting on shelf, block checkout
+    status = Status.ERROR
+    confirmations["Item::Held::Waiting"] = True
+  return status
+
 def _merge_availability_to_states(availability, states):
   merged = {}
   if availability.get('confirmations', None):
@@ -97,4 +96,5 @@ def _merge_availability_to_states(availability, states):
   if availability.get('unavailabilities', None):
     for v in availability['unavailabilities']:
       merged[v] = True
+  if not states: return merged
   return {**states, **merged}

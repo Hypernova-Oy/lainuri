@@ -61,6 +61,7 @@ const i18n_messages = {
 
       'Checkout::Renew': "Already checked out to you",
       'Item::CheckedOut': "Item is already checked out by somebody else",
+      'Item::Held::Waiting': "Item is already on hold for somebody else",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Lainuri",
@@ -136,6 +137,7 @@ const i18n_messages = {
 
       'Checkout::Renew': "Jo lainassa teillä",
       'Item::CheckedOut': "Tämä nide on jo lainassa jollakulla muulla",
+      'Item::Held::Waiting': "Nide on jo varattu toiselle",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Bäkkärivirhe",
@@ -211,6 +213,7 @@ const i18n_messages = {
 
       'Checkout::Renew': "Har redan checkat ut för dig",
       'Item::CheckedOut': "Varan har redan checkats ut av någon annan",
+      'Item::Held::Waiting': "Objektet är redan i väntan för någon annan",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Servern förlorad",
@@ -286,6 +289,7 @@ const i18n_messages = {
 
       'Checkout::Renew': "Уже проверил для вас",
       'Item::CheckedOut': "Товар уже был проверен кем-то другим",
+      'Item::Held::Waiting': "Товар уже заблокирован для кого-то другого",
     },
     StatusBar: {
       Lainuri_server_connection_lost: "Сервер потерян",
