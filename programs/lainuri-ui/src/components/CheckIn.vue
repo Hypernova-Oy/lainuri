@@ -120,12 +120,14 @@
     <PrintNotification :receipt_printing="receipt_printing"
       v-on:close_notification="print_receipt_complete"
     />
-    <v-overlay :value="overlay_notifications.length" opacity="1">
-      <OverlayNotification
-        :item_bib="overlay_notifications[0]"
-        :mode="'checkin'"
-        v-on:close_notification="close_notification"
-      />
+    <v-overlay v-if="overlay_notifications.length" opacity="1">
+      <transition name="fade" mode="out-in" appear>
+        <OverlayNotification :key="overlay_notifications[0].item_barcode"
+          :item_bib="overlay_notifications[0]"
+          :mode="'checkin'"
+          v-on:close_notification="close_notification"
+        />
+      </transition>
     </v-overlay>
   </v-container>
 </template>
@@ -422,5 +424,12 @@ export default {
 .v-toolbar__title {
   font-weight: 900;
   font-size: 1.5rem;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
 }
 </style>
