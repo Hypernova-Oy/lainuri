@@ -32,6 +32,7 @@ export default function (Vue) {
             always_display_check_in_out_notification: true,
             images: {},
             session_inactivity_timeout_s: 120,
+            popup_inactivity_timeout_s: 5,
             use_bookcovers: true,
             show_item_statuses: false,
           },

@@ -25,8 +25,6 @@ let log = get_logger('Admin/ConfigEditor.vue');
 import {lainuri_ws} from '../../lainuri'
 import {Status} from '../../lainuri_events.js'
 
-import * as Timeout from '../../timeout_poller'
-
 export default {
   name: 'ConfigEditor',
   created: function () {
@@ -36,7 +34,6 @@ export default {
 
   },
   beforeDestroy: function () {
-    Timeout.terminate();
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
   },
   data () {

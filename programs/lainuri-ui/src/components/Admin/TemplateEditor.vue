@@ -176,7 +176,7 @@ export default {
     window.setTimeout(function() {lainuri_ws.dispatch_event(new LEPrintTemplateList('client', 'server'))}, 2000) // Seed the initial templates from server
   },
   beforeDestroy: function () {
-    Timeout.terminate();
+    Timeout.terminate('TestPrintLazy');
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
   },
   data () {
@@ -254,10 +254,10 @@ export default {
       this.$emit('close_template_editor')
     },
     maybe_lazy_test_print: function () {
-      Timeout.terminate()
+      Timeout.terminate('TestPrintLazy')
 
 
-      Timeout.start(() => {
+      Timeout.start('TestPrintLazy', () => {
         this.$data.test_print_timer_running = false
         this.test_print();
       }, 1);

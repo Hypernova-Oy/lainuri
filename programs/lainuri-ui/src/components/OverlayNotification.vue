@@ -1,4 +1,8 @@
 <template>
+<span>
+    <v-progress-linear striped reverse height="10"
+      v-model="timeout_left"
+      :color="(item_bib.status === Status.SUCCESS && 'success') || 'error'"/>
   <v-card
     raised
     :ripple="false"
@@ -22,6 +26,7 @@
       gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
     />
   </v-card>
+</span>
 </template>
 
 <script>
@@ -30,6 +35,7 @@ let log = get_logger('OverlayNotification.vue');
 
 import {Status} from '../lainuri_events.js'
 import ItemCard from '../components/ItemCard.vue'
+import * as Timeout from '../timeout_poller'
 
 export default {
   name: 'OverlayNotification',
@@ -43,8 +49,23 @@ export default {
   data: () => ({
     // Include imports
     Status: Status,
+    timeout_left: 100,
   }),
   created: function () {
+    if (this.$appConfig.ui.popup_inactivity_timeout_s) {
+      Timeout.start('OverlayNotificationTimeout',
+        undefined,
+        undefined,
+        () => {
+          this.$data.timeout_left -= 100 / this.$appConfig.ui.popup_inactivity_timeout_s;
+          if (this.$data.timeout_left < -5) this.close_notification();
+        },
+        1000
+      );
+    }
+  },
+  destroyed: function () {
+    if (this.$appConfig.ui.popup_inactivity_timeout_s) Timeout.terminate('OverlayNotificationTimeout');
   },
   computed: {
     /**
@@ -69,6 +90,7 @@ export default {
   methods: {
     close_notification: function () {
       log.info('close_notification():> item_bib=', this.item_bib.item_barcode);
+      if (this.$appConfig.ui.popup_inactivity_timeout_s) Timeout.terminate('OverlayNotificationTimeout');
       this.$emit('close_notification')
     }
   },
