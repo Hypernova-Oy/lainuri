@@ -161,15 +161,14 @@ class HSK_Printer():
     self._transaction(bytes([0x1B, 0x64, feed_lines]))
 
   def print_image(self, png_file_path: str):
-    self.send_real_time_request(recover_by_clearing=True)
     (escpos_rv, usb_rv, retry) = self._print_image(png_file_path)
     if retry == "TODO":
+      self.initialize_printer()
+      self.send_real_time_request(recover_by_clearing=True)
     #if retry: #TODO: The HS-K33 device return API command response values are undocumented and behaves erratically for raster images. Waiting for vendor support to clarify the codes.
       log.error(f"Retrying print_image due to error retry='{retry}', escpos_rv='{escpos_rv}', usb_rv='{usb_rv}'")
-      self.send_real_time_request(recover_by_clearing=True)
       (escpos_rv, usb_rv, retry) = self._print_image(png_file_path)
       if retry:
-        self.send_real_time_request(recover_by_clearing=True)
         raise lainuri.exception.printer.ReceiptPrintingRetryFailed(f"Retrying print_image failed. retry='{retry}', escpos_rv='{escpos_rv}', usb_rv='{usb_rv}'")
     return (escpos_rv, usb_rv, retry)
 
@@ -178,9 +177,9 @@ class HSK_Printer():
     try:
       with self.transaction_lock:
         escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=2300)
-        usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 256) # Try reading the USB output buffer, to prevent it from maybe overflowing?
+        usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 256, 250) # Try reading the USB output buffer, to prevent it from maybe overflowing?
         log.info(f"_print_image() USB rv = '{usb_rv}'")
-        time.sleep(1) # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread can break printing.
+        time.sleep(0.250) # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread could/might break printing.
         if not usb_rv or usb_rv[0] == 0:
           retry = f"Bad USB return value '{usb_rv}'"
           #time.sleep(1) #Since the read operation timed out, the printer has had enough time to process the image printing.
