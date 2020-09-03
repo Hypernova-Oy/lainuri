@@ -138,7 +138,7 @@ class HSK_Printer():
       return (escpos_rv, usb_rv)
 
   def initialize_printer(self):
-    self._transaction(b'\x1B\x40', read_bytes=256, read_can_timeout=True, sleep=0.250)
+    self._transaction(b'\x1B\x40', read_bytes=16, read_can_timeout=True, sleep=0.250)
 
   def is_paper_torn_away(self):
     return not self.real_time_transmission_status(printer_status=True).paper_not_torn_away
@@ -152,12 +152,12 @@ class HSK_Printer():
     if rtts.paper_ending: return 1
     if rtts.paper_adequate: return 2
 
-  def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False, feed_lines: int = 9):
+  def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False, feed_lines: int = 7):
     self.print_and_feed(feed_lines)
     if three_points_left: return self._transaction(b'\x1B\x6D')
     if one_point_left: return self._transaction(b'\x1B\x69')
 
-  def print_and_feed(self, feed_lines: int = 9):
+  def print_and_feed(self, feed_lines: int = 7):
     self._transaction(bytes([0x1B, 0x64, feed_lines]))
 
   def print_image(self, png_file_path: str):
@@ -197,13 +197,13 @@ class HSK_Printer():
 
     rtts = HSK_RealTimeTransmissionStatus()
     if printer_status:
-      rtts.printer_status(self._transaction(b'\x10\x04\x01', read_bytes=1))
+      rtts.printer_status(self._transaction(b'\x10\x04\x01', read_bytes=16))
     if send_offline_status:
-      rtts.send_offline_status(self._transaction(b'\x10\x04\x02', read_bytes=1))
+      rtts.send_offline_status(self._transaction(b'\x10\x04\x02', read_bytes=16))
     if transmission_error_status:
-      rtts.transmission_error_status(self._transaction(b'\x10\x04\x03', read_bytes=1))
+      rtts.transmission_error_status(self._transaction(b'\x10\x04\x03', read_bytes=16))
     if transmission_paper_sensor_status:
-      rtts.transmission_paper_sensor_status(self._transaction(b'\x10\x04\x04', read_bytes=1))
+      rtts.transmission_paper_sensor_status(self._transaction(b'\x10\x04\x04', read_bytes=16))
     return rtts
 
   def send_real_time_request(self, recover_and_resume=False, recover_by_clearing=False):
@@ -233,17 +233,17 @@ class HSK_Printer():
     bs.append(heating_time)
     bs.append(heating_interval)
 
-    return self._transaction(bs, read_bytes=256, sleep=0.250) # Wait a bit for the printer to set the new settings internally
+    return self._transaction(bs, read_bytes=16, sleep=0.250) # Wait a bit for the printer to set the new settings internally
 
   def test_page(self):
-    return self._transaction(b'\x1B\x40\x12\x54', read_bytes=1, sleep=1.0)
+    return self._transaction(b'\x1B\x40\x12\x54', read_bytes=16, sleep=1.0)
 
   def transmit_status(self):
     """
     See HS-K33 User Manual.
     Use real_time_transmission_status() instead, as this timeouts on paper out
     """
-    return HSK_TransmitStatus(self._transaction(b'\x1D\x72\x01', read_bytes=1))
+    return HSK_TransmitStatus(self._transaction(b'\x1D\x72\x01', read_bytes=16))
 
   def get_all_statuses(self):
     """
