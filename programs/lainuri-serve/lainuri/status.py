@@ -72,5 +72,5 @@ statuses = {
   'touch_screen_status': Status.SUCCESS,
   'ils_connection_status': Status.SUCCESS,
   'ils_credentials_status': Status.SUCCESS,
-  'software_version': None,
+  'software_version': get_software_version(),
 }
