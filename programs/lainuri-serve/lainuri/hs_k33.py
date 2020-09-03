@@ -33,6 +33,7 @@ class HSK_Printer():
     self.transaction_lock = threading.Lock()
     self._get_printer_usb_connection()
     self.initialize_printer()
+    self.send_real_time_request(recover_by_clearing=True)
     self.set_automatic_status_back()
     self.reconfigure()
 
@@ -151,9 +152,13 @@ class HSK_Printer():
     if rtts.paper_ending: return 1
     if rtts.paper_adequate: return 2
 
-  def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False):
+  def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False, feed_lines: int = 9):
+    self.print_and_feed(feed_lines)
     if three_points_left: return self._transaction(b'\x1B\x6D')
     if one_point_left: return self._transaction(b'\x1B\x69')
+
+  def print_and_feed(self, feed_lines: int = 9):
+    self._transaction(bytes([0x1B, 0x64, feed_lines]))
 
   def print_image(self, png_file_path: str):
     self.send_real_time_request(recover_by_clearing=True)
@@ -174,11 +179,13 @@ class HSK_Printer():
       with self.transaction_lock:
         escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=2300)
         usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 256) # Try reading the USB output buffer, to prevent it from maybe overflowing?
-        log.info(f"USB rv = '{usb_rv}'")
+        log.info(f"_print_image() USB rv = '{usb_rv}'")
+        time.sleep(1) # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread can break printing.
         if not usb_rv or usb_rv[0] == 0:
           retry = f"Bad USB return value '{usb_rv}'"
+          #time.sleep(1) #Since the read operation timed out, the printer has had enough time to process the image printing.
     except usb.core.USBError as e:
-      log.info(f"USB rv = '{e}'")
+      log.info(f"_print_image() USB rv = '{e}'")
       retry = e
     return (escpos_rv, usb_rv, retry)
 
