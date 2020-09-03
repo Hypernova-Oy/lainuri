@@ -147,9 +147,12 @@ def _generate_receipt_png(doc: weasyprint.Document, pj: PrintJob):
 def _print_via_escpos_raster(png_file_path: str):
   if get_config('devices.thermal-printer.enabled'):
     printer = lainuri.hs_k33.get_printer()
-    printer.escpos_method('image', png_file_path, impl=u'bitImageRaster')
-    printer.escpos_method('cut')
-    update_paper_status()
+    try:
+      printer.print_image(png_file_path)
+    finally:
+      time.sleep(0.25)
+      printer.paper_cut()
+      update_paper_status()
   else:
     log.info(f"Thermal printer is disabled from configuration.")
 

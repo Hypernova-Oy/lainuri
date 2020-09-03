@@ -236,6 +236,9 @@ def test_print_koha_api(subtests):
     printer_thr.start()
     assert printer_thr.is_alive()
 
+  with subtests.test("SetUp: Authenticated to the Koha API"):
+    assert lainuri.koha_api.koha_api.authenticate()
+
   with subtests.test("Scenario: Print check-out -receipt via Koha API"):
     with subtests.test("Given a check-out print request"):
       event = lainuri.event_queue.push_event(lainuri.event.LEPrintRequest('check-out', items=[], user_barcode='l-t-u-good'))

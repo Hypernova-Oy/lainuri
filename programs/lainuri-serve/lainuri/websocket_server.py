@@ -176,7 +176,7 @@ def start(ws_daemon: bool = False) -> bool:
 
   lainuri.rtttl_player.get_player().start()
 
-  lainuri.printer.status.get_daemon().start()
+  #lainuri.printer.status.get_daemon().start() #Disable this for now to eliminate race conditions when printing receipts
 
   port = int(get_config('server.port'))
   hostname = get_config('server.hostname')
@@ -195,14 +195,14 @@ def stop() -> bool:
   lainuri.barcode_reader.get_BarcodeReader().stop_polling_barcodes()
   lainuri.event_queue.get_daemon().kill()
   lainuri.rtttl_player.get_player().kill()
-  lainuri.printer.status.get_daemon().kill()
+  #lainuri.printer.status.get_daemon().kill()
   subthreads['server'].kill()
 
   lainuri.rfid_reader.get_rfid_reader().daemon.join(10)
   lainuri.barcode_reader.get_BarcodeReader().daemon.join(10)
   lainuri.event_queue.get_daemon().join(10)
   lainuri.rtttl_player.get_player().join(10)
-  lainuri.printer.status.get_daemon().join(10)
+  #lainuri.printer.status.get_daemon().join(10)
   subthreads['server'].join(10)
   return True
 

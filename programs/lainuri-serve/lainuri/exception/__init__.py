@@ -7,6 +7,9 @@ class NoResults(Exception):
 class ILS(Exception):
   pass
 
+class Printer(Exception):
+  pass
+
 class RFID(Exception):
   pass
 

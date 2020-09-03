@@ -3,6 +3,7 @@ from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 import lainuri.helpers
+import lainuri.exception.printer
 
 import atexit
 import escpos
@@ -32,6 +33,7 @@ class HSK_Printer():
     self.transaction_lock = threading.Lock()
     self._get_printer_usb_connection()
     self.initialize_printer()
+    self.set_automatic_status_back()
     self.reconfigure()
 
   def reconfigure(self):
@@ -116,17 +118,26 @@ class HSK_Printer():
   def close(self):
     return self.escpos_printer.close()
 
-  def escpos_method(self, method_name, *args, **kwargs):
+  def escpos_method(self, method_name: str, need_response: list, *args, **kwargs):
     """
-    Thread-safe version of python-escpos methods
+    Thread-safe version of python-escpos methods.
+    'need_response' is a list of the bytes to read and the timeout in milliseconds. If defined reads a response directly from the usb handle.
+    Returns list of
+      - return value from the escpos method
+      - if 'need_response' is set, bytes read from the usb handle
     """
     method = getattr(self.escpos_printer, method_name, None)
     if not method: raise ValueError(f"python-escpos method '{method_name}' doesn't exist!")
 
-    with self.transaction_lock: return method(*args, **kwargs)
+    with self.transaction_lock:
+      escpos_rv = method(*args, **kwargs)
+      usb_rv = None
+      if need_response:
+        usb_rv = self.escpos_printer.device.read(self.usb_ep_in, need_response[0], need_response[1] or None)
+      return (escpos_rv, usb_rv)
 
   def initialize_printer(self):
-    return self._transaction(b'\x1B\x40', read_bytes=1, read_can_timeout=True)
+    self._transaction(b'\x1B\x40', read_bytes=256, read_can_timeout=True, sleep=0.250)
 
   def is_paper_torn_away(self):
     return not self.real_time_transmission_status(printer_status=True).paper_not_torn_away
@@ -143,6 +154,33 @@ class HSK_Printer():
   def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False):
     if three_points_left: return self._transaction(b'\x1B\x6D')
     if one_point_left: return self._transaction(b'\x1B\x69')
+
+  def print_image(self, png_file_path: str):
+    self.send_real_time_request(recover_by_clearing=True)
+    (escpos_rv, usb_rv, retry) = self._print_image(png_file_path)
+    if retry == "TODO":
+    #if retry: #TODO: The HS-K33 device return API command response values are undocumented and behaves erratically for raster images. Waiting for vendor support to clarify the codes.
+      log.error(f"Retrying print_image due to error retry='{retry}', escpos_rv='{escpos_rv}', usb_rv='{usb_rv}'")
+      self.send_real_time_request(recover_by_clearing=True)
+      (escpos_rv, usb_rv, retry) = self._print_image(png_file_path)
+      if retry:
+        self.send_real_time_request(recover_by_clearing=True)
+        raise lainuri.exception.printer.ReceiptPrintingRetryFailed(f"Retrying print_image failed. retry='{retry}', escpos_rv='{escpos_rv}', usb_rv='{usb_rv}'")
+    return (escpos_rv, usb_rv, retry)
+
+  def _print_image(self, png_file_path):
+    (escpos_rv, usb_rv, retry) = (None, None, None)
+    try:
+      with self.transaction_lock:
+        escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=2300)
+        usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 256) # Try reading the USB output buffer, to prevent it from maybe overflowing?
+        log.info(f"USB rv = '{usb_rv}'")
+        if not usb_rv or usb_rv[0] == 0:
+          retry = f"Bad USB return value '{usb_rv}'"
+    except usb.core.USBError as e:
+      log.info(f"USB rv = '{e}'")
+      retry = e
+    return (escpos_rv, usb_rv, retry)
 
   def real_time_transmission_status(self, printer_status=None, send_offline_status=None, transmission_error_status=None, transmission_paper_sensor_status=None):
     """
@@ -162,6 +200,20 @@ class HSK_Printer():
       rtts.transmission_paper_sensor_status(self._transaction(b'\x10\x04\x04', read_bytes=1))
     return rtts
 
+  def send_real_time_request(self, recover_and_resume=False, recover_by_clearing=False):
+    """
+    See HS-K33 User Manual.
+    """
+    if recover_and_resume: return self._transaction(b'\x10\x05\x01', read_bytes=0)
+    elif recover_by_clearing: return self._transaction(b'\x10\x05\x02', read_bytes=0)
+    else: raise ValueError("No recovery strategy defined.")
+
+  def set_automatic_status_back(self, error_status=True, paper_sensor_status=True):
+    n = 0
+    if error_status: n = n + 4
+    if paper_sensor_status: n = n + 8
+    self._transaction(bytes([0x1D,0x61,n]))
+
   def set_print_concentration(self, max_printing_dots=9, heating_time=80, heating_interval=2):
     """
     See HS-K33 User Manual.
@@ -175,7 +227,7 @@ class HSK_Printer():
     bs.append(heating_time)
     bs.append(heating_interval)
 
-    return self._transaction(bs, read_bytes=0, sleep=0.250) # Wait a bit for the printer to set the new settings internally
+    return self._transaction(bs, read_bytes=256, sleep=0.250) # Wait a bit for the printer to set the new settings internally
 
   def test_page(self):
     return self._transaction(b'\x1B\x40\x12\x54', read_bytes=1, sleep=1.0)
@@ -186,6 +238,16 @@ class HSK_Printer():
     Use real_time_transmission_status() instead, as this timeouts on paper out
     """
     return HSK_TransmitStatus(self._transaction(b'\x1D\x72\x01', read_bytes=1))
+
+  def get_all_statuses(self):
+    """
+    Performs all status requests the HS-K33 supports.
+    Returns a dict of all statuses.
+    """
+    transmit_status = self.transmit_status()
+    rtts = self.real_time_transmission_status(printer_status=True, send_offline_status=True, transmission_error_status=True, transmission_paper_sensor_status=True)
+    return {**transmit_status.__dict__, **rtts.__dict__}
+
 
 class HSK_TransmitStatus():
   def __init__(self, bs: bytes):

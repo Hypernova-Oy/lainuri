@@ -88,10 +88,10 @@ def print_receipt(event):
     #lainuri.printer.status.start_polling_for_receipt_torn(event)
 
   except Exception as e:
-    log.exception(f"Exception with PrintJob={pj.__dict__}")
+    log.exception(f"Exception with PrintJob={(pj and pj.__dict__) or pj}")
     lainuri.event_queue.push_event(
       le.LEPrintResponse(
-        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=pj._printable_html or None,
+        receipt_type=event.receipt_type, items=event.items, user_barcode=event.user_barcode, printable_sheet=(pj and pj._printable_html) or None,
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,
