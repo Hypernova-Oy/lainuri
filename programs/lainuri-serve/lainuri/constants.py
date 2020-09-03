@@ -5,3 +5,8 @@ class Status():
   ERROR = 'ERROR'
   PENDING = 'PENDING'
   NOT_SET = 'NOT_SET'
+
+class SortBin():
+  ERROR = 'Place_to_bin_ODD'
+  OK = 'Place_to_bin_OK'
+  NOT_SET = 'NOT_SET'

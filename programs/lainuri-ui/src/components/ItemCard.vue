@@ -36,8 +36,9 @@
         gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
       ></v-img>
       <div class="itemcard-content">
+        <v-card-text class="ic-sort-to" v-if="item_bib.sort_to">{{t('CheckIn/'+item_bib.sort_to)}}</v-card-text>
         <v-card-text class="v-title-fix" v-text="item_bib.title || '...'"></v-card-text>
-        <v-card-subtitle class="ic-miscinfo">
+        <v-card-subtitle class="ic-miscinfo" v-if="item_bib.author || item_bib.edition">
           <div>{{item_bib.author}}</div>
           <div>{{item_bib.edition}}</div>
         </v-card-subtitle>
@@ -132,7 +133,7 @@ export default {
   padding-top: 10px;
   padding-bottom: 10px;
 }
-.itemcard-layout-bookcover .v-title-fix {
+.itemcard-layout-bookcover .v-title-fix, .itemcard-layout-bookcover .ic-sort-to {
   font-size: 1.24rem;
   overflow: hidden;
   padding-bottom: 0px;

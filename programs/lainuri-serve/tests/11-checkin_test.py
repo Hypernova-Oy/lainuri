@@ -9,8 +9,9 @@ import context.mock_koha_api_checkin_responses
 
 import lainuri.websocket_server
 import lainuri.koha_api
-from lainuri.constants import Status
+from lainuri.constants import SortBin, Status
 import lainuri.event as le
+import lainuri.sorting
 
 
 good_item_barcode = '1620154429'
@@ -28,6 +29,7 @@ def test_statuses_mock_checkin__transfer_with_outstanding_fines_01():
   assert states['outstanding_fines'] == '4.00'
   assert states['return_to_another_branch'] == 'Kouvolan kampuskirjasto'
   assert len(states) == 2
+  assert lainuri.sorting.sort(status, states) == SortBin.ERROR
 
 def test_statuses_mock_checkin__hold_transfer_with_outstanding_fines_01():
   (status, states) = mock_handle_html(context.mock_koha_api_checkin_responses.hold_transfer_with_outstanding_fines_01)
@@ -37,6 +39,7 @@ def test_statuses_mock_checkin__hold_transfer_with_outstanding_fines_01():
   assert states['hold_found'] == '224247'
   assert states['return_to_another_branch'] == 'Savonlinnan kampuskirjasto'
   assert len(states) == 3
+  assert lainuri.sorting.sort(status, states) == SortBin.ERROR
 
 def test_statuses_mock_checkin__hold_with_outstanding_fines_01():
   (status, states) = mock_handle_html(context.mock_koha_api_checkin_responses.hold_with_outstanding_fines_01)
@@ -45,12 +48,14 @@ def test_statuses_mock_checkin__hold_with_outstanding_fines_01():
   assert states['outstanding_fines'] == '4.00'
   assert states['hold_found'] == '142261'
   assert len(states) == 2
+  assert lainuri.sorting.sort(status, states) == SortBin.ERROR
 
 def test_statuses_mock_checkin__simple_checkin_01():
   (status, states) = mock_handle_html(context.mock_koha_api_checkin_responses.simple_checkin_01)
 
   assert status == Status.SUCCESS
   assert len(states) == 0
+  assert lainuri.sorting.sort(status, states) == SortBin.OK
 
 
 
@@ -75,6 +80,9 @@ def test_checkin_barcode_via_event_queue(subtests):
     assert event.item_barcode == good_item_barcode
     assert event.states['return_to_another_branch'] == 'Centerville'
     assert event.status == Status.SUCCESS
+
+  with subtests.test("And the Item is sorted properly"):
+    assert event.sort_to == SortBin.ERROR
 
 
 def test_checkin_exception_item_not_found(subtests):
@@ -102,3 +110,6 @@ def test_checkin_exception_item_not_found(subtests):
     assert event.status == Status.ERROR
     assert len(event.states) == 1
     assert event.states['exception']['type'] == 'NoItem'
+
+  with subtests.test("And the Item is sorted properly"):
+    assert event.sort_to == SortBin.ERROR

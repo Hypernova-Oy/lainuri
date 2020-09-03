@@ -9,7 +9,7 @@ import json
 import time
 import traceback
 
-from lainuri.constants import Status
+from lainuri.constants import SortBin, Status
 import lainuri.koha_api as koha_api
 
 event_id: int = 0
@@ -128,14 +128,16 @@ class LECheckInComplete(LEvent):
   event = 'check-in-complete'
   default_recipient = 'client'
 
-  serializable_attributes = ['item_barcode', 'status', 'states', 'tag_type']
+  serializable_attributes = ['item_barcode', 'sort_to', 'tag_type', 'status', 'states']
   item_barcode = ''
+  sort_to = SortBin.NOT_SET
   tag_type = 'rfid'
   states = {}
   status = Status.NOT_SET
 
-  def __init__(self, item_barcode: str, tag_type: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, item_barcode: str, sort_to: SortBin, tag_type: str, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.item_barcode = item_barcode
+    self.sort_to = sort_to
     self.tag_type = tag_type if tag_type else self.tag_type
     self.states = states
     self.status = status

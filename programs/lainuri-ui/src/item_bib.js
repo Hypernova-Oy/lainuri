@@ -10,6 +10,7 @@ import {Status} from './lainuri_events';
 export class ItemBib {
   item_barcode = '';
   tag_type = 'rfid' || 'barcode';
+  sort_to = ''
 
   author = '';
   title = '';
@@ -34,6 +35,7 @@ export class ItemBib {
       let tag = item_barcode_or_tag
       this.item_barcode = tag.item_barcode
       this.serial_number = tag.serial_number
+      this.sort_to = tag.sort_to || ''
       this.author = tag.author
       this.title = tag.title
       this.edition = tag.edition

@@ -145,15 +145,17 @@ class LECheckIn extends LEvent {
 class LECheckInComplete extends LEvent {
   static event = 'check-in-complete';
 
-  static serializable_attributes = ['item_barcode', 'tag_type', 'status', 'states'];
+  static serializable_attributes = ['item_barcode', 'sort_to', 'tag_type', 'status', 'states'];
   item_barcode;
+  sort_to;
   tag_type;
   states;
   status = Status.NOT_SET;
 
-  constructor(item_barcode, tag_type = 'rfid', status, states, sender, recipient, event_id = undefined) {
+  constructor(item_barcode, sort_to, tag_type = 'rfid', status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.item_barcode = item_barcode
+    this.sort_to = sort_to
     this.tag_type = tag_type;
     this.states = states
     this.status = status

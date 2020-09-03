@@ -10,7 +10,7 @@ from lainuri.koha_api import koha_api
 from lainuri.constants import Status
 import lainuri.event
 import lainuri.event_queue
-import lainuri.rfid_reader as rfid
+import lainuri.sorting
 
 def checkin(event):
   try:
@@ -19,6 +19,7 @@ def checkin(event):
       lainuri.event.LECheckInComplete(
         item_barcode=event.item_barcode,
         tag_type=event.tag_type,
+        sort_to=lainuri.sorting.sort(status, states),
         status=status,
         states=states,
       )
@@ -29,6 +30,7 @@ def checkin(event):
       lainuri.event.LECheckInComplete(
         item_barcode=event.item_barcode,
         tag_type=event.tag_type,
+        sort_to=lainuri.sorting.SortBin.ERROR,
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,

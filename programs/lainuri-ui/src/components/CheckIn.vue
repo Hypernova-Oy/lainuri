@@ -316,6 +316,7 @@ export default {
         log.fatal(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`)
         throw new Error(`check_in_complete():> Couldn't find a transaction regarding tag item_barcode='${event.item_barcode}'`);
       }
+      this.$set(item_bib, 'sort_to', event.sort_to)
 
       if (event.status === Status.SUCCESS) {
         this.check_in_succeeded(item_bib, event.states);
