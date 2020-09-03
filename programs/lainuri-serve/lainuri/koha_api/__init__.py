@@ -67,7 +67,7 @@ class KohaAPI():
       except Exception as e:
         if "TRANSPARENT_REAUTHENTICATION" in str(e):
           headers['Cookie'] = f'CGISESSID={self.sessionid}'
-          pass # Continue to the next retry loop
+          continue # Continue to the next retry loop
 
         log.exception(f"Exception requesting Koha API '{url}'")
 

@@ -58,6 +58,9 @@ def test_get_item():
   assert item['biblionumber']
 
 def test_enrich_rfid_tag_with_marc():
+  koha_api.deauthenticate()
+  assert koha_api.authenticated() == 0
+
   global borrower, item, record
   koha_api.current_event_id = 'marc-8'
   context.assert_raises('Testing bad biblionumber', NoResults, '9999999999', lambda: MARCRecord(koha_api.get_record(9999999999)))
