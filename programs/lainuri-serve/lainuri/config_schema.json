@@ -5,7 +5,8 @@
   "type": "object",
   "publicProperties": [
     "ui",
-    "i18n"
+    "i18n",
+    "devices"
   ],
   "properties": {
     "admin": {

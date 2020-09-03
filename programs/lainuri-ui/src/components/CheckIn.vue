@@ -14,7 +14,7 @@
             >
               {{t('CheckIn/Finish')}}
             </v-btn>
-            <v-btn v-if="Object.keys(items_checked_in_successfully).length"
+            <v-btn v-if="$appConfig.devices['thermal-printer'].enabled && Object.keys(items_checked_in_successfully).length"
               v-on:click="stop_checkin_in_and_get_receipt"
               x-large color="secondary"
             >

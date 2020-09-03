@@ -40,6 +40,11 @@ export default function (Vue) {
             enabled_locales: ['en'],
             messages: {},
           },
+          devices: {
+            "thermal-printer": {
+              enabled: false,
+            },
+          },
         },
       }
     },

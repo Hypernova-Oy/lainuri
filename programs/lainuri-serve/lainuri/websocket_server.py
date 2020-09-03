@@ -176,7 +176,9 @@ def start(ws_daemon: bool = False) -> bool:
 
   lainuri.rtttl_player.get_player().start()
 
-  #lainuri.printer.status.get_daemon().start() #Disable this for now to eliminate race conditions when printing receipts
+  if get_config('devices.thermal-printer.enabled'):
+    #lainuri.printer.status.get_daemon().start() #Disable this for now to eliminate race conditions when printing receipts
+    pass
 
   port = int(get_config('server.port'))
   hostname = get_config('server.hostname')
@@ -195,14 +197,18 @@ def stop() -> bool:
   lainuri.barcode_reader.get_BarcodeReader().stop_polling_barcodes()
   lainuri.event_queue.get_daemon().kill()
   lainuri.rtttl_player.get_player().kill()
-  #lainuri.printer.status.get_daemon().kill()
+  if get_config('devices.thermal-printer.enabled'):
+    #lainuri.printer.status.get_daemon().kill()
+    pass
   subthreads['server'].kill()
 
   lainuri.rfid_reader.get_rfid_reader().daemon.join(10)
   lainuri.barcode_reader.get_BarcodeReader().daemon.join(10)
   lainuri.event_queue.get_daemon().join(10)
   lainuri.rtttl_player.get_player().join(10)
-  #lainuri.printer.status.get_daemon().join(10)
+  if get_config('devices.thermal-printer.enabled'):
+    #lainuri.printer.status.get_daemon().join(10)
+    pass
   subthreads['server'].join(10)
   return True
 
