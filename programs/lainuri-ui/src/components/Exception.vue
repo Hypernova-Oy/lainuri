@@ -53,5 +53,7 @@ export default {
 </script>
 
 <style scoped>
-
+* {
+  font-size: 1.2em;
+}
 </style>
