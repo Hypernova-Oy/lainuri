@@ -229,6 +229,8 @@ export default {
       return queue
     },
     column_width: function () {
+      if (! this.$appConfig.ui.use_bookcovers) return 12;
+
       let visible_columns = 0;
       if (Object.keys(this.items_checked_in_failed).length) {
         visible_columns++;
