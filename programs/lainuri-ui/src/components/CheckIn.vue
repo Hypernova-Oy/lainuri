@@ -414,19 +414,17 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-/*.subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
-  font-size: 1.3em;
-}*/
 .subspace-navigation .v-card__title, .subspace-navigation button.v-btn {
-  font-size: 1.5em;
+  font-size: 1.6em;
   font-weight: 900;
+  height: 100%;
 }
 .subspace-navigation .v-card__actions {
   height: 100%;
 }
 .v-toolbar__title {
   font-weight: 900;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
 }
 
 .fade-enter-active, .fade-leave-active {
