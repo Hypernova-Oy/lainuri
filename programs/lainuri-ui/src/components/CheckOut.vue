@@ -158,7 +158,7 @@ import PrintNotification from '../components/PrintNotification.vue'
 import {find_tag_by_key} from '../helpers'
 import {ItemBib} from '../item_bib'
 import {lainuri_ws, send_user_logging_in} from '../lainuri'
-import {Status, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
+import {Status, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort, LERFIDTagsNew, LECheckOut, LECheckOutComplete, LEBarcodeRead, LEItemBibFullDataResponse, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
 import * as Timeout from '../timeout_poller'
 
 
@@ -207,6 +207,18 @@ export default {
       }
       else {
         log.error(`Received event 'LEBarcodeRead' for barcode='${event.barcode}', but no user logged in?`);
+      }
+    });
+    lainuri_ws.attach_event_listener(LEItemBibFullDataResponse, this, function(event) {
+      log.info(`Event 'LEItemBibFullDataResponse'`);
+      for (let item_bib_data of event.item_bibs) {
+        let item_bib = this.$data.transactions[item_bib_data.item_barcode]
+        if (! item_bib) continue; // It is ok to not have a matching ItemBib since it could be removed while the supplementary data is being received.
+        if (item_bib_data.status === Status.SUCCESS) { // ItemBib FullData fetching is a non-critical part of the transaction, so it's successful status doesn't define the transaction's status
+          delete(item_bib_data.status);
+          delete(item_bib_data.states);
+        }
+        Object.assign(item_bib, item_bib_data)
       }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {

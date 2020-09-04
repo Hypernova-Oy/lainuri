@@ -143,7 +143,7 @@ import PrintNotification from '../components/PrintNotification.vue'
 import {find_tag_by_key} from '../helpers'
 import {ItemBib} from '../item_bib'
 import {lainuri_ws} from '../lainuri'
-import {Status, LERFIDTagsNew, LECheckIn, LECheckInComplete, LEBarcodeRead, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
+import {Status, LERFIDTagsNew, LECheckIn, LECheckInComplete, LEBarcodeRead, LEItemBibFullDataResponse, LEPrintRequest, LEPrintResponse, LESetTagAlarm, LESetTagAlarmComplete} from '../lainuri_events'
 import * as Timeout from '../timeout_poller'
 
 
@@ -170,6 +170,18 @@ export default {
     lainuri_ws.attach_event_listener(LEBarcodeRead, this, function(event) {
       log.info(`Event 'LEBarcodeRead' for barcode='${event.barcode}'`); Timeout.prod('SessionTimeout');
       this.start_or_continue_transaction(new ItemBib(event.tag))
+    });
+    lainuri_ws.attach_event_listener(LEItemBibFullDataResponse, this, function(event) {
+      log.info(`Event 'LEItemBibFullDataResponse'`);
+      for (let item_bib_data of event.item_bibs) {
+        let item_bib = this.$data.transactions[item_bib_data.item_barcode]
+        if (! item_bib) continue; // It is ok to not have a matching ItemBib since it could be removed while the supplementary data is being received.
+        if (item_bib_data.status === Status.SUCCESS) { // ItemBib FullData fetching is a non-critical part of the transaction, so it's successful status doesn't define the transaction's status
+          delete(item_bib_data.status);
+          delete(item_bib_data.states);
+        }
+        Object.assign(item_bib, item_bib_data)
+      }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       log.info(`Event 'LERFIDTagsNew' triggered. New RFID tags:`, event.tags_new); Timeout.prod('SessionTimeout');

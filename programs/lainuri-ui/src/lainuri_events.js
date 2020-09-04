@@ -303,6 +303,36 @@ class LEConfigWrite extends LEvent {
     this.validate_params()
   }
 }
+class LEItemBibFullDataRequest extends LEvent {
+  static event = 'itembib-fulldata-request'
+  default_dispatch = 'server'
+
+  static serializable_attributes = ['barcodes']
+
+  barcodes;
+
+  constructor(barcodes, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.barcodes = barcodes
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
+class LEItemBibFullDataResponse extends LEvent {
+  static event = 'itembib-fulldata-response'
+  default_dispatch = 'client'
+
+  static serializable_attributes = ['item_bibs']
+
+  item_bibs;
+
+  constructor(item_bibs, sender, recipient, event_id = undefined) {
+    super(event_id);
+    this.item_bibs = item_bibs
+    this.construct(sender, recipient);
+    this.validate_params()
+  }
+}
 class LELogSend extends LEvent {
   static event = 'log-send'
   default_dispatch = 'server'
@@ -659,5 +689,5 @@ class LETestMockDevices extends LEvent {
 }
 
 export {
-  Status, LEvent, LEException, LEAdminModeLeave, LEAdminModeEnter, LEBarcodeRead, LECheckIn, LECheckInComplete, LELogSend, LELogReceived, LELocaleSet, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
+  Status, LEvent, LEException, LEAdminModeLeave, LEAdminModeEnter, LEBarcodeRead, LECheckIn, LECheckInComplete, LEItemBibFullDataRequest, LEItemBibFullDataResponse, LELogSend, LELogReceived, LELocaleSet, LESetTagAlarm, LESetTagAlarmComplete, LECheckOut, LECheckOutComplete, LEConfigWrite, LEConfigGetpublic, LEConfigGetpublic_Response, LEPrintRequest, LEPrintResponse, LEPrintTemplateList, LEPrintTemplateListResponse, LEPrintTemplateSave, LEPrintTemplateSaveResponse, LEPrintTestRequest, LEPrintTestResponse, LERFIDTagsLost, LERFIDTagsNew, LERFIDTagsPresentRequest, LERFIDTagsPresent, LERingtonePlay, LERingtonePlayComplete, LEServerConnected, LEServerDisconnected, LEServerStatusRequest, LEServerStatusResponse, LETestMockDevices, LEUserLoginComplete, LEUserLoggingIn, LEUserLoginAbort
 }

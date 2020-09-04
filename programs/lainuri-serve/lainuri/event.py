@@ -253,7 +253,7 @@ class LEBarcodeRead(LEvent):
 
   def __init__(self, barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode = barcode
-    self.tag = {'tag_type': 'barcode', **koha_api.get_fleshed_item_record(barcode)}
+    self.tag = {'tag_type': 'barcode', 'item_barcode': barcode}
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
@@ -306,6 +306,33 @@ class LEConfigWriteResponse(LEvent):
     self.variable = variable
     self.new_value = new_value
     self.old_value = old_value
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEItemBibFullDataRequest(LEvent):
+  event = 'itembib-fulldata-request'
+  default_handler = 'lainuri.websocket_handlers.status.itembib_fulldata'
+  default_recipient = 'server'
+
+  serializable_attributes = ['barcodes']
+
+  barcodes = []
+
+  def __init__(self, barcodes, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.barcodes = barcodes
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LEItemBibFullDataResponse(LEvent):
+  event = 'itembib-fulldata-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['item_bibs']
+
+  item_bibs = []
+
+  def __init__(self, item_bibs, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.item_bibs = item_bibs
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
@@ -475,8 +502,8 @@ class LERFIDTagsLost(LEvent):
   tags_present = []
 
   def __init__(self, tags_lost: list, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.tags_present = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_present]
-    self.tags_lost = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_lost]
+    self.tags_present = [{**tag.to_ui(), 'item_barcode': tag.iso25680_get_primary_item_identifier()} for tag in tags_present]
+    self.tags_lost =    [{**tag.to_ui(), 'item_barcode': tag.iso25680_get_primary_item_identifier()} for tag in tags_lost   ]
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
 
 class LERFIDTagsNew(LEvent):
@@ -487,8 +514,8 @@ class LERFIDTagsNew(LEvent):
   tags_present = []
 
   def __init__(self, tags_new: list, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    self.tags_present = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_present]
-    self.tags_new = [{**tag.to_ui(), **koha_api.get_fleshed_item_record(tag.iso25680_get_primary_item_identifier())} for tag in tags_new]
+    self.tags_present = [{**tag.to_ui(), 'item_barcode': tag.iso25680_get_primary_item_identifier()} for tag in tags_present]
+    self.tags_new =     [{**tag.to_ui(), 'item_barcode': tag.iso25680_get_primary_item_identifier()} for tag in tags_new    ]
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 

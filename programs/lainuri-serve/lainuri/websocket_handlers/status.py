@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 from lainuri.constants import Status
 import lainuri.event
 import lainuri.event_queue
+import lainuri.koha_api as koha_api
 import lainuri.status
 import lainuri.rfid_reader
 
@@ -27,6 +28,11 @@ def get_rfid_tags_present(event = None):
         },
       )
     )
+
+def itembib_fulldata(event):
+  lainuri.event_queue.push_event(lainuri.event.LEItemBibFullDataResponse(
+    item_bibs=[koha_api.get_fleshed_item_record(barcode) for barcode in event.barcodes]
+  ))
 
 def status_request(event = None):
   try:

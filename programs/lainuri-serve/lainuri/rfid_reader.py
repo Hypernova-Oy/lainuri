@@ -166,6 +166,10 @@ class RFID_Reader():
       if self.tags_lost:
         lainuri.event_queue.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
 
+      # RFIDTagsNew/Lost-events are fast, and show to the GUI that Items are detected. Schedule ItemBib full data load event after showing to the user the RFID tag detection changes.
+      if self.tags_new:
+        lainuri.event_queue.push_event(le.LEItemBibFullDataRequest([tag.iso25680_get_primary_item_identifier() for tag in self.tags_new]))
+
     return self
 
   def flesh_tag_details(self, tag: Tag):
