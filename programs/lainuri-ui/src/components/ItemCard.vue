@@ -36,7 +36,6 @@
         gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"
       ></v-img>
       <div class="itemcard-content">
-        <v-card-text class="ic-sort-to" v-if="item_bib.sort_to">{{t('CheckIn/'+item_bib.sort_to)}}</v-card-text>
         <v-card-text class="v-title-fix" v-text="item_bib.title || '...'"></v-card-text>
         <v-card-subtitle class="ic-miscinfo" v-if="item_bib.author || item_bib.edition">
           <div>{{item_bib.author}}</div>
@@ -44,6 +43,7 @@
         </v-card-subtitle>
         <v-card-subtitle class="ic-barcode" v-if="item_bib.item_barcode">{{item_bib.item_barcode}}</v-card-subtitle>
       </div>
+      <v-card-text class="ic-sort-to" v-if="item_bib.sort_to">{{t('CheckIn/'+item_bib.sort_to)}}</v-card-text>
       <v-progress-circular
         v-if="$appConfig.ui.use_bookcovers === true && item_bib.status === Status.PENDING"
         class="progress"
@@ -166,6 +166,10 @@ export default {
 }
 .itemcard-layout-rows .ic-barcode {
   margin-left: auto;
+}
+.itemcard-layout-rows .ic-sort-to {
+  float: none;
+  padding-top: 0px;
 }
 .itemcard-layout-rows .iconosphere {
   padding: 15px 16px 14px 0px;
