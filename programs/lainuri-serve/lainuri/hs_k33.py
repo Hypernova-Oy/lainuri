@@ -153,9 +153,11 @@ class HSK_Printer():
     if rtts.paper_adequate: return 2
 
   def paper_cut(self, one_point_left: bool = True, three_points_left: bool = False, feed_lines: int = 7):
-    self.print_and_feed(feed_lines)
-    if three_points_left: return self._transaction(b'\x1B\x6D')
-    if one_point_left: return self._transaction(b'\x1B\x69')
+    self._write(b"\n\n\n\n\n\n")
+    #self.escpos_printer.cut()
+    #self.print_and_feed(feed_lines)
+    if three_points_left: return self._write(b'\x1B\x6D')
+    if one_point_left: return self._write(b'\x1B\x69')
 
   def print_and_feed(self, feed_lines: int = 7):
     self._transaction(bytes([0x1B, 0x64, feed_lines]))
@@ -175,14 +177,13 @@ class HSK_Printer():
   def _print_image(self, png_file_path):
     (escpos_rv, usb_rv, retry) = (None, None, None)
     try:
-      with self.transaction_lock:
-        escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=2300)
-        usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 256, 250) # Try reading the USB output buffer, to prevent it from maybe overflowing?
-        log.info(f"_print_image() USB rv = '{usb_rv}'")
-        time.sleep(0.250) # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread could/might break printing.
-        if not usb_rv or usb_rv[0] == 0:
-          retry = f"Bad USB return value '{usb_rv}'"
-          #time.sleep(1) #Since the read operation timed out, the printer has had enough time to process the image printing.
+      escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=2300)
+      usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 16, 100) # Try reading the USB output buffer, to prevent it from maybe overflowing?
+      log.info(f"_print_image() USB rv = '{usb_rv}'")
+      time.sleep(0.100) # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread could/might break printing.
+      if not usb_rv or usb_rv[0] == 0:
+        retry = f"Bad USB return value '{usb_rv}'"
+        #time.sleep(0.100) #Since the read operation timed out, the printer has had enough time to process the image printing.
     except usb.core.USBError as e:
       log.info(f"_print_image() USB rv = '{e}'")
       retry = e

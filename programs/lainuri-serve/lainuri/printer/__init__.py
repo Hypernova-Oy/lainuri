@@ -147,14 +147,16 @@ def _generate_receipt_png(doc: weasyprint.Document, pj: PrintJob):
 def _print_via_escpos_raster(png_file_path: str):
   if get_config('devices.thermal-printer.enabled'):
     printer = lainuri.hs_k33.get_printer()
-    try:
-      printer.print_image(png_file_path)
-    finally:
-      #time.sleep(0.25)
-      #printer.send_real_time_request(recover_by_clearing=True) #TODO: Clear a stuck print buffer
-      #printer.initialize_printer() #TODO: Clear a stuck print buffer, sample with reading the usb buffer empty first in printer.print_image().
-      printer.paper_cut()
-      update_paper_status()
+    with printer.transaction_lock:
+      try:
+        printer.print_image(png_file_path)
+      finally:
+        time.sleep(0.25)
+        #printer.send_real_time_request(recover_by_clearing=True) #TODO: Clear a stuck print buffer
+        #printer.initialize_printer() #TODO: Clear a stuck print buffer, sample with reading the usb buffer empty first in printer.print_image().
+        printer.paper_cut()
+        time.sleep(1)  # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread could/might break printing.
+    update_paper_status()
   else:
     log.info(f"Thermal printer is disabled from configuration.")
 
