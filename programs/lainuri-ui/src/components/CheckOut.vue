@@ -23,14 +23,17 @@
 
             <v-btn
               v-on:click="stop_checking_out"
-              v-if="is_user_logged_in"
+              v-if="is_user_logged_in && !(overlay_notifications.length)"
               x-large color="secondary"
             >
               {{t('CheckOut/Finish')}}
             </v-btn>
             <v-btn
               v-on:click="stop_checkin_out_and_get_receipt"
-              v-if="is_user_logged_in && $appConfig.devices['thermal-printer'].enabled && Object.keys(items_checked_out_successfully).length"
+              v-if="is_user_logged_in &&
+                    $appConfig.devices['thermal-printer'].enabled &&
+                    Object.keys(items_checked_out_successfully).length &&
+                    !(overlay_notifications.length)"
               x-large color="secondary"
             >
               {{t('CheckOut/Finish+Receipt')}}

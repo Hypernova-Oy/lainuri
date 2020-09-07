@@ -10,11 +10,14 @@
             <v-spacer></v-spacer>
             <v-btn
               v-on:click="stop_checking_in"
+              v-if="!(overlay_notifications.length)"
               x-large color="secondary"
             >
               {{t('CheckIn/Finish')}}
             </v-btn>
-            <v-btn v-if="$appConfig.devices['thermal-printer'].enabled && Object.keys(items_checked_in_successfully).length"
+            <v-btn v-if="$appConfig.devices['thermal-printer'].enabled &&
+                         Object.keys(items_checked_in_successfully).length &&
+                         !(overlay_notifications.length)"
               v-on:click="stop_checkin_in_and_get_receipt"
               x-large color="secondary"
             >
