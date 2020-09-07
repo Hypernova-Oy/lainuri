@@ -219,4 +219,3 @@ def handle_barcode_read(bcr: lainuri.barcode_reader.BarcodeReader, barcode: str)
     lainuri.websocket_handlers.auth.login_user(barcode)
   else:
     lainuri.event_queue.push_event(lainuri.event.LEBarcodeRead(barcode))
-    lainuri.event_queue.push_event(lainuri.event.LEItemBibFullDataRequest([barcode]))

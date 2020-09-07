@@ -81,31 +81,3 @@ def test_rfid_inventory_triggered_fulldata_request(subtests):
     assert event.item_bibs[0]['status'] == Status.SUCCESS
     assert event.item_bibs[0]['item_barcode'] == good_item_barcode
     assert event.item_bibs[0]['title'] == '27 horas de estúdio. [Sound recording]'
-
-def test_barcode_read_triggered_fulldata_request(subtests):
-  global good_item_barcode
-  assert lainuri.event_queue.flush_all()
-
-  with subtests.test("When a barcode is read"):
-    lainuri.websocket_server.handle_barcode_read(None, good_item_barcode)
-
-  with subtests.test("Then a LEBarcodeRead event is generated"):
-    event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[0]
-    assert type(event) == le.LEBarcodeRead
-    assert event.barcode == good_item_barcode
-
-  with subtests.test("And a LEItemBibFullDataRequest event is generated"):
-    event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[1]
-    assert type(event) == le.LEItemBibFullDataRequest
-    assert event.barcodes[0] == good_item_barcode
-
-  with subtests.test("And a LEItemBibFullDataResponse event is generated"):
-    event = lainuri.websocket_server.handle_one_event(5)
-    assert event == lainuri.event_queue.history[2]
-    assert type(event) == le.LEItemBibFullDataResponse
-    assert event.item_bibs[0].get('states', None) == None
-    assert event.item_bibs[0]['status'] == Status.SUCCESS
-    assert event.item_bibs[0]['item_barcode'] == good_item_barcode
-    assert event.item_bibs[0]['title'] == '27 horas de estúdio. [Sound recording]'

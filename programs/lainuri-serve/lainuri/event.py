@@ -253,7 +253,7 @@ class LEBarcodeRead(LEvent):
 
   def __init__(self, barcode: str, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.barcode = barcode
-    self.tag = {'tag_type': 'barcode', 'item_barcode': barcode}
+    self.tag = {'tag_type': 'barcode', **koha_api.get_fleshed_item_record(barcode)}
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
