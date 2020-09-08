@@ -498,11 +498,4 @@ export default {
   font-weight: 900;
   font-size: 1.6rem;
 }
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity .5s;
-}
-.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-  opacity: 0;
-}
 </style>

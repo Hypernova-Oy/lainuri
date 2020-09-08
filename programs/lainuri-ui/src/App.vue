@@ -71,10 +71,12 @@
 
     <v-container fluid max-height="800">
       <StatusBar/>
-      <Exception v-if="exceptions.length"
-        :exception="exceptions[0]" :exceptions_count="exceptions.length"
-        v-on:exception_close="exceptions.shift()"
-      />
+      <transition name="fade" mode="out-in" appear>
+        <Exception v-if="exceptions.length" :key="exceptions.length"
+          :exception="exceptions[exceptions.length-1]" :exceptions_count="exceptions.length"
+          v-on:exception_close="exceptions.pop()"
+        />
+      </transition>
       <MainMenuView v-if="app_mode === 'mode_main_menu'"
         :rfid_tags_present="rfid_tags_present"
         v-on:exception="show_exception"
@@ -356,7 +358,13 @@ button {
   background: rgba(#000, .06);
 }
 
-.footer-tech-name {
-  padding-left: 5px;
+
+/* Global animation/transition styles */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .3s;
 }
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
+
 </style>
