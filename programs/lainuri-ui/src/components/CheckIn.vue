@@ -187,7 +187,11 @@ export default {
       }
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
+      if (event.status !== Status.SUCCESS) {
+        return; //App.vue already handles these errors
+      }
       log.info(`Event 'LERFIDTagsNew' triggered. New RFID tags:`, event.tags_new); Timeout.prod('SessionTimeout');
+
       for (let item_bib of event.tags_new) {
         let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib.item_barcode)
         if (! tags_present_item_bib_and_i) {

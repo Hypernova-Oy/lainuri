@@ -3,14 +3,17 @@
 import context
 
 import lainuri.config
+from lainuri.constants import Status
 import lainuri.event
 import lainuri.event_queue
+import lainuri.exception.rfid as exception_rfid
 import lainuri.koha_api
 import lainuri.rfid_reader
 from lainuri.RL866.tag import Tag
 
 import iso28560
 import time
+import unittest.mock
 
 rfid_reader = None
 
@@ -138,3 +141,84 @@ def test_rfid_reader_inventory_polling_thread(subtests):
   with subtests.test("Finally the polling thread is terminated"):
     rfid_reader.stop_polling_rfid_tags()
     assert context.poll_thread_is_alive(False, rfid_reader.daemon)
+
+
+
+def mock_flesh_tag_details1(tag):
+  raise exception_rfid.TagMalformed(id="tag serial number", description="nice error description")
+def mock_flesh_tag_details2(tag):
+  raise exception_rfid.RFIDCommand(id="tag serial number", description="nice command description")
+
+def test_rfid_reader_inventory_polling_exception_handling__individual_tag_malformed(subtests):
+  global rfid_reader
+  assert lainuri.event_queue.flush_all()
+
+  with unittest.mock.patch.object(lainuri.rfid_reader.RFID_Reader, 'flesh_tag_details', side_effect=mock_flesh_tag_details1) as raise_on_tag_fleshing:
+    with subtests.test("Given an RFID Reader which is rigged to fail when fleshing tag details"):
+      rfid_reader = lainuri.rfid_reader.get_rfid_reader() if not rfid_reader else rfid_reader
+      rfid_reader.tags_present = []
+
+    with subtests.test("When polling for inventory, an exception is thrown"):
+      rfid_reader.rfid_poll_daemon()
+
+    with subtests.test("And a LEServerStatusResponse is generated due to a RFID reader exception"):
+      event = lainuri.event_queue.pop_event(1)
+      assert type(event) == lainuri.event.LEServerStatusResponse
+      assert event.statuses['rfid_reader_status'] == Status.ERROR
+
+    with subtests.test("Then a TagMalformed-exception is caught during polling and scheduled to the GUI"):
+      event = lainuri.event_queue.pop_event(1)
+      assert type(event) == lainuri.event.LERFIDTagsNew
+      assert event.states['exception']['type'] == 'TagMalformed'
+      assert event.states['exception']['err_repeated'] == 1
+      assert event.tags_new == []
+      assert event.tags_present == []
+      assert event.status == Status.ERROR
+
+def test_rfid_reader_inventory_polling_exception_handling__more_generic_rfid_error(subtests):
+  global rfid_reader
+  assert lainuri.event_queue.flush_all()
+
+  with unittest.mock.patch.object(lainuri.rfid_reader.RFID_Reader, 'flesh_tag_details', side_effect=mock_flesh_tag_details2) as raise_on_tag_fleshing:
+    with subtests.test("Given an RFID Reader which is rigged to fail when fleshing tag details"):
+      rfid_reader = lainuri.rfid_reader.get_rfid_reader() if not rfid_reader else rfid_reader
+      rfid_reader.tags_present = []
+
+    with subtests.test("When polling for inventory, an exception is thrown"):
+      rfid_reader.rfid_poll_daemon()
+
+    with subtests.test("Then a RFID-exception is caught during polling and scheduled to the GUI"):
+      event = lainuri.event_queue.pop_event(1)
+      assert type(event) == lainuri.event.LERFIDTagsNew
+      assert event.states['exception']['type'] == 'RFID'
+      assert event.states['exception']['err_repeated'] == 2
+      assert event.tags_new == []
+      assert event.tags_present == []
+      assert event.status == Status.ERROR
+
+    #with subtests.test("And a LEServerStatusResponse is NOT generated due to a RFID reader being in ERROR-state"):
+    #  context.assert_raises('Lainuri event_queue is empty', lainuri.event_queue.queue.Empty, '', lambda: lainuri.event_queue.pop_event(1))
+
+def test_rfid_reader_inventory_polling_exception_handling__rfid_reader_reset_after_too_many_errors(subtests):
+  global rfid_reader
+  assert lainuri.event_queue.flush_all()
+
+  with unittest.mock.patch.object(lainuri.rfid_reader.RFID_Reader, 'flesh_tag_details', side_effect=mock_flesh_tag_details2) as raise_on_tag_fleshing:
+    with subtests.test("Given an RFID Reader which is rigged to fail when fleshing tag details"):
+      rfid_reader = lainuri.rfid_reader.get_rfid_reader() if not rfid_reader else rfid_reader
+      rfid_reader.tags_present = []
+
+    with subtests.test("When polling for inventory, an exception is thrown"):
+      rfid_reader.rfid_poll_daemon()
+
+    with subtests.test("Then a RFID-exception is caught during polling and scheduled to the GUI"):
+      event = lainuri.event_queue.pop_event(1)
+      assert type(event) == lainuri.event.LERFIDTagsNew
+      assert event.states['exception']['type'] == 'RFIDReset'
+      assert event.states['exception']['err_repeated'] == 3
+      assert event.tags_new == []
+      assert event.tags_present == []
+      assert event.status == Status.ERROR
+
+    #with subtests.test("And a LEServerStatusResponse is NOT generated due to a RFID reader being in ERROR-state"):
+    #  context.assert_raises('Lainuri event_queue is empty', lainuri.event_queue.queue.Empty, '', lambda: lainuri.event_queue.pop_event(1))

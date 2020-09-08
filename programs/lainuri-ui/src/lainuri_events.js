@@ -513,14 +513,18 @@ class LEPrintTestResponse extends LEvent {
 class LERFIDTagsNew extends LEvent {
   static event = 'rfid-tags-new';
 
-  static serializable_attributes = ['tags_new','tags_present'];
+  static serializable_attributes = ['tags_new','tags_present', 'status', 'states'];
   tags_new;
   tags_present;
+  status;
+  states;
 
-  constructor(tags_new, tags_present, sender, recipient, event_id = undefined) {
+  constructor(tags_new, tags_present, status, states, sender, recipient, event_id = undefined) {
     super(event_id);
     this.tags_new = tags_new;
     this.tags_present = tags_present;
+    this.status = status;
+    this.states = states;
     this.construct(sender, recipient);
     this.validate_params()
   }

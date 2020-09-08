@@ -438,7 +438,7 @@ class IBlock_TagConnect(IBlock, Request):
       field5 += tag.field46[0:8]
 
     else:
-      raise Exception(f"Unsupported air_protocol '{state.air_protocol_type_table[tag.air_protocol_type_id()]}'. Using tag '{tag.__dict__}'")
+      raise exception_rfid.TagMalformed(id=tag.serial_number(), description=f"Unsupported air_protocol '{state.air_protocol_type_table[tag.air_protocol_type_id()]}'. Using tag '{tag.__dict__}'")
 
     return field5
 

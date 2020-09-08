@@ -510,12 +510,16 @@ class LERFIDTagsNew(LEvent):
   event = 'rfid-tags-new'
   default_recipient = 'client'
 
-  serializable_attributes = ['tags_new','tags_present']
+  serializable_attributes = ['tags_new','tags_present', 'status', 'states']
   tags_present = []
+  states = {}
+  status = Status.NOT_SET
 
-  def __init__(self, tags_new: list, tags_present: list, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+  def __init__(self, tags_new: list, tags_present: list, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
     self.tags_present = [{**tag.to_ui(), 'item_barcode': tag.iso25680_get_primary_item_identifier()} for tag in tags_present]
     self.tags_new =     [{**tag.to_ui(), 'item_barcode': tag.iso25680_get_primary_item_identifier()} for tag in tags_new    ]
+    self.states = states
+    self.status = status
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 

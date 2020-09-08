@@ -22,5 +22,20 @@ class TagNotDetected(lainuri.exception.RFID):
   def __init__(self, id: str):
     self.id = id
 
+class RFIDReset(lainuri.exception.RFID):
+  """
+  RFID Reader has failed too many times and is now reseting and rebooting.
+  """
+  def __init__(self, duration: int):
+    self.duration = duration
+
 class RFIDTimeout(lainuri.exception.RFID):
   pass
+
+class TagMalformed(lainuri.exception.RFID):
+  """
+  The given tag's data model and/or tag specifications are inconsistent with the ISO standards
+  """
+  def __init__(self, id: str, description: str):
+    self.id = id
+    self.description = description

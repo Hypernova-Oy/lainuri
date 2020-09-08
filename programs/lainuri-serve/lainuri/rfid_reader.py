@@ -121,13 +121,40 @@ class RFID_Reader():
       lainuri.status.update_status('rfid_reader_status', Status.SUCCESS)
     except Exception as e:
       self.err_repeated = self.err_repeated + 1
-      log.exception(f"RFID Reader - Getting inventory failed. Sleeping for {self.err_repeated * 2}s and resetting connection.")
       lainuri.status.update_status('rfid_reader_status', Status.ERROR)
-      time.sleep(self.err_repeated * 2)
 
-      if type(e) == exception_rfid.RFIDTimeout:
-        self.reconnect()
-      self.reset()
+      if self.err_repeated < 3:
+        log.warning(f"RFID Reader - Getting inventory failed ({self.err_repeated}). Exception='{str(e)}'")
+        if isinstance(e, lainuri.exception.RFID):
+          lainuri.event_queue.push_event(le.LERFIDTagsNew(
+            tags_new=[],
+            tags_present=[],
+            status=Status.ERROR,
+            states={'exception': {
+              'type': (type(e) == exception_rfid.TagMalformed and type(e).__name__) or lainuri.exception.RFID.__name__,
+              'trace': str(e),
+              'err_repeated': self.err_repeated,
+            }}
+          ))
+      else:
+        log.exception(f"RFID Reader - Getting inventory failed ({self.err_repeated}). Sleeping for {self.err_repeated}s and resetting connection.")
+        if isinstance(e, lainuri.exception.RFID):
+          lainuri.event_queue.push_event(le.LERFIDTagsNew(
+            tags_new=[],
+            tags_present=[],
+            status=Status.ERROR,
+            states={'exception': {
+              'type': exception_rfid.RFIDReset.__name__,
+              'trace': str(e),
+              'err_repeated': self.err_repeated,
+            }}
+          ))
+        time.sleep(self.err_repeated)
+
+        if type(e) == exception_rfid.RFIDTimeout:
+          self.reconnect()
+
+        self.reset()
 
   def do_inventory(self, no_events: bool = False):
     with self.access_lock():
@@ -162,7 +189,7 @@ class RFID_Reader():
 
     if not no_events:
       if self.tags_new:
-        lainuri.event_queue.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present))
+        lainuri.event_queue.push_event(le.LERFIDTagsNew(self.tags_new, self.tags_present, Status.SUCCESS))
       if self.tags_lost:
         lainuri.event_queue.push_event(le.LERFIDTagsLost(self.tags_lost, self.tags_present))
 

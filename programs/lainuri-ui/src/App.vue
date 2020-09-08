@@ -176,6 +176,12 @@ export default {
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       log.info(`Event 'LERFIDTagsNew' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);
+
+      if (event.status !== Status.SUCCESS) {
+        this.show_exception(event);
+        return;
+      }
+
       event.tags_new.forEach((item_bib) => {
         this.rfid_tags_present.push(new ItemBib(item_bib));
       });
