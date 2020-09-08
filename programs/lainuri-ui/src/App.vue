@@ -141,9 +141,9 @@ import MainMenuView from './components/MainMenuView.vue'
 import StatusBar from './components/StatusBar.vue'
 
 import {ItemBib} from './item_bib'
-import {splice_bib_item_from_array} from './helpers'
+import {splice_bib_item_from_array, find_tag_by_key} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
-import {Status, LEAdminModeEnter, LEAdminModeLeave, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
+import {Status, LEAdminModeEnter, LEAdminModeLeave, LEItemBibFullDataResponse, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
 
 
 let shared = {
@@ -197,6 +197,20 @@ export default {
     lainuri_ws.attach_event_listener(LERFIDTagsPresent, this, function(event) {
       log.info(`Event 'LERFIDTagsPresent' received. Present RFID tags (${event.tags_present.length}):`, event.tags_present);
       this.rfid_tags_present = event.tags_present.reduce((reducer, elem) => {reducer.push(new ItemBib(elem)); return reducer}, []);
+    });
+    lainuri_ws.attach_event_listener(LEItemBibFullDataResponse, this, function(event) {
+      //if (this.$data.app_mode !== "mode_main_menu") return; // Other modes handle this event in their own handlers.
+      log.info(`Event 'LEItemBibFullDataResponse'`);
+      for (let item_bib_data of event.item_bibs) {
+        let tags_present_item_bib_and_i = find_tag_by_key(this.rfid_tags_present, 'item_barcode', item_bib_data.item_barcode)
+        if (! tags_present_item_bib_and_i) continue; // It is ok to not have a matching ItemBib since it could be removed while the supplementary data is being received.
+        let item_bib = tags_present_item_bib_and_i[0];
+        if (item_bib_data.status === Status.SUCCESS) { // ItemBib FullData fetching is a non-critical part of the transaction, so it's successful status doesn't define the transaction's status
+          delete(item_bib_data.status);
+          delete(item_bib_data.states);
+        }
+        Object.assign(item_bib, item_bib_data)
+      }
     });
 
     try {
