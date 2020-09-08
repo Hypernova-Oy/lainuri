@@ -16,7 +16,9 @@ from lainuri.logging_context import logging
 def assert_raises(name, e_class, e_string, cb):
   try:
     cb()
-    raise AssertionError(name + " failed to raise! " + cb)
+    raise AssertionError(f"{name} - Failed to raise anything, not even '{e_class}'")
+  except AssertionError as e:
+    raise e
   except Exception as e:
     assert type(e) == e_class
     assert e_string in str(e)
