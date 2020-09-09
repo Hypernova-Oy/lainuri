@@ -15,6 +15,12 @@ class RFIDCommand(lainuri.exception.RFID):
     self.id = id
     self.description = description
 
+class RFIDInventory(lainuri.exception.RFID):
+  """
+  Doing the wireless inventory failed
+  """
+  pass
+
 class TagNotDetected(lainuri.exception.RFID):
   """
   The given tag was not found in the RFID reader's reading radius

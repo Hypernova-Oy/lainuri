@@ -37,7 +37,7 @@ const i18n_messages = {
     },
     Exception: {
       ILSConnectionFailure: "Connection to the library system temporarily failed. Please try again.",
-      RFID: "Couldn't properly identify the wireless Item, please place it on the reader.",
+      RFIDInventory: "Couldn't properly identify the wireless Item, please place it on the reader.",
       RFIDCommand: "Place the item on the reader, setting security gate status failed",
       RFIDReset: "Too many wireless errors. Wireless reader restarting. Please wait a few seconds and patiently place the Item on the reader.",
       TagMalformed: "Error reading the Item's wireless identification, please put the Item back on the reading platform. The RFID tag might be malformed.",
@@ -116,7 +116,7 @@ const i18n_messages = {
     },
     Exception: {
       ILSConnectionFailure: "Yhteys kirjastojärjestelmään epäonnistui. Yritä uudelleen.",
-      RFID: "Langattoman niteen tunnistaminen epäonnistui, laita nide uudestaan lukualustalle.",
+      RFIDInventory: "Langattoman niteen tunnistaminen epäonnistui, laita nide uudestaan lukualustalle.",
       RFIDCommand: "Laita nide lukijalle, hälyttimen asettaminen epäonnistui!",
       RFIDReset: "Liian monta langatonta virhelukua. Langaton lukija käynnistyy uudelleen. Ole hyvä ja odota muutama sekunti ja kärsivällisesti aseta nide lukualustalle.",
       TagMalformed: "Virhe luettaessa niteen langatonta tunnistetta, aseta nide takaisin lukualustalle. RFID tägi saattaa olla vaurioitunut.",
@@ -195,7 +195,7 @@ const i18n_messages = {
     },
     Exception: {
       ILSConnectionFailure: "Anslutningen till bibliotekssystemet misslyckades tillfälligt. Var god försök igen.",
-      RFID: "Det gick inte att identifiera det trådlösa objektet ordentligt. Lägg det på läsaren.",
+      RFIDInventory: "Det gick inte att identifiera det trådlösa objektet ordentligt. Lägg det på läsaren.",
       RFIDCommand: "Placera objektet på läsaren och ställa in säkerhetsgrindens status misslyckades",
       RFIDReset: "För många trådlösa fel. Trådlös läsare startas om. Vänta några sekunder och lägg tålmodig tålmodigt på läsaren.",
       TagMalformed: "Fel vid läsning av artikelns trådlösa identifikation, lägg tillbaka artikeln på läsplattformen. RFID-taggen kan vara felformad.",
@@ -274,7 +274,7 @@ const i18n_messages = {
     },
     Exception: {
       ILSConnectionFailure: "Подключение к библиотечной системе временно не удалось. Пожалуйста, попробуйте еще раз.",
-      RFID: "Не удалось правильно идентифицировать беспроводной элемент, поместите его на считывающее устройство.",
+      RFIDInventory: "Не удалось правильно идентифицировать беспроводной элемент, поместите его на считывающее устройство.",
       RFIDCommand: "Поместите элемент в считыватель, установка состояния ворот безопасности не удалась",
       RFIDReset: "Слишком много ошибок беспроводной связи. Перезапуск беспроводного считывателя. Подождите несколько секунд и терпеливо поместите объект на считывающее устройство.",
       TagMalformed: "Ошибка чтения беспроводной идентификации предмета, пожалуйста, верните предмет на платформу для чтения. Возможно, RFID-метка имеет неправильную форму.",

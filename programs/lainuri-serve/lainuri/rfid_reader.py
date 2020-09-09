@@ -131,7 +131,7 @@ class RFID_Reader():
             tags_present=[],
             status=Status.ERROR,
             states={'exception': {
-              'type': (type(e) == exception_rfid.TagMalformed and type(e).__name__) or lainuri.exception.RFID.__name__,
+              'type': (type(e) == exception_rfid.TagMalformed and type(e).__name__) or exception_rfid.RFIDInventory.__name__,
               'trace': str(e),
               'err_repeated': self.err_repeated,
             }}

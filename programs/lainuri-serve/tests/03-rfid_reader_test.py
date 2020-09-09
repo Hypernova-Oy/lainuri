@@ -190,7 +190,7 @@ def test_rfid_reader_inventory_polling_exception_handling__more_generic_rfid_err
     with subtests.test("Then a RFID-exception is caught during polling and scheduled to the GUI"):
       event = lainuri.event_queue.pop_event(1)
       assert type(event) == lainuri.event.LERFIDTagsNew
-      assert event.states['exception']['type'] == 'RFID'
+      assert event.states['exception']['type'] == 'RFIDInventory'
       assert event.states['exception']['err_repeated'] == 2
       assert event.tags_new == []
       assert event.tags_present == []
