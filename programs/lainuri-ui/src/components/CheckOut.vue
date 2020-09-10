@@ -16,6 +16,7 @@
             <v-btn
               v-on:click="stop_checking_out"
               v-if="!is_user_logged_in"
+              id="return_button"
               x-large color="secondary"
             >
               {{t('CheckOut/Return')}}
@@ -24,6 +25,7 @@
             <v-btn
               v-on:click="stop_checking_out"
               v-if="is_user_logged_in && !(overlay_notifications.length)"
+              id="finish_button"
               x-large color="secondary"
             >
               {{t('CheckOut/Finish')}}
@@ -34,6 +36,7 @@
                     $appConfig.devices['thermal-printer'].enabled &&
                     Object.keys(items_checked_out_successfully).length &&
                     !(overlay_notifications.length)"
+              id="finish_with_receipt_button"
               x-large color="secondary"
             >
               {{t('CheckOut/Finish+Receipt')}}

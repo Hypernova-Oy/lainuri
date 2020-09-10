@@ -9,6 +9,7 @@
           <v-card-actions>
             <v-spacer></v-spacer>
             <v-btn
+              id="finish_button"
               v-on:click="stop_checking_in"
               v-if="!(overlay_notifications.length)"
               x-large color="secondary"
@@ -18,6 +19,7 @@
             <v-btn v-if="$appConfig.devices['thermal-printer'].enabled &&
                          Object.keys(items_checked_in_successfully).length &&
                          !(overlay_notifications.length)"
+              id="finish_with_receipt_button"
               v-on:click="stop_checkin_in_and_get_receipt"
               x-large color="secondary"
             >

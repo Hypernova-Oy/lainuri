@@ -2,7 +2,7 @@
   <v-card
     v-if="rfid_tags_present.length"
     min-width="345"
-    class="mx-auto"
+    class="mx-auto main-menu-view"
   >
     <v-app-bar
       color="primary"
