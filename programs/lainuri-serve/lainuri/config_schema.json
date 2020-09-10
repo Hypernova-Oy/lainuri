@@ -266,6 +266,22 @@
           "type": "integer",
           "default": 53153,
           "description": "Lainuri-serve backend server's port"
+        },
+        "rpc-daemon": {
+          "type": "object",
+          "description": "RPC server to receive control and automation commands from an external process.",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable the RPC server. This should never be used in production."
+            },
+            "service-impl": {
+              "type": "string",
+              "default": "VirtualBarcodeService",
+              "enum": ["VirtualBarcodeService", "SlaveService"]
+            }
+          }
         }
       }
     },

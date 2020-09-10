@@ -22,6 +22,7 @@ import lainuri.exception.ils as exception_ils
 import lainuri.printer
 import lainuri.printer.status
 import lainuri.rfid_reader
+import lainuri.rpc_daemon
 import lainuri.barcode_reader
 import lainuri.rtttl_player
 import lainuri.status
@@ -174,6 +175,8 @@ def start(ws_daemon: bool = False) -> bool:
 
   lainuri.event_queue.init(event_handler=lainuri.websocket_server.handle_one_event_daemon).start()
 
+  lainuri.rpc_daemon.start_daemon()
+
   lainuri.rtttl_player.get_player().start()
 
   if get_config('devices.thermal-printer.enabled'):
@@ -196,6 +199,7 @@ def stop() -> bool:
   lainuri.rfid_reader.get_rfid_reader().stop_polling_rfid_tags()
   lainuri.barcode_reader.get_BarcodeReader().stop_polling_barcodes()
   lainuri.event_queue.get_daemon().kill()
+  lainuri.rpc_daemon.stop_daemon()
   lainuri.rtttl_player.get_player().kill()
   if get_config('devices.thermal-printer.enabled'):
     #lainuri.printer.status.get_daemon().kill()
@@ -205,6 +209,7 @@ def stop() -> bool:
   lainuri.rfid_reader.get_rfid_reader().daemon.join(10)
   lainuri.barcode_reader.get_BarcodeReader().daemon.join(10)
   lainuri.event_queue.get_daemon().join(10)
+  if lainuri.rpc_daemon.get_daemon(): lainuri.rpc_daemon.get_daemon().join(10)
   lainuri.rtttl_player.get_player().join(10)
   if get_config('devices.thermal-printer.enabled'):
     #lainuri.printer.status.get_daemon().join(10)

@@ -11,6 +11,7 @@ python-escpos
 pyusb
 pyyaml
 qrcode
+rpyc
 simple_websocket_server
 urllib3
 WeasyPrint

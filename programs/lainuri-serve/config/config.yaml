@@ -58,6 +58,9 @@ koha:
 server:
   hostname: localhost
   port: 53153
+  rpc-daemon:
+    enabled: False
+    service-impl: VirtualBarcodeService
 ui:
   always_display_check_in_out_notification: True
   images:
