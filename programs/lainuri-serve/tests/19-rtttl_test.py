@@ -49,7 +49,7 @@ def test_play_rtttl_checkin_out_types(subtests):
     player = lainuri.rtttl_player.get_player()
     player.start()
 
-    run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-error')
+    lainuri.rtttl_player.play_rtttl(le.LERingtonePlay(ringtone_type='checkout-error'))
     run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkout-success')
     run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-error')
     run_play_rtttl_tst(subtests, play_rtttl_mock, 'checkin-success')
@@ -71,10 +71,9 @@ def run_play_rtttl_tst(subtests, play_rtttl_mock, ringtone_type = None, ringtone
     lainuri.event_queue.push_event(event)
     assert lainuri.websocket_server.handle_one_event(5) == event
     assert event == lainuri.event_queue.history[0]
-    time.sleep(2)
 
   with subtests.test("Then a response event is generated"):
-    event_response = lainuri.websocket_server.handle_one_event(5)
+    event_response = lainuri.websocket_server.handle_one_event(10)
     assert event_response == lainuri.event_queue.history[1]
     assert type(event_response) == le.LERingtonePlayComplete
     assert event_response.ringtone_type == event.ringtone_type

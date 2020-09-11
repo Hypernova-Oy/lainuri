@@ -8,6 +8,7 @@ import lainuri.event_queue
 from lainuri.threadbase import Threadbase
 
 import re
+import socket
 import subprocess
 import threading
 import traceback
@@ -26,7 +27,6 @@ rtttl_validator_re = re.compile(r"""
   (\d{0,2}[a-zA-Z]\#?\.?\d{0,2})
   $
 """, re.X)
-
 
 def list_rtttl() -> dict:
   global rtttl_validator_re
@@ -97,27 +97,23 @@ def _do_play(event: lainuri.event.LERingtonePlay):
   else:
     ringtone = event.ringtone
 
-  args = ['rtttl-player', '-o']
-
+  payload = None
   if rtttl_validator_re.search(ringtone):
-    args.append("--rtttl")
-    args.append(ringtone)
+    payload = f"rtttl-{ringtone}"
     log.debug(f"Playing rtttl '{ringtone}'")
   elif ringtone_type_songname_parser.search(ringtone):
-    args.append(f"song-{ringtone}")
+    payload = f"song-{ringtone}"
     log.debug(f"Playing song '{ringtone}'")
   else:
     raise TypeError(f"ringtone '{ringtone}' is not a valid ringtone name or a rtttl-code")
+  payload = payload + "\r\n"
 
-  process = None
-  try:
-    process = subprocess.Popen(args)
-    process.wait(timeout=120)
-    log.info("Stopped playing rtttl")
-    if process.returncode != 0:
-      raise Exception("Process non-zero exit code")
-  except Exception as e:
-    raise type(e)(e, f"Failed to play rtttl! Command '{args}' exit='{process.returncode}', stderr='{process.stderr}', stdout='{process.stdout}'")
+  s = socket.socket(socket.AF_UNIX)
+  s.connect('/var/run/emb-rtttl/sock')
+  s.send(payload.encode('UTF-8'))
+  resp = s.recv(4096).decode('UTF-8')
+  if resp[0:3] != "OK:":
+    raise Exception("Playing the ringtone '{ringtone}' failed! Error: '{resp}'")
 
 def rtttl_daemon(event: lainuri.event.LERingtonePlay):
     play_rtttl(event)

@@ -28,11 +28,14 @@ def test_read_virtual_barcode(subtests):
     assert type(event) == lainuri.event.LEBarcodeRead
     assert event.barcode == '123456'
 
+  with subtests.test("And test rtttl-player"):
+    conn.root.play_rtttl('ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c')
+
   with subtests.test("Finally the rpc server is closed"):
     assert lainuri.rpc_daemon.stop_daemon()
     lainuri.rpc_daemon.get_daemon().join(10)
 
-def test_complete_slace_rpc_server(subtests):
+def test_complete_slave_rpc_server(subtests):
   conn = None
   lainuri.config.write_config('server.rpc-daemon.enabled', True)
   lainuri.config.write_config('server.rpc-daemon.service-impl', 'SlaveService')

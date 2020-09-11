@@ -3,6 +3,8 @@ from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
 import lainuri.websocket_server
+import lainuri.rtttl_player
+import lainuri.event
 
 import pathlib
 import rpyc
@@ -17,6 +19,9 @@ daemon = None
 class VirtualBarcodeService(rpyc.Service):
   def exposed_read_virtual_barcode(self, barcode): # this is an exposed method
     lainuri.websocket_server.handle_barcode_read(None, barcode)
+
+  def exposed_play_rtttl(self, rtttl):
+    lainuri.rtttl_player._do_play(lainuri.event.LERingtonePlay(ringtone=rtttl, ringtone_type=None))
 
 def _start_rpyc_server():
   global server
