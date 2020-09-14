@@ -67,6 +67,7 @@
       v-if="app_mode === 'mode_admin_menu'"
       v-on:close_admin_menu="enter_main_menu"
       v-on:enable_repl="repl_active = true"
+      v-on:exception="show_exception"
     />
 
     <v-container fluid max-height="800">
