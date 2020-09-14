@@ -38,6 +38,14 @@ _global.markdownit = require('markdown-it')
 Vue.component('draggable', Draggable)
 Vue.component('VJsf', VJsf)
 
+
+
+import HistogramSlider from 'vue-histogram-slider';
+import 'vue-histogram-slider/dist/histogram-slider.css';
+Vue.component(HistogramSlider.name, HistogramSlider);
+
+
+
 //run_test_suite();
 Vue.config.productionTip = false
 
