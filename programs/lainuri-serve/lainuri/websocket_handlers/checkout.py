@@ -7,6 +7,7 @@ import traceback
 #from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
 from lainuri.constants import Status
+import lainuri.db.transaction_history
 import lainuri.event
 import lainuri.event_queue
 import lainuri.exception as exception
@@ -45,6 +46,8 @@ def checkout(event):
     if status == None:
       # Checkout to Koha
       (status, states) = koha_api.checkout(event.item_barcode, borrower['borrowernumber'])
+
+    if status == Status.SUCCESS: lainuri.db.transaction_history.post({'transaction_type': 'checkout', 'borrower_barcode': event.user_barcode, 'item_barcode': event.item_barcode})
 
     lainuri.event_queue.push_event(
       lainuri.event.LECheckOutComplete(

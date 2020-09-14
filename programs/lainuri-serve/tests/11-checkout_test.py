@@ -9,6 +9,7 @@ import pytest_subtests
 
 import context.mock_koha_api_checkout_responses
 
+import lainuri.db.transaction_history
 import lainuri.websocket_server
 import lainuri.koha_api
 from lainuri.constants import Status
@@ -61,6 +62,7 @@ def test_checkout_barcode_via_event_queue(subtests):
   global good_item_barcode, good_user_barcode
   borrower = None
   assert lainuri.event_queue.flush_all()
+  lainuri.db.transaction_history.clear()
 
   with subtests.test("Given an API authentication"):
     assert lainuri.koha_api.koha_api.authenticate()
@@ -92,6 +94,10 @@ def test_checkout_barcode_via_event_queue(subtests):
     assert event.item_barcode == good_item_barcode
     assert event.status == Status.SUCCESS
 
+  with subtests.test("And a transaction_history-event is persisted"):
+    rv = lainuri.db.transaction_history.list_between(transaction_types=['checkout'])
+    assert rv[0]['borrower_barcode'] == good_user_barcode
+    assert rv[0]['item_barcode'] == good_item_barcode
 
 
 def test_checkout_rfid_via_event_queue(subtests):
@@ -100,6 +106,7 @@ def test_checkout_rfid_via_event_queue(subtests):
   borrower = None
   event = None
   assert lainuri.event_queue.flush_all()
+  lainuri.db.transaction_history.clear()
 
   assert get_config('devices.rfid-reader.enabled') == True
 
@@ -130,6 +137,11 @@ def test_checkout_rfid_via_event_queue(subtests):
     assert type(event) == le.LECheckInComplete
     assert event.status == Status.SUCCESS
 
+  with subtests.test("And a transaction_history-event is persisted"):
+    rv = lainuri.db.transaction_history.list_between(transaction_types=['checkin'])
+    assert rv[0]['borrower_barcode'] == None
+    assert rv[0]['item_barcode'] == good_item_barcode
+
   with subtests.test("When the tag is checked out"):
     event = le.LECheckOut(item_barcode=tag.iso25680_get_primary_item_identifier(), user_barcode=good_user_barcode, tag_type='barcode')
     lainuri.event_queue.push_event(event)
@@ -142,6 +154,11 @@ def test_checkout_rfid_via_event_queue(subtests):
     assert event.states == {}
     assert type(event) == le.LECheckOutComplete
     assert event.status == Status.SUCCESS
+
+  with subtests.test("And a transaction_history-event is persisted"):
+    rv = lainuri.db.transaction_history.list_between(transaction_types=['checkout'])
+    assert rv[0]['borrower_barcode'] == good_user_barcode
+    assert rv[0]['item_barcode'] == good_item_barcode
 
   with subtests.test("When the tag is checked out AGAIN!"):
     event = le.LECheckOut(item_barcode=tag.iso25680_get_primary_item_identifier(), user_barcode=good_user_barcode, tag_type='barcode')
@@ -158,6 +175,10 @@ def test_checkout_rfid_via_event_queue(subtests):
     assert event.states == {"Checkout::Renew": True}
     assert event.status == Status.SUCCESS
 
+  with subtests.test("And a transaction_history-event is persisted"):
+    rv = lainuri.db.transaction_history.list_between(transaction_types=['checkout'])
+    assert rv[1]['borrower_barcode'] == good_user_barcode
+    assert rv[1]['item_barcode'] == good_item_barcode
 
 
 def test_checkout_exception_item_not_found(subtests):

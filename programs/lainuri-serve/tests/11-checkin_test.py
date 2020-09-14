@@ -7,6 +7,7 @@ import pytest_subtests
 
 import context.mock_koha_api_checkin_responses
 
+import lainuri.db.transaction_history
 import lainuri.websocket_server
 import lainuri.koha_api
 from lainuri.constants import SortBin, Status
@@ -63,6 +64,7 @@ def test_checkin_barcode_via_event_queue(subtests):
   global good_item_barcode, good_user_barcode
   borrower = None
   assert lainuri.event_queue.flush_all()
+  lainuri.db.transaction_history.clear()
 
   with subtests.test("Given an API authentication"):
     assert lainuri.koha_api.koha_api.authenticate()
@@ -83,6 +85,11 @@ def test_checkin_barcode_via_event_queue(subtests):
 
   with subtests.test("And the Item is sorted properly"):
     assert event.sort_to == SortBin.ERROR
+
+  with subtests.test("And a transaction_history-event is persisted"):
+    rv = lainuri.db.transaction_history.list_between(transaction_types=['checkin'])
+    assert rv[0]['borrower_barcode'] == None
+    assert rv[0]['item_barcode'] == good_item_barcode
 
 
 def test_checkin_exception_item_not_found(subtests):

@@ -6,6 +6,7 @@ import traceback
 
 #from lainuri.event import LEvent # Cannot import this even for type safety, due to circular dependency
 
+import lainuri.db.transaction_history
 from lainuri.koha_api import koha_api
 from lainuri.constants import Status
 import lainuri.event
@@ -15,6 +16,7 @@ import lainuri.sorting
 def checkin(event):
   try:
     (status, states) = koha_api.checkin(event.item_barcode)
+    if status == Status.SUCCESS: lainuri.db.transaction_history.post({'transaction_type': 'checkin', 'borrower_barcode': None, 'item_barcode': event.item_barcode})
     lainuri.event_queue.push_event(
       lainuri.event.LECheckInComplete(
         item_barcode=event.item_barcode,
