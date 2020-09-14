@@ -157,6 +157,37 @@ class LELocaleSet(LEvent):
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
+class LETransactionHistoryRequest(LEvent):
+  event = 'transaction-history-request'
+  default_handler = 'lainuri.websocket_handlers.transaction_history.list_some'
+  default_recipient = 'server'
+
+  serializable_attributes = ['start_time','end_time']
+  start_time = 0
+  end_time = 0
+
+  def __init__(self, start_time: int, end_time: int, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.start_time = start_time
+    self.end_time = end_time
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
+class LETransactionHistoryResponse(LEvent):
+  event = 'transaction-history-response'
+  default_recipient = 'client'
+
+  serializable_attributes = ['transactions', 'status', 'states']
+  transactions = []
+  states = {}
+  status = Status.NOT_SET
+
+  def __init__(self, transactions, status: Status, states: dict = {}, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    self.transactions = transactions
+    self.states = states
+    self.status = status
+    super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
+    self.validate_params()
+
 class LESetTagAlarm(LEvent):
   event = 'set-tag-alarm'
   default_handler = 'lainuri.websocket_handlers.tag_alarm.set_tag_alarm'

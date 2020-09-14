@@ -4,7 +4,8 @@ import context
 import context.items
 import context.users
 import lainuri.db
-lainuri.db.init(test_mode=True)
+import lainuri.db.receipt_template as receipt_template
+lainuri.db.init()
 lainuri.db.create_database()
 
 from lainuri.constants import Status
@@ -38,13 +39,13 @@ def test_list_print_templates(subtests):
     assert type(resp_event) == lainuri.event.LEPrintTemplateListResponse
     assert len(resp_event.templates) >= 8
     assert len(resp_event.templates) >= 4
-    assert resp_event.templates[0] == lainuri.db.receipt_templates_get(type='checkin', locale_code='en')
+    assert resp_event.templates[0] == receipt_template.get(type='checkin', locale_code='en')
 
 def test_save_print_template(subtests):
   event, resp_event = (None, None)
 
   with subtests.test("Given a LEPrintTemplateSave-event"):
-    event = lainuri.event.LEPrintTemplateSave(None, 'checkin', 'sv', 'template contents')
+    event = lainuri.event.LEPrintTemplateSave(None, 'checkin', 'nz', 'template contents')
 
   with subtests.test("When the event has been handled"):
     assert event == lainuri.event_queue.push_event(event)
@@ -63,7 +64,7 @@ def test_save_print_template(subtests):
     assert resp_event.locale_code == event.locale_code
 
   with subtests.test("Given the same LEPrintTemplateSave-event"):
-    event = lainuri.event.LEPrintTemplateSave(resp_event.id, 'checkin', 'sv', 'template contents2')
+    event = lainuri.event.LEPrintTemplateSave(resp_event.id, 'checkin', 'nz', 'template contents2')
 
   with subtests.test("When the event has been handled"):
     assert event == lainuri.event_queue.push_event(event)
@@ -102,7 +103,7 @@ def test_test_printer_template(subtests):
 
   with subtests.test("Given a LEPrintTestRequest-event"):
     event = lainuri.event.LEPrintTestRequest(
-      template=lainuri.db.receipt_templates_get(type='checkin', locale_code='en')['template'],
+      template=receipt_template.get(type='checkin', locale_code='en')['template'],
       data=json.dumps({
         "user": context.users.user1,
         "items": context.items.items1,

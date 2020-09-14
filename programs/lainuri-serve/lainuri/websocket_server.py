@@ -36,6 +36,7 @@ import lainuri.websocket_handlers.config
 import lainuri.websocket_handlers.locale
 import lainuri.websocket_handlers.logging
 import lainuri.websocket_handlers.printer
+import lainuri.websocket_handlers.transaction_history
 import lainuri.websocket_handlers.ringtone
 import lainuri.websocket_handlers.status
 import lainuri.websocket_handlers.tag_alarm
@@ -159,6 +160,8 @@ class SimpleChat(WebSocket):
 subthreads = {}
 def start(ws_daemon: bool = False) -> bool:
   global subthreads
+
+  lainuri.db.upgrade_database_schema()
 
   lainuri.locale.verify_locales_installed()
   lainuri.config.image_overloads_handle()

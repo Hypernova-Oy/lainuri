@@ -4,7 +4,7 @@ import context
 import context.items
 import context.users
 import lainuri.db
-lainuri.db.init(test_mode=True)
+lainuri.db.init()
 lainuri.db.create_database()
 from context.env import MockEnv
 

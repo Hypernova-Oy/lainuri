@@ -1,9 +1,10 @@
-CREATE TABLE IF NOT EXISTS receipt_templates (
+CREATE TABLE receipt_templates (
   id INTEGER PRIMARY KEY ASC,
   type TEXT NOT NULL,
   locale_code TEXT NOT NULL,
   template TEXT NOT NULL
 );
+CREATE UNIQUE INDEX receipt_templates_unique_type_locale ON receipt_templates (type, locale_code);
 
 INSERT INTO receipt_templates VALUES
    (NULL,'checkin','en','

@@ -15,3 +15,4 @@ rpyc
 simple_websocket_server
 urllib3
 WeasyPrint
+yoyo-migrations

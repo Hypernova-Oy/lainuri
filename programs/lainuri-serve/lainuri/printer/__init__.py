@@ -2,7 +2,7 @@ from lainuri.config import get_config, get_lainuri_conf_dir, log_dir
 from lainuri.logging_context import logging
 log = logging.getLogger(__name__)
 
-import lainuri.db
+import lainuri.db.receipt_template as receipt_template
 from lainuri.constants import Status
 import lainuri.hs_k33
 from lainuri.koha_api import koha_api
@@ -23,7 +23,7 @@ import weasyprint
 cli_print_command = ['lp', '-']
 
 def list_templates():
-  return lainuri.db.receipt_templates_list()
+  return receipt_template.list_all()
 
 def test_print(pj: PrintJob, real_print: bool = False) -> PrintJob:
   _render_jinja2_template(pj)
@@ -36,9 +36,9 @@ def test_print(pj: PrintJob, real_print: bool = False) -> PrintJob:
 def save_template(template: dict):
   jinja2.Environment().parse(source=template.template) #validate template
   if not getattr(template, 'id', None):
-    t_id = lainuri.db.receipt_templates_post(template)
+    t_id = receipt_template.post(template)
     template.id = t_id
-  else: lainuri.db.receipt_templates_put(template)
+  else: receipt_template.put(template)
 
 def print_check_out_receipt(pj: PrintJob):
   pj._template_backend = get_config('devices.thermal-printer.check-out-receipt')
@@ -71,7 +71,7 @@ def print_html(pj: PrintJob):
 
 def get_sheet(pj: PrintJob) -> str:
   try:
-    pj._receipt_template = lainuri.db.receipt_templates_get(pj._type, lainuri.locale.get_locale())['template']
+    pj._receipt_template = receipt_template.get(type=pj._type, locale_code=lainuri.locale.get_locale())['template']
   except Exception as e:
     raise type(e)(e, f"Exception when get_sheet():> PrintJob={pj.__dict__}")
   _render_jinja2_template(pj)
