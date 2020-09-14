@@ -169,6 +169,21 @@ class Lainuri {
       console.log(`Receiving event '${event.event_id}', but no event handler registered?`);
     }
   }
+
+  dispatch_when_ready(event) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.dispatch_event(event)
+    }
+    else {
+      let interval = window.setInterval(() => {
+        console.log(this)
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          window.clearInterval(interval)
+          this.dispatch_event(event)
+        }
+      }, 1000)
+    }
+  }
 }
 
 export {Lainuri}
