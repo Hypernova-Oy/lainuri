@@ -82,13 +82,13 @@
               <img v-if="template_content_rendering" :src="template_content_rendering"/>
             </v-row><v-row>
               <v-col>
-                <v-btn icon color="primary" x-large
+                <v-btn  color="primary" x-large
                   @click="save_template">
                   <v-icon>mdi-content-save</v-icon>
                   SAVE
                 </v-btn>
               </v-col><v-col>
-                <v-btn icon color="primary" x-large
+                <v-btn  color="primary" x-large
                   @click="test_print">
                   <v-icon>mdi-test-tube</v-icon>
                   TEST
@@ -166,6 +166,7 @@ export default {
           this.$set(this.templates, key, templates_ordered[key])
         }
         this.$data.template_content_error = null
+        this.test_print();
       }
       else {
         this.$data.template_content_error = event.states
@@ -173,60 +174,58 @@ export default {
     });
   },
   mounted: function () {
-    window.setTimeout(function() {lainuri_ws.dispatch_event(new LEPrintTemplateList('client', 'server'))}, 2000) // Seed the initial templates from server
+    lainuri_ws.dispatch_when_ready(new LEPrintTemplateList('client', 'server'));
   },
   beforeDestroy: function () {
     Timeout.terminate('TestPrintLazy');
     lainuri_ws.flush_listeners_for_component(this, this.$options.name);
   },
-  data () {
-    return {
-      tab: null,
-      easy_mode: true,
-      template_type: 'checkin',
-      template_types: [
-        'checkin', 'checkout',
-      ],
-      text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-      templates: {
-        checkin: {
-          'en': {"template": "loading {% today %}"},
-        },
-        checkout: {
-          'en': {"template": "loading {% today %}"},
-        },
+  data: () => ({
+    tab: null,
+    easy_mode: true,
+    template_type: 'checkin',
+    template_types: [
+      'checkin', 'checkout',
+    ],
+    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+    templates: {
+      checkin: {
+        'en': {"template": "loading {% today %}"},
       },
-      template_content_rendering: null,
-      template_content_error: null,
-      template_data: JSON.stringify({
-        "user": {
-          "firstname": "Olli-Antti",
-          "surname": "Kivilahti"
+      checkout: {
+        'en': {"template": "loading {% today %}"},
+      },
+    },
+    template_content_rendering: null,
+    template_content_error: null,
+    template_data: JSON.stringify({
+      "user": {
+        "firstname": "Olli-Antti",
+        "surname": "Kivilahti"
+      },
+      "items": [
+        {
+          "title": "Heroides",
+          "author": "Publius Ovidius Naso",
+          "item_barcode": "167N01010101"
         },
-        "items": [
-          {
-            "title": "Heroides",
-            "author": "Publius Ovidius Naso",
-            "item_barcode": "167N01010101"
-          },
-          {
-            "title": "Pratima-nataka",
-            "author": "Bhāsa",
-            "item_barcode": "167N21212121"
-          },
-          {
-            "title": "Drinking Alone by Moonlight",
-            "author": "Li Bai",
-            "item_barcode": "e00401003f382624"
-          }
-        ],
-        "today": new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString()
-      }, null, 2),
-      template_action_error: '',
-      template_action_title: '',
-      test_print_timer_running: false,
-    }
-  },
+        {
+          "title": "Pratima-nataka",
+          "author": "Bhāsa",
+          "item_barcode": "167N21212121"
+        },
+        {
+          "title": "Drinking Alone by Moonlight",
+          "author": "Li Bai",
+          "item_barcode": "e00401003f382624"
+        }
+      ],
+      "today": new Date().toLocaleDateString() + " " + new Date().toLocaleTimeString()
+    }, null, 2),
+    template_action_error: '',
+    template_action_title: '',
+    test_print_timer_running: false,
+  }),
   computed: {
     template_active: function () {
       return this.templates[this.template_type][this.$appConfig.i18n.enabled_locales[this.tab]] || this.templates['checkin']['en']
