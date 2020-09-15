@@ -116,7 +116,7 @@ def test_checkin_exception_item_not_found(subtests):
   with subtests.test("And the exception class matches"):
     assert event.status == Status.ERROR
     assert len(event.states) == 1
-    assert event.states['exception']['type'] == 'NoItem'
+    assert event.states['no_item'] == 'no_item'
 
   with subtests.test("And the Item is sorted properly"):
-    assert event.sort_to == SortBin.ERROR
+    assert event.sort_to == SortBin.REJECT

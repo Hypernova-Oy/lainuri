@@ -342,7 +342,9 @@ class KohaAPI():
     m_no_item = re.compile('No item with barcode', re.S | re.M)
     match = m_no_item.search(message)
     if match:
-      raise exception_ils.NoItem(barcode)
+      states['no_item'] = 'no_item'
+      states['status'] = Status.ERROR
+      return 'no_item'
 
     m_fines = re.compile('Patron has outstanding fines of (?P<fine_amount>\d+[.,]?\d*)\.')
     match = m_fines.search(message)

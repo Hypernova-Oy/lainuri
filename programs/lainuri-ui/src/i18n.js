@@ -18,6 +18,7 @@ const i18n_messages = {
       Errors: "Errors",
       Place_to_bin_OK: "Place to shelf 'normal'",
       Place_to_bin_ODD: "Place to shelf 'strange'",
+      Place_to_bin_REJECT: "The Item can not be returned here",
       Place_to_RFID_reader: "Place the item back to the reader platform",
     },
     CheckOut: {
@@ -34,6 +35,7 @@ const i18n_messages = {
       Check_out_failed: "Checkout failed",
       'Be_advised!': "Be advised!",
       Place_to_RFID_reader: "Place the item back to the reader platform",
+      Unknown_Item_cannot_checkout: "Unknown Item, cannot be loaned from here",
     },
     Exception: {
       ILSConnectionFailure: "Connection to the library system temporarily failed. Please try again.",
@@ -56,6 +58,7 @@ const i18n_messages = {
       Take_the_receipt: "Take the receipt",
     },
     State: {
+      no_item: "Unknown item",
       not_checked_out: "Not checked out?",
       return_to_another_branch: "To transport",
       needs_confirmation: "Cannot be loaned here",
@@ -97,6 +100,7 @@ const i18n_messages = {
       Errors: "Virheet",
       Place_to_bin_OK: "Paikka hyllyyn 'normaali'",
       Place_to_bin_ODD: "Paikka hyllylle 'outo'",
+      Place_to_bin_REJECT: "Nidettä ei voida palauttaa tähän",
       Place_to_RFID_reader: "Aseta nide takaisin lukualustalle",
     },
     CheckOut: {
@@ -113,6 +117,7 @@ const i18n_messages = {
       Check_out_failed: "Lainaaminen epäonnistui",
       'Be_advised!': "Huomioikaa!",
       Place_to_RFID_reader: "Aseta nide takaisin lukualustalle",
+      Unknown_Item_cannot_checkout: "Tuntematon nide, ei voida lainata tästä",
     },
     Exception: {
       ILSConnectionFailure: "Yhteys kirjastojärjestelmään epäonnistui. Yritä uudelleen.",
@@ -135,6 +140,7 @@ const i18n_messages = {
       Take_the_receipt: "Ota kuitti",
     },
     State: {
+      no_item: "Tuntematon nide",
       not_checked_out: "Ei lainattu?",
       return_to_another_branch: "Lähtee kuljetukseen",
       needs_confirmation: "Ei voida lainata tässä",
@@ -176,6 +182,7 @@ const i18n_messages = {
       Errors: "Misstag",
       Place_to_bin_OK: "Plats på hyllan 'normal'",
       Place_to_bin_ODD: "Plats att hyllas 'konstigt'",
+      Place_to_bin_REJECT: "Varan kan inte returneras här",
       Place_to_RFID_reader: "Placera artikeln tillbaka till läsarplattformen",
     },
     CheckOut: {
@@ -192,6 +199,7 @@ const i18n_messages = {
       Check_out_failed: "Utcheckning misslyckas",
       'Be_advised!': "Rådas!",
       Place_to_RFID_reader: "Placera artikeln tillbaka till läsarplattformen",
+      Unknown_Item_cannot_checkout: "Okänd artikel, kan inte lånas härifrån",
     },
     Exception: {
       ILSConnectionFailure: "Anslutningen till bibliotekssystemet misslyckades tillfälligt. Var god försök igen.",
@@ -214,6 +222,7 @@ const i18n_messages = {
       Take_the_receipt: "Ta kvittot",
     },
     State: {
+      no_item: "Okänd artikel",
       not_checked_out: "Inte utcheckad?",
       return_to_another_branch: "Att transportera",
       needs_confirmation: "Kan inte lånas här",
@@ -255,6 +264,7 @@ const i18n_messages = {
       Errors: "ошибки",
       Place_to_bin_OK: "Место на полке 'нормально'",
       Place_to_bin_ODD: "Место на полке 'странно'",
+      Place_to_bin_REJECT: "Товар не может быть возвращен здесь",
       Place_to_RFID_reader: "Поместите предмет обратно на платформу считывателя",
     },
     CheckOut: {
@@ -271,6 +281,7 @@ const i18n_messages = {
       Check_out_failed: "Не удалось оформить заказ",
       Be_advised: "Быть посоветованным",
       Place_to_RFID_reader: "Поместите предмет обратно на платформу считывателя",
+      Unknown_Item_cannot_checkout: "Неизвестный предмет, не может быть отдан здесь",
     },
     Exception: {
       ILSConnectionFailure: "Подключение к библиотечной системе временно не удалось. Пожалуйста, попробуйте еще раз.",
@@ -293,6 +304,7 @@ const i18n_messages = {
       Take_the_receipt: "Возьмите квитанцию",
     },
     State: {
+      no_item: "Неизвестный предмет",
       not_checked_out: "Не проверено",
       return_to_another_branch: "Для транзита",
       needs_confirmation: "Здесь нельзя одолжить",

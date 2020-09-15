@@ -10,6 +10,7 @@ from lainuri.constants import SortBin, Status
 
 def sort(status, states):
   log.debug("Sorting status='%s', states='%s'", status, states)
+  if states.get('no_item', None): return SortBin.REJECT
   if status == Status.ERROR: return SortBin.ERROR
 
   states_keys = list(states.keys())

@@ -9,4 +9,5 @@ class Status():
 class SortBin():
   ERROR = 'Place_to_bin_ODD'
   OK = 'Place_to_bin_OK'
+  REJECT = 'Place_to_bin_REJECT'
   NOT_SET = 'NOT_SET'

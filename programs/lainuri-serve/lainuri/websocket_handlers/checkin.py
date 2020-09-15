@@ -8,7 +8,7 @@ import traceback
 
 import lainuri.db.transaction_history
 from lainuri.koha_api import koha_api
-from lainuri.constants import Status
+from lainuri.constants import SortBin, Status
 import lainuri.event
 import lainuri.event_queue
 import lainuri.sorting
@@ -32,7 +32,7 @@ def checkin(event):
       lainuri.event.LECheckInComplete(
         item_barcode=event.item_barcode,
         tag_type=event.tag_type,
-        sort_to=lainuri.sorting.SortBin.ERROR,
+        sort_to=SortBin.ERROR,
         status=Status.ERROR,
         states={'exception': {
           'type': type(e).__name__,

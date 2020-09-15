@@ -14,6 +14,7 @@
   >
     <v-icon class="close-overlay-icon">mdi-close-box</v-icon>
     <h1 v-if="     mode === 'checkin'">{{t('CheckIn/'+sort_to)}}</h1>
+    <h1 v-else-if="mode === 'checkout' && (item_bib.states['Exception/NoItem'] || item_bib.states['Exception/NoItemIdentifier'])">{{t('CheckOut/Unknown_Item_cannot_checkout')}}</h1>
     <h1 v-else-if="mode === 'checkout' && sort_to === 'Place_to_RFID_reader'">{{t('CheckOut/'+sort_to)}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.ERROR">{{t('CheckOut/Check_out_failed')}}</h1>
     <h1 v-else-if="mode === 'checkout' && item_bib.status == Status.SUCCESS">{{t('CheckOut/Be_advised!')}}</h1>
