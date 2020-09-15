@@ -4,7 +4,6 @@ log = logging.getLogger(__name__)
 
 import os
 import pathlib
-import pugsql
 import re
 import sqlite3
 import yoyo
