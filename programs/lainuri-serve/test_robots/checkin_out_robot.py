@@ -2,11 +2,12 @@
 This robot checks in and out Items on the RFID reader.
 It reads a virtual barcode, to identify the logging in user, by using the lainuri rpc-service.
 """
+import datetime
 
 import rpyc
 
 from selenium import webdriver
-from selenium.common.exceptions import ElementNotVisibleException
+from selenium.common.exceptions import ElementNotVisibleException, TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.touch_actions import TouchActions
@@ -18,6 +19,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger()
 
+
+loop_times = 2
 checkout_user_barcode = '2600104874'
 item_barcodes = [
   '9781491980552',
@@ -47,17 +50,20 @@ class LainuriRobot():
     for bc in self.item_barcodes:
       time.sleep(0.25)
       self.rpyc.root.read_virtual_barcode(bc)
+    time.sleep(len(self.item_barcodes) * 2)
 
     try:
-      overlay_notification = self._wait_for_element('find_element_by_class_name', "close-overlay-icon")
-      self._click(overlay_notification)
+      while True:
+        overlay_notification = self._wait_for_element('find_element_by_class_name', "close-overlay-icon")
+        self._click(overlay_notification)
     except Exception as e:
-      log.exception(e)
+      if type(e) != TimeoutException:
+        log.exception(e)
 
     finish_with_receipt_button = self._wait_for_element('find_element_by_id', "finish_with_receipt_button", timeout=60)
     self._click(finish_with_receipt_button)
 
-    self._wait_for_element('find_element_by_class_name', "main-menu-view")
+    self._wait_for_element('find_element_by_class_name', "main-menu-view", timeout=30)
 
   def checkout(self):
     checkout_mode_button = self.driver.find_element_by_id('checkout_mode_button')  # Find the search box
@@ -72,17 +78,20 @@ class LainuriRobot():
     for bc in self.item_barcodes:
       time.sleep(0.25)
       self.rpyc.root.read_virtual_barcode(bc)
+    time.sleep(len(self.item_barcodes) * 3)
 
     try:
-      overlay_notification = self._wait_for_element('find_element_by_class_name', "close-overlay-icon")
-      self._click(overlay_notification)
+      while True:
+        overlay_notification = self._wait_for_element('find_element_by_class_name', "close-overlay-icon")
+        self._click(overlay_notification)
     except Exception as e:
-      log.exception(e)
+      if type(e) != TimeoutException:
+        log.exception(e)
 
     finish_with_receipt_button = self._wait_for_element('find_element_by_id', "finish_with_receipt_button", timeout=60)
     self._click(finish_with_receipt_button)
 
-    self._wait_for_element('find_element_by_class_name', "main-menu-view")
+    self._wait_for_element('find_element_by_class_name', "main-menu-view", timeout=30)
 
   def _click(self, element):
     self._action_chain_perform([['click', element]])
@@ -103,7 +112,8 @@ class LainuriRobot():
 
 robot = LainuriRobot('http://localhost:5000', user_barcode=checkout_user_barcode, item_barcodes=item_barcodes)
 try:
-  for i in range(1):
+  robot.rpyc.root.play_rtttl('ToveriAccessDenied:d=4,o=4,b=100:32e,32d,32e,4c')
+  for i in range(loop_times):
     robot.checkin()
     robot.checkout()
 finally:
