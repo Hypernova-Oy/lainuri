@@ -113,7 +113,7 @@ def _do_play(event: lainuri.event.LERingtonePlay):
   s.send(payload.encode('UTF-8'))
   resp = s.recv(4096).decode('UTF-8')
   if resp[0:3] != "OK:":
-    raise Exception("Playing the ringtone '{ringtone}' failed! Error: '{resp}'")
+    raise Exception(f"Playing the ringtone '{ringtone}' failed! Error: '{resp}'")
 
 def rtttl_daemon(event: lainuri.event.LERingtonePlay):
     play_rtttl(event)
