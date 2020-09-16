@@ -207,7 +207,7 @@ def stop() -> bool:
   if get_config('devices.thermal-printer.enabled'):
     #lainuri.printer.status.get_daemon().kill()
     pass
-  subthreads['server'].kill()
+  if 'server' in subthreads: subthreads['server'].kill()
 
   lainuri.rfid_reader.get_rfid_reader().daemon.join(10)
   lainuri.barcode_reader.get_BarcodeReader().daemon.join(10)
@@ -217,7 +217,7 @@ def stop() -> bool:
   if get_config('devices.thermal-printer.enabled'):
     #lainuri.printer.status.get_daemon().join(10)
     pass
-  subthreads['server'].join(10)
+  if 'server' in subthreads: subthreads['server'].join(10)
   return True
 
 def handle_barcode_read(bcr: lainuri.barcode_reader.BarcodeReader, barcode: str):

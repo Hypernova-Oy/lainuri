@@ -18,4 +18,7 @@ if __name__ == '__main__':
   signal.signal(signal.SIGUSR1, handle_signal_SIGUSR1)
 
   import lainuri.websocket_server
-  lainuri.websocket_server.start(ws_daemon=False)
+  try:
+    lainuri.websocket_server.start(ws_daemon=False)
+  finally:
+    lainuri.websocket_server.stop()
