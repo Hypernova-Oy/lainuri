@@ -188,6 +188,11 @@ class LETransactionHistoryResponse(LEvent):
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()
 
+  def to_string(self):
+    o = {**self.__dict__}
+    o['transactions'] = len(o['transactions'])
+    return lp.pformat(o)
+
 class LESetTagAlarm(LEvent):
   event = 'set-tag-alarm'
   default_handler = 'lainuri.websocket_handlers.tag_alarm.set_tag_alarm'
