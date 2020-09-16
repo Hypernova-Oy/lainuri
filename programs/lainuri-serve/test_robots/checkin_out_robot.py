@@ -1,23 +1,28 @@
 """
+IN THIS FILE
+
 This robot checks in and out Items on the RFID reader.
 It reads a virtual barcode, to identify the logging in user, by using the lainuri rpc-service.
+
 """
 import datetime
-
+import os
+import pathlib
 import rpyc
-
 from selenium import webdriver
 from selenium.common.exceptions import ElementNotVisibleException, TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.touch_actions import TouchActions
 from selenium.webdriver.support.wait import WebDriverWait
-
 import time
 
 import logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger()
+
+
+if not 'DISPLAY' in os.environ: os.environ['DISPLAY'] = ':0'
 
 
 loop_times = 2
@@ -28,12 +33,14 @@ item_barcodes = [
   '167A0174667',
 ]
 
+geckopath=str((pathlib.Path(__file__) / '..' / 'geckodriver').resolve())
+
 class LainuriRobot():
   def __init__(self, url, user_barcode, item_barcodes=[]):
     self.user_barcode = user_barcode
     self.item_barcodes = item_barcodes
 
-    self.driver = webdriver.Firefox()
+    self.driver = webdriver.Firefox(executable_path=geckopath)
     self.driver.set_window_position(0,0)
     self.driver.set_window_size(1080, 1920)
     self.driver.get(url)
@@ -116,5 +123,6 @@ try:
   for i in range(loop_times):
     robot.checkin()
     robot.checkout()
+  robot.checkin()
 finally:
   robot.driver.quit()
