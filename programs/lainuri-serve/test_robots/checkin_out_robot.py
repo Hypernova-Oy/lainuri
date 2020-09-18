@@ -40,7 +40,7 @@ class LainuriRobot():
     self.user_barcode = user_barcode
     self.item_barcodes = item_barcodes
 
-    self.driver = webdriver.Firefox(executable_path=geckopath)
+    self.driver = webdriver.Firefox(executable_path=geckopath, service_log_path='/tmp/geckodriver.log')
     self.driver.set_window_position(0,0)
     self.driver.set_window_size(1080, 1920)
     self.driver.get(url)

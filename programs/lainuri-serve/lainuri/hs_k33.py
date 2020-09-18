@@ -177,7 +177,7 @@ class HSK_Printer():
   def _print_image(self, png_file_path):
     (escpos_rv, usb_rv, retry) = (None, None, None)
     try:
-      escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=2300)
+      escpos_rv = self.escpos_printer.image(png_file_path, fragment_height=100)
       usb_rv = self.escpos_printer.device.read(self.usb_ep_in, 16, 100) # Try reading the USB output buffer, to prevent it from maybe overflowing?
       log.info(f"_print_image() USB rv = '{usb_rv}'")
       time.sleep(0.100) # Give time for the printer to process the image before releasing the lock, otherwise the status polling thread could/might break printing.
