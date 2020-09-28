@@ -14,7 +14,7 @@
 
     </v-app-bar>
 
-    <v-container class="item_scrollview">
+    <v-container v-if="$appConfig.ui.main_menu_display_rfid_tags" class="item_scrollview">
       <v-row dense>
         <v-col
           v-for="(item_bib) in rfid_tags_present"

@@ -323,6 +323,11 @@
             }
           }
         },
+        "main_menu_display_rfid_tags": {
+          "type": "boolean",
+          "description": "Show all present RFID tags in the main menu view.",
+          "default": true
+        },
         "popup_inactivity_timeout_s": {
           "type": "integer",
           "default": 5,

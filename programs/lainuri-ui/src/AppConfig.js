@@ -31,6 +31,7 @@ export default function (Vue) {
           ui: {
             always_display_check_in_out_notification: true,
             images: {},
+            main_menu_display_rfid_tags: true,
             session_inactivity_timeout_s: 120,
             popup_inactivity_timeout_s: 5,
             use_bookcovers: true,

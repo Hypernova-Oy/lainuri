@@ -72,6 +72,7 @@ ui:
     src: ../../../lainuri-ui/public/images/shared_gallery/xamk-logo-big.png
   - position: logo-small
     src: ../../../lainuri-ui/public/images/shared_gallery/xamk-logo-small.png
+  main_menu_display_rfid_tags: True
   popup_inactivity_timeout_s: 5
   use_bookcovers: true
   session_inactivity_timeout_s: 120
