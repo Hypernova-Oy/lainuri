@@ -57,6 +57,23 @@ class WGI_AimingLight(WGICommand):
       self.data = b'\x02'
     super().__init__()
 
+class WGI_ErrorCheck(WGICommand):
+  """
+  ?
+  """
+  exID  = b'\xA1'
+  exCMD = b'\x0B'
+  def __init__(self, turn_off=None, read_twice=None, read_thrice=None):
+    if turn_off:
+      self.data = b'\x01'
+    if read_twice:
+      self.data = b'\x02'
+    if read_thrice:
+      self.data = b'\x03'
+    else:
+      raise Exception(f"WGI_ErrorCheck() invoked without defining the proper operational mode!")
+    super().__init__()
+
 class WGI_IlluminateWorkMode(WGICommand):
   """
   ?

@@ -32,6 +32,7 @@ def autoconfigure(self):
     WGI_AimingLight(always_on=1),
     WGI_IlluminateWorkMode(always_on=1),
     WGI_TurnOnAllCode(),
+    WGI_ErrorCheck(read_thrice=True),
   ]
   for cmd in configurations:
     send_command(self, cmd)
