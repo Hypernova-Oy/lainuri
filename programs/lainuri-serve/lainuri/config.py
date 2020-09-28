@@ -103,6 +103,9 @@ def get_config(lookup: str):
 def get_lainuri_conf_dir() -> pathlib.Path:
   return pathlib.Path(os.environ.get('LAINURI_CONF_DIR'))
 
+def get_lainuri_ui_dir() -> pathlib.Path:
+  return (get_lainuri_sources_Path() / '..' / 'lainuri-ui').resolve()
+
 def log_dir() -> pathlib.Path:
   return pathlib.Path(os.environ.get('LAINURI_LOG_DIR'))
 
@@ -123,6 +126,7 @@ def image_overloads_flush():
   """
   Only used for test cases atm. Only flushes .png-files
   """
+  log.info(f"image_overloads_flush():> Flushing all overloaded images")
   for target_path in image_overloads_target_directories():
     for img_type in image_types():
       for file_path in target_path.glob(f"*.{img_type}"):
@@ -136,7 +140,7 @@ def image_overloads_handle():
   """
   ui_images = get_config('ui.images')
   if not ui_images: return
-  lainuri_config_image_overloads_path = get_lainuri_conf_dir() / 'image_overloads'
+  log.info(f"image_overloads_handle():> Deploying image overloads")
 
   for ui_img in ui_images:
     for target_path in image_overloads_target_directories():
@@ -145,30 +149,49 @@ def image_overloads_handle():
       src = None
       position = None
       try:
-        src = pathlib.Path(ui_img['src'])
+        src = image_overloads_get_source_file(pathlib.Path(ui_img['src']))
         position = target_path / (ui_img['position']+'.png')
-        if not src.is_absolute(): src = lainuri_config_image_overloads_path / src
-        if not src.exists():
-          log.error(f"image_overloads_handle():> image src '{src}' doesn't exist?")
-          continue
-        if not src.is_file():
-          log.error(f"image_overloads_handle():> image src '{src}' is not a file?")
-          continue
         shutil.copy(src=str(src), dst=str(position))
+        log.debug(f"Deployed image overload from '{src}' to '{position}'")
         try:
           os.chown(path=position, uid=target_path_stat.st_uid, gid=target_path_stat.st_gid)
         except Exception as e:
-          log.debug(f"Exception setting the owner of image overloads. path='{position}', uid='{target_path_stat.st_uid}', gid='{target_path_stat.st_gid}':\n  "+traceback.format_exc)
+          log.debug(f"Exception setting the owner of image overloads. path='{position}', uid='{target_path_stat.st_uid}', gid='{target_path_stat.st_gid}':\n  "+traceback.format_exc())
 
       except Exception as e:
-        log.error(f"image_overloads_handle():> Trying to copy src='{src}' to '{position}' failed. {type(e).__name__}:\n  "+traceback.format_exc)
+        log.error(f"image_overloads_handle():> Trying to copy src='{src}' to '{position}' failed. {type(e).__name__}:\n  "+traceback.format_exc())
 
 def image_overloads_target_directories():
-  lainuri_ui_path = (get_lainuri_sources_Path() / '..' / 'lainuri-ui').resolve()
+  lainuri_ui_path = get_lainuri_ui_dir()
   return (
     lainuri_ui_path / 'public' / 'image_overloads',
     lainuri_ui_path / 'dist' / 'image_overloads'
   )
+
+def image_overloads_get_source_file(src: pathlib.Path) -> pathlib.Path:
+  if src.is_absolute():
+    if not src.exists():
+      raise FileNotFoundError(f"image src '{src}' does not exist.")
+    if not src.is_file():
+      raise FileNotFoundError(f"image src '{src}' is not a file.")
+    return src
+
+  lainuri_config_image_overloads_path = get_lainuri_conf_dir() / 'image_overloads'
+
+  candidate_srcs = [
+    lainuri_config_image_overloads_path / src,
+    get_lainuri_ui_dir() / 'public' / 'images' / src,
+  ]
+  errors = []
+  for candidate_src in candidate_srcs:
+    if not candidate_src.exists():
+      errors.append(f"image src '{candidate_src}' does not exist.")
+      continue
+    if not candidate_src.is_file():
+      errors.append(f"image src '{candidate_src}' is not a file.")
+      continue
+    return candidate_src
+  raise FileNotFoundError(' '.join(errors))
 
 def image_overloads_get_images():
   images = []

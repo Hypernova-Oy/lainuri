@@ -302,7 +302,7 @@
         },
         "images": {
           "type": "array",
-          "description": "Inject custom images from the lainuri configuration directory (defaults to /etc/lainuri-serve/images) to the lainuri-ui public html files. They are loaded for the configured display positions.",
+          "description": "Inject custom images from a defined absolute path, or the lainuri configuration directory (defaults to /etc/lainuri-serve/image_overloads), or from the lainuri-ui public/images/, to the lainuri-ui public html files (public/images/). They are loaded for the configured display positions.",
           "items": {
             "type": "object",
             "description": "Custom image rule to match a image file to a image place in the GUI",
