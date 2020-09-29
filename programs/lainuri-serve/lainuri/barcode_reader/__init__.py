@@ -55,8 +55,8 @@ class BarcodeReader():
     """
     log.info(f"WRITE--> {type(cmd)}")
     data = cmd.pack()
-    for b in data: print(hex(b), ' ', end='')
-    print()
+    #for b in data: print(hex(b), ' ', end='')
+    #print()
     rv = self.serial.write(data)
     log.info(f"-->WRITE {type(cmd)} '{rv}'")
     return rv

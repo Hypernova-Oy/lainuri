@@ -28,7 +28,7 @@ class LEvent():
     self.client = client
     self.recipient = recipient
     self.event_id = event_id
-    self.timestamp = time.strftime("%H:%M:%S", time.localtime())
+    self.timestamp = time.time()
     if not(self.event_id) and self.event: self.event_id = get_event_id(self.event)
 
   def serialize_ws(self):

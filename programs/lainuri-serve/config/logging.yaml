@@ -8,11 +8,11 @@ formatters:
     format: '%(asctime)s %(name)s [%(levelname)s] %(message)s'
   colored:
     class: colorlog.ColoredFormatter
-    format: '%(log_color)s%(asctime)s %(name)s [%(levelname)s]%(reset)s %(message)s at %(funcName)s'
+    format: '%(log_color)s%(asctime)s %(name)s [%(levelname)s]%(reset)s %(message)s'
 handlers:
   console:
     class: logging.StreamHandler
-    formatter: simple
+    formatter: colored
     stream: ext://sys.stdout
   console_complex:
     class: logging.StreamHandler
@@ -45,6 +45,10 @@ loggers:
     level: INFO
     handlers: [console_complex]
     propagate: no
-  root:
-    level: ERROR
-    handlers: [console]
+  lainuri:
+    level: DEBUG
+    handlers: [console_complex]
+    propagate: no
+#  root: # root logger overloading doesn't work with colorlog
+#    level: ERROR
+#    handlers: [console_complex]
