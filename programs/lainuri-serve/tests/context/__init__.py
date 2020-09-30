@@ -1,4 +1,6 @@
+from bs4 import BeautifulSoup
 import os
+import pathlib
 import time
 import sys
 
@@ -30,3 +32,6 @@ def poll_thread_is_alive(is_alive: bool, thread):
     time.sleep(0.1)
     if count == 0: raise TimeoutError(f"thread failed to {is_alive}")
   return True
+
+def soapify_mock_response(filepath: str) -> str:
+  return BeautifulSoup((pathlib.Path(__file__) / '..' / filepath).resolve().read_text('UTF-8'), 'html.parser')

@@ -13,6 +13,7 @@ import lainuri.status
 from bs4 import BeautifulSoup
 import bs4
 import functools
+from http.cookies import BaseCookie
 import json
 from pprint import pprint
 import re
@@ -100,7 +101,7 @@ class KohaAPI():
     data = r.data.decode('utf-8')
     try:
       soup = BeautifulSoup(data, features="html.parser")
-      for e in soup.select('script, style, meta, link'): e.decompose() # Remove all script-tags
+      for e in soup.select('script, style, meta, link, #breadcrumbs, body>nav, #header_search, #patronlists, #menu, #toolbar'): e.decompose() # Remove all script-tags
       log_scrape.info(self._scrape_log_header(r) + "\n" + soup.prettify())
     except Exception as e:
       log_scrape.info(f"event_id='{self.current_event_id}'\n" + data)
@@ -141,66 +142,57 @@ class KohaAPI():
   def authenticated(self):
     if not self.sessionid: return 0
 
-    # TODO: Koha API is broken here. On success we get 500, on error we get 401.
     r = self.http.request_encode_body(
       'GET',
-      self.koha_baseurl+'/api/v1/auth/session',
+      self.koha_baseurl+'/cgi-bin/koha/circ/returns.pl',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
       },
-      fields = {
-        'sessionid': self.sessionid,
-      },
     )
-    self._receive_json(r)
-    if r.status == 500 or r.status == 200: #Bug in Koha API
-      return 1
-    else:
-      return 0
+    soup = self._receive_html(r)
+    e = soup.select('#login_error')
+    if not e: return False
+    return True
 
   def authenticate(self):
     log.info(f"Authenticating")
 
     r = self.http.request(
       'POST',
-      self.koha_baseurl + '/api/v1/auth/session',
-      headers = {
-        'Cookie': f'CGISESSID={self.sessionid}',
-      },
+      self.koha_baseurl+'/cgi-bin/koha/circ/returns.pl',
       fields = {
-        'password': get_config('koha.password'),
+        'koha_login_context': 'intranet',
         'userid': get_config('koha.userid'),
+        'password': get_config('koha.password'),
+        'branch': '',
       },
     )
-    payload = self._receive_json(r)
-    error = payload.get('error', None)
-    if error:
+    soup = self._receive_html(r)
+    e = soup.select('#login_error')
+    if e:
       lainuri.status.update_status('ils_credentials_status', Status.ERROR)
-      if 'Login failed' in error: raise exception_ils.InvalidUser(get_config('koha.userid'))
-      else: raise Exception(f"Unknown error '{error}'")
-    self.sessionid = payload['sessionid']
-    return payload
+      raise exception_ils.InvalidUser(get_config('koha.userid'))
+
+    c = BaseCookie(r.headers.get('set-cookie'))
+    self.sessionid = c['CGISESSID'].value
+    if not self.sessionid:
+      lainuri.status.update_status('ils_credentials_status', Status.ERROR)
+      raise Exception("Unable to parse authentication cookie from a supposedly successfull authentication?")
+
+    return r
 
   def deauthenticate(self):
     if not self.sessionid: return None
     log.info(f"Deauthenticating")
     r = self.http.request_encode_body(
-      'DELETE',
-      self.koha_baseurl + '/api/v1/auth/session',
+      'GET',
+      self.koha_baseurl + '/cgi-bin/koha/circ/returns.pl?logout.x=1',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
-      },
-      fields = {
-        'sessionid': self.sessionid,
-      },
+      }
     )
-    payload = self._receive_json(r)
-    error = payload.get('error', None)
-    if error:
-      if 'Logout failed' in error: raise exception_ils.InvalidUser(get_config('koha.userid'))
-      else: raise Exception(f"Unknown error '{error}'")
     self.sessionid = None
-    return payload
+    return r
 
   def authenticate_user(self, user_barcode, userid=None, password=None) -> dict:
     log.info(f"Auth user '{user_barcode or userid}'.")
@@ -218,7 +210,7 @@ class KohaAPI():
 
     fields = {}
     if user_barcode: fields['cardnumber'] = user_barcode
-    if borrowernumber: fields['borrowernumber'] = borrowernumber
+    if borrowernumber: fields['patron_id'] = borrowernumber
 
     (response, payload) = self._request(
       'GET',
@@ -239,7 +231,9 @@ class KohaAPI():
     if len(payload) == 0:
       raise exception_ils.NoUser(user_barcode)
 
-    return payload[0]
+    bo = payload[0]
+    bo['borrowernumber'] = bo['patron_id']
+    return bo
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_item(self, item_barcode):
@@ -252,7 +246,7 @@ class KohaAPI():
         'Cookie': f'CGISESSID={self.sessionid}',
       },
       fields = {
-        'barcode': item_barcode,
+        'external_id': item_barcode,
       },
     )
 
@@ -266,25 +260,29 @@ class KohaAPI():
     if len(payload) == 0:
       raise exception_ils.NoItem(item_barcode)
 
-    return payload[0]
+    it = payload[0]
+    it['itemnumber'] = it['item_id']
+    it['biblionumber'] = it['biblio_id']
+    it['barcode'] = it['external_id']
+    return it
 
   @functools.lru_cache(maxsize=get_config('koha.api_memoize_cache_size'), typed=False)
   def get_record(self, biblionumber):
     log.info(f"Get record: biblionumber='{biblionumber}'")
-    (response, payload) = self._request(
+
+    r = self.http.request_encode_body(
       'GET',
-      self.koha_baseurl + f'/api/v1/records/{biblionumber}',
+      self.koha_baseurl + f'/api/v1/biblios/{biblionumber}',
       headers = {
         'Cookie': f'CGISESSID={self.sessionid}',
+        'Accept': 'application/marcxml+xml',
       },
     )
+    if (r.status == 200):
+      return r.data.decode('utf-8')
 
-    error = payload.get('error', None)
-    if error:
-      if response.status == 404:
-        raise exception.NoResults(biblionumber)
-      raise Exception(f"Unknown error '{error}'")
-    return payload
+    # On 404 this is true, otherwise should transparently reauthenticate!
+    raise exception.NoResults(biblionumber) # TODO Transparent reauthentication works rather poorly when errors are returned as JSON and data as XML. Need to rework the whole request dispatch cycle
 
   def checkin(self, barcode) -> tuple:
     log.info(f"Checkin: barcode='{barcode}'")
@@ -300,15 +298,40 @@ class KohaAPI():
       expect_html=True,
     )
 
-    (status, states) = self._checkin_check_statuses(barcode, soup, *self._parse_html(soup))
+    (status, states) = self._checkin_check_statuses(barcode, soup)
     log.info(f"Checkin complete: item_barcode='{barcode}' with status='{status}' states='{states}'")
     return (status, states)
 
-  def _checkin_check_statuses(self, barcode, soup, alerts, messages):
+  def _checkin_check_statuses(self, barcode, soup):
     states = {}
     status = None
-    alerts = [a for a in alerts if not self._checkin_has_status(a, states, barcode)]
-    messages = [a for a in messages if not self._checkin_has_status(a, states, barcode)]
+    message = soup.prettify()
+
+    m_not_checked_out = re.compile('Not checked out', re.S | re.M)
+    match = m_not_checked_out.search(message)
+    if match:
+      states['not_checked_out'] = True
+      states['status'] = Status.SUCCESS # If the item is not checked out, it wont be registered as a checkin in the table#checkedintable
+
+    m_return_to_another_branch = re.compile('Please return this item to (?P<branchname>.+?)\n', re.S | re.M)
+    match = m_return_to_another_branch.search(message)
+    if match:
+      states['return_to_another_branch'] = match.group('branchname')
+
+    m_no_item = re.compile('No item with barcode', re.S | re.M)
+    match = m_no_item.search(message)
+    if match:
+      states['no_item'] = True
+      states['status'] = Status.ERROR
+
+    m_holds = re.compile(f'id="hold-found2".+?biblionumber=(?P<biblionumber>\d+)">\s*{re.escape(barcode)}:', re.S | re.M)
+    match = m_holds.search(message)
+    if match:
+      states['hold_found'] = match.group('biblionumber')
+
+
+    if states.get('status', None):
+      status = states.pop('status')
 
     # Check if the checkin actually went through in Koha, this is indicated by the #checkedintable contents
     # The alerts and messages don't have a clear status indication of success or failure.
@@ -319,51 +342,7 @@ class KohaAPI():
         break
     if not status: status = Status.ERROR
 
-    if (alerts or messages):
-      states['unhandled'] = [*(alerts or []), *(messages or [])]
-    if states.get('status', None):
-      status = states.pop('status')
     return (status, states)
-
-  def _checkin_has_status(self, message, states, barcode):
-    m_not_checked_out = re.compile('Not checked out', re.S | re.M)
-    match = m_not_checked_out.search(message)
-    if match:
-      states['not_checked_out'] = True
-      states['status'] = Status.SUCCESS # If the item is not checked out, it wont be registered as a checkin in the table#checkedintable
-      return 'not_checked_out'
-
-    m_return_to_another_branch = re.compile('Please return item to: (?P<branchname>.+?)\n', re.S | re.M)
-    match = m_return_to_another_branch.search(message)
-    if match:
-      states['return_to_another_branch'] = match.group('branchname')
-      return 'return_to_another_branch'
-
-    m_no_item = re.compile('No item with barcode', re.S | re.M)
-    match = m_no_item.search(message)
-    if match:
-      states['no_item'] = 'no_item'
-      states['status'] = Status.ERROR
-      return 'no_item'
-
-    m_fines = re.compile('Patron has outstanding fines of (?P<fine_amount>\d+[.,]?\d*)\.')
-    match = m_fines.search(message)
-    if match:
-      states['outstanding_fines'] = match.group('fine_amount')
-      return 'outstanding_fines'
-
-    m_holds = re.compile(f'id="hold-found2".+?biblionumber=(?P<biblionumber>\d+)">\s+{re.escape(barcode)}:', re.S | re.M)
-    match = m_holds.search(message)
-    if match:
-      states['hold_found'] = match.group('biblionumber')
-
-      m_transfer = re.compile('<h4>\s+<strong>\s+Transfer to:\s+</strong>\s+(?P<branchname>.+?)\s+</h4>', re.S | re.M)
-      match = m_transfer.search(message)
-      if match:
-        states['return_to_another_branch'] = match.group('branchname')
-      return 'hold_found'
-
-    return None
 
   def checkout(self, barcode, borrowernumber) -> tuple:
     log.info(f"Checkout: barcode='{barcode}' borrowernumber='{borrowernumber}'")
@@ -415,7 +394,7 @@ class KohaAPI():
     if match:
       states['checkout_impossible'] = True
       states['status'] = Status.ERROR
-      return 'not_checked_out'
+      return 'checkout_impossible'
 
     m_needsconfirmation = re.compile('id="circ_needsconfirmation"', re.S | re.M | re.I)
     match = m_needsconfirmation.search(message)
@@ -450,26 +429,7 @@ class KohaAPI():
     return receipt_text
 
   def availability(self, borrowernumber, itemnumber):
-    log.info(f"Availability: borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'")
-    (response, payload) = self._request(
-      'GET',
-      self.koha_baseurl + f'/api/v1/availability/item/checkout?itemnumber={itemnumber}&borrowernumber={borrowernumber}',
-      headers = {
-        'Cookie': f'CGISESSID={self.sessionid}',
-      },
-    )
-
-    if isinstance(payload, dict) and payload.get('error', None):
-      error = payload.get('error', None)
-      if error:
-        raise Exception(f"Unknown error '{error}'")
-
-    if len(payload) > 1:
-      raise Exception(f"Got more than one availability result with borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'!")
-    if len(payload) == 0:
-      raise Exception(f"Got no availability result with borrowernumber='{borrowernumber}' itemnumber='{itemnumber}'!")
-
-    return payload[0]['availability']
+    return {'available': True}
 
 image_types_matcher = re.compile("(?:"+"|.".join(lainuri.config.image_types(True))+"|image)", re.I)
 class MARCRecord():

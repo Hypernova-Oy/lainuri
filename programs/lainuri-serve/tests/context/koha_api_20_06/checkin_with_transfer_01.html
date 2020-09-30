@@ -1,0 +1,258 @@
+<div class="main container-fluid">
+  <div class="row">
+    <div class="col-sm-12">
+      <main>
+        <div class="row">
+
+          <div class="col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+
+            <!-- case of a mistake in transfer loop -->
+
+            <div id="item-transfer-modal" class="modal fade audio-alert-action block">
+              1
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <form method="post" action="returns.pl" name="mainform" id="mainform">
+
+                    <input type="hidden" name="print_slip" value="0" />
+
+                    <div class="modal-header">
+                      <h3>
+                        Please return this item to HAMKin kirjasto
+                      </h3>
+                    </div>
+                    <div class="modal-body">
+                      <p>
+                        <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=34">
+                          ki12345: Pähkähullu kissa /
+                        </a>
+                      </p>
+
+                      <input type="hidden" name="tobranch" value="HAMK" />
+                      <input type="hidden" name="transferitem" value="1530" />
+                      <input type="hidden" name="barcode" value="0" />
+                      <input type="hidden" name="trigger" value="" />
+
+                      <!-- Patron has added an issue note -->
+
+                      <!-- Patron has fines -->
+
+                      <!-- Item has return claim(s) -->
+
+                      <!-- Patron has waiting holds -->
+
+                      <!-- Patron is restricted and checkin was backdated -->
+
+                    </div>
+                    <div class="modal-footer">
+
+                      <button type="button" data-dismiss="modal" class="btn btn-default approve"><i
+                          class="fa fa-check"></i> OK</button>
+                      <button type="button" data-dismiss="modal" name="dotransfer" class="btn btn-default print openWin"
+                        data-url="transfer-slip.pl?transferitem=1530&amp;branchcode=HAMK&amp;op=slip"><i
+                          class="fa fa-print"></i> Print slip</button>
+
+                      <input type="hidden" name="return_date_override" value="" />
+                      <input type="hidden" name="return_date_override_remember" value="" />
+                      <input type="hidden" name="exemptfine" value="" />
+                      <input type="hidden" name="dropboxmode" value="" />
+                      <input type="hidden" name="forgivemanualholdsexpire" value="" />
+
+                      <input type="hidden" name="ri-0" value="ki12345" />
+                      <input type="hidden" name="dd-0" value="2020-10-14 23:59" />
+                      <input type="hidden" name="bn-0" value="71" />
+
+                    </div> <!-- /.modal-footer -->
+                  </form> <!-- /#mainform -->
+                </div> <!-- /.modal-content -->
+              </div> <!-- /.modal-dialog -->
+            </div> <!-- /#item-transfer-modal -->
+
+            <!-- case of simple return no issue or transfer but with a reservation  -->
+
+            <div class="static_checkin_messages">
+
+              <!-- Patron has added an issue note -->
+
+              <!-- Patron has fines -->
+
+              <!-- Item has return claim(s) -->
+
+              <!-- Patron has waiting holds -->
+
+              <!-- Patron is restricted and checkin was backdated -->
+
+            </div>
+
+            <form id="checkin-form" method="post" action="/cgi-bin/koha/circ/returns.pl" autocomplete="off">
+              <fieldset id="circ_returns_checkin">
+                <div class="show_checkin_dialog" style="float:right;display:none"><button type="button"
+                    class="btn btn-default btn-sm" data-toggle="tooltip" title="Show the last checkin message"><i
+                      class="fa fa-info"></i></button></div>
+                <h3>Check in</h3>
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="hint">Enter item barcode:</div>
+                    <div class="form-control-group">
+
+                      <input name="barcode" id="barcode" size="14" class="barcode focus" />
+
+                      <button type="submit" class="btn btn-default">Check in</button>
+
+                      <input type="hidden" name="ri-0" value="ki12345" />
+                      <input type="hidden" name="dd-0" value="2020-10-14 23:59" />
+                      <input type="hidden" name="bn-0" value="71" />
+
+                    </div>
+                    <div id="show-circ-settings">
+                      <a href="#"><i class="fa circ-settings-icon fa-caret-down"></i> Checkin settings</a>
+                    </div>
+                  </div>
+                  <div class="col-sm-6">
+
+                    <div id="exemptfines" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Fines for returned items are forgiven.</p>
+                    </div>
+
+                    <div id="forgivemanualholdsexpire-alert" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Fines are not charged for manually cancelled holds.</p>
+                    </div>
+
+                    <div id="dropboxmode" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Book drop mode. <span class="single-line">( Effective checkin date
+                          is 29/09/2020 00:00 )</span></p>
+                    </div>
+
+                    <div id="return_date_remember" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Saved check-in date: <span id="saved_return_date"
+                          class="single-line"></span></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="circ-settings">
+
+                  <div class="date-select" id="return_date_override_fields">
+                    <div class="hint">Specify return date (DD/MM/YYYY)
+                      : </div>
+
+                    <input type="text" size="13" id="return_date_override" name="return_date_override" value="" />
+
+                    <button type="button" class="action btn btn-default btn-xs" id="cleardate"
+                      name="cleardate">Clear</button>
+                    <div class="circ-setting">
+
+                      <input type="checkbox" id="return_date_override_remember" name="return_date_override_remember" />
+
+                      <label for="return_date_override_remember"> Remember due date for next check in</label>
+                    </div>
+                  </div> <!-- /.date-select -->
+
+                  <!-- overduecharges -->
+
+                  <div id="book-drop-mode" class="circ-setting">
+
+                    <input type="checkbox" id="dropboxcheck" name="dropboxmode" value="dropboxmode" />
+
+                    <label for="dropboxcheck">Book drop mode</label>
+                  </div>
+
+                  <div class="forgive-manual-hold-fees circ-setting">
+
+                    <input type="checkbox" id="forgivemanualholdsexpire" name="forgivemanualholdsexpire"
+                      value="forgivemanualholdsexpire" />
+
+                    <label for="forgivemanualholdsexpire">Forgive fees for manually expired holds</label>
+                  </div>
+                  <!-- overduecharges -->
+
+                </div> <!-- /.circ-settings -->
+              </fieldset> <!-- /#circ_returns_checkin -->
+            </form> <!-- /#checkin-form -->
+
+            <h2>Checked-in items</h2>
+            <table id="checkedintable">
+              <thead>
+                <tr>
+                  <th class="ci-duedate">Due date</th>
+                  <th class="ci-title">Title</th>
+                  <th class="ci-author">Author</th>
+                  <th class="ci-barcode">Barcode</th>
+                  <th class="ci-homelibrary">Home library</th>
+                  <th class="ci-holdinglibrary">Holding library</th>
+                  <th class="ci-shelvinglocation">Shelving location</th>
+                  <th class="ci-callnumber">Call number</th>
+                  <th class="ci-dateaccessioned">Date acquired</th>
+                  <th class="ci-recordlevelitemtype">Record-level itemtype</th>
+                  <th class="ci-itemtype">Item type</th>
+                  <th class="ci-collection">Collection</th>
+                  <th class="ci-patron">Patron</th>
+                  <th class="ci-note">Note</th>
+                </tr>
+              </thead>
+
+              <tr>
+                <td class="ci-duedate">
+
+                  14/10/2020 23:59
+
+                </td>
+                <td class="ci-title">
+                  <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=34">
+                    Pähkähullu kissa /
+
+                  </a>
+
+                </td>
+                <td class="ci-author">Stott, Bill.</td>
+                <td class="ci-barcode">
+                  <a
+                    href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=34&amp;itemnumber=1530#item1530">ki12345</a>
+                </td>
+                <td class="ci-homelibrary">
+                  HAMKin kirjasto
+                </td>
+                <td class="ci-holdinglibrary">
+                  Centerville
+                </td>
+                <td class="ci-shelvinglocation">
+                  <span class="shelvingloc"></span>
+                </td>
+                <td class="ci-callnumber">
+
+                </td>
+                <td class="ci-dateaccessioned">
+                  04/08/2020
+                </td>
+                <td class="ci-recordlevelitemtype">
+                  Books
+                </td>
+                <td class="ci-itemtype">
+                  Books
+                </td>
+                <td class="ci-collection">
+
+                </td>
+                <td class="ci-patron">
+
+                  <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=71"> Studerande, Sture (Sture Studerande)
+                    (102) </a>
+
+                </td>
+                <td class="ci-note">
+
+                </td>
+              </tr>
+
+            </table> <!-- /#checkedintable -->
+
+          </div> <!-- /.col-md-10.col-md-offset-1.col-lg-8.col-lg-offset-2 -->
+        </div> <!-- /.row -->
+
+      </main>
+    </div> <!-- /.col-sm-12 -->
+  </div> <!-- /.row -->

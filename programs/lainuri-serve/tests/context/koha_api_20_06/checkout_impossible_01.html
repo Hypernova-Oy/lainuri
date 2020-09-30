@@ -1,0 +1,97 @@
+<body>
+
+  <!--  INITIAL BLOC : PARAMETERS & BORROWER INFO -->
+
+  <div id="circ_impossible" class="dialog alert audio-alert-warning">
+
+    <!-- RESULT OF ISSUING REQUEST -->
+    <ul>
+
+      <li>
+
+        Item not for loan (Not For Loan).
+
+      </li>
+
+    </ul>
+  </div> <!-- /#circ_impossible -->
+
+  <span class="audio-alert-success"></span>
+
+  <!-- BARCODE ENTRY -->
+
+  <div class="row">
+
+    <div class="col-sm-6">
+      <form method="post" action="/cgi-bin/koha/circ/circulation.pl" id="mainform" name="mainform" autocomplete="off">
+        <input type="hidden" name="restoreduedatespec" />
+
+        <fieldset id="circ_circulation_issue">
+
+          <label class="circ_barcode" for="barcode">Checking out to Sture (Sture Studerande) Studerande (102)</label>
+
+          <div class="hint">Enter item barcode:</div>
+
+          <input type="text" name="barcode" id="barcode" class="barcode focus" size="14" />
+
+          <button type="submit" class="btn btn-default">Check out</button>
+
+          <div id="show-circ-settings">
+            <a href="#"><i class="fa fa-caret-right circ-settings-icon"></i> Checkout settings</a>
+          </div>
+
+          <div class="circ-settings">
+
+            <div id="specify-due-date" class="circ-setting">
+              <div class="hint">Specify due date (DD/MM/YYYY)
+                : </div>
+
+              <input type="text" size="20" id="duedatespec" name="duedatespec" value="" />
+
+              <label for="stickyduedate"> Remember for session:</label>
+
+              <input type="checkbox" id="stickyduedate" onclick="this.form.barcode.focus();" name="stickyduedate" />
+
+              <button class="btn btn-default btn-xs action" id="cleardate" name="cleardate"
+                onclick="this.checked = false; this.form.duedatespec.value = ''; this.form.stickyduedate.checked = false; this.form.barcode.focus(); return false;">Clear</button>
+            </div>
+
+            <div id="set-automatic-renewal" class="circ-setting">
+
+              <input type="checkbox" name="auto_renew" id="auto_renew" value="auto_renew" class="circ_setting" />
+
+              <label for="auto_renew">Automatic renewal</label>
+            </div>
+
+          </div> <!-- /.circ-settings -->
+
+          <input type="hidden" name="borrowernumber" id="borrowernumber" value="71" />
+          <input type="hidden" name="branch" value="CPL" />
+          <input type="hidden" name="debt_confirmed" value="0" />
+
+        </fieldset> <!-- /#circ_circulation_issue -->
+
+      </form> <!-- /#mainform -->
+    </div> <!-- /.col-sm-6 -->
+
+    <div class="col-sm-6">
+
+      <div id="circmessages" class="circmessage attention">
+        <h3>Attention:</h3>
+
+        <ul>
+
+        </ul>
+
+        <div id="messages" class="circmessage">
+          <h4>Messages:</h4>
+          <ul>
+
+          </ul>
+          <a id="addnewmessageLabel" href="#add_message_form" class="btn btn-link" data-toggle="modal"><i
+              class="fa fa-plus"></i> Add a new message</a>
+        </div> <!-- /.messages -->
+      </div> <!-- /#circmessages -->
+    </div> <!-- /div or div.col-sm-6 -->
+  </div> <!-- /.row -->
+</body>

@@ -1,0 +1,217 @@
+<div class="main container-fluid">
+  <div class="row">
+    <div class="col-sm-12">
+      <main>
+        <div class="row">
+
+          <div class="col-md-10 col-md-offset-1 col-lg-8 col-lg-offset-2">
+
+            <!-- case of a mistake in transfer loop -->
+
+            <!-- case of simple return no issue or transfer but with a reservation  -->
+
+            <!-- reserved -->
+            <div id="hold-found2" class="modal fade audio-alert-action block">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <form method="post" action="returns.pl" class="confirm">
+
+                    <input type="hidden" name="print_slip" value="0" />
+
+                    <div class="modal-header">
+                      <h3>
+                        Hold found:
+                        <br />
+                        <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=33">Susikoski Suomesta
+                          /</a>
+                        <div class="hold-found-barcode">
+                          (<a
+                            href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=33&amp;itemnumber=1529">kis12345</a>)
+                        </div>
+                      </h3>
+                    </div>
+
+                    <div class="modal-body">
+
+                      <h5>Hold for:</h5>
+                      <ul>
+                        <li>
+                          <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=55#reserves"> Malliasiakas, Matti
+                            (1591-6926-3852) (Ma12345) </a>
+                          <span class="patron-category"> - Student</span>
+                        </li>
+
+                        <li class="notification_method none">Patron is not notified.</li>
+
+                      </ul>
+
+                      <h4><strong>Hold at</strong> Centerville</h4>
+
+                      <input type="hidden" name="itemnumber" value="1529" />
+                      <input type="hidden" name="borrowernumber" value="55" />
+                      <input type="hidden" name="biblionumber" value="33" />
+                      <input type="hidden" name="reserve_id" value="30" />
+                      <input type="hidden" name="diffBranch" value="CPL" />
+                      <input type="hidden" name="exemptfine" value="" />
+                      <input type="hidden" name="dropboxmode" value="" />
+                      <input type="hidden" name="forgivemanualholdsexpire" value="" />
+                      <input type="hidden" name="return_date_override" value="" />
+                      <input type="hidden" name="return_date_override_remember" value="" />
+
+                      <!-- Patron has added an issue note -->
+
+                      <!-- Patron has fines -->
+
+                      <!-- Item has return claim(s) -->
+
+                      <!-- Patron has waiting holds -->
+
+                      <!-- Patron is restricted and checkin was backdated -->
+
+                      <div class="dialog alert audio-alert-warning">
+                        <h3>Check in message</h3>
+
+                        <p><a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=33">kis12345:
+                            Susikoski Suomesta /</a></p>
+
+                        <p class="problem">Not checked out.</p>
+
+                      </div> <!-- /.dialog.dialog-alert -->
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                      <button type="submit" class="btn btn-default approve">
+                        <i class="fa fa-check"></i> Confirm hold
+                      </button>
+                      <button type="button" class="btn btn-default print">
+                        <i class="fa fa-print"></i> Print slip and confirm
+                      </button>
+
+                      <button data-dismiss="modal" aria-hidden="true" type="submit" class="btn btn-default deny">
+                        <i class="fa fa-times"></i> Ignore
+                      </button>
+                    </div> <!-- /.modal-footer -->
+                  </form> <!-- /.confirm -->
+                </div> <!-- /.modal-content -->
+              </div> <!-- /.modal-dialog -->
+            </div> <!-- /#hold-found2 -->
+
+            <div class="static_checkin_messages">
+
+              <!-- Patron has added an issue note -->
+
+              <!-- Patron has fines -->
+
+              <!-- Item has return claim(s) -->
+
+              <!-- Patron has waiting holds -->
+
+              <!-- Patron is restricted and checkin was backdated -->
+
+              <div class="dialog alert audio-alert-warning">
+                <h3>Check in message</h3>
+
+                <p><a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=33">kis12345: Susikoski
+                    Suomesta /</a></p>
+
+                <p class="problem">Not checked out.</p>
+
+              </div> <!-- /.dialog.dialog-alert -->
+
+            </div>
+
+            <form id="checkin-form" method="post" action="/cgi-bin/koha/circ/returns.pl" autocomplete="off">
+              <fieldset id="circ_returns_checkin">
+                <div class="show_checkin_dialog" style="float:right;display:none"><button type="button"
+                    class="btn btn-default btn-sm" data-toggle="tooltip" title="Show the last checkin message"><i
+                      class="fa fa-info"></i></button></div>
+                <h3>Check in</h3>
+                <div class="row">
+                  <div class="col-sm-6">
+                    <div class="hint">Enter item barcode:</div>
+                    <div class="form-control-group">
+
+                      <input name="barcode" id="barcode" size="14" class="barcode focus" />
+
+                      <button type="submit" class="btn btn-default">Check in</button>
+
+                    </div>
+                    <div id="show-circ-settings">
+                      <a href="#"><i class="fa circ-settings-icon fa-caret-down"></i> Checkin settings</a>
+                    </div>
+                  </div>
+                  <div class="col-sm-6">
+
+                    <div id="exemptfines" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Fines for returned items are forgiven.</p>
+                    </div>
+
+                    <div id="forgivemanualholdsexpire-alert" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Fines are not charged for manually cancelled holds.</p>
+                    </div>
+
+                    <div id="dropboxmode" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Book drop mode. <span class="single-line">( Effective checkin date
+                          is 29/09/2020 00:00 )</span></p>
+                    </div>
+
+                    <div id="return_date_remember" class="checkin-active-setting" style="display:none;">
+
+                      <p><i class="fa fa-check"></i> Saved check-in date: <span id="saved_return_date"
+                          class="single-line"></span></p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="circ-settings">
+
+                  <div class="date-select" id="return_date_override_fields">
+                    <div class="hint">Specify return date (DD/MM/YYYY)
+                      : </div>
+
+                    <input type="text" size="13" id="return_date_override" name="return_date_override" value="" />
+
+                    <button type="button" class="action btn btn-default btn-xs" id="cleardate"
+                      name="cleardate">Clear</button>
+                    <div class="circ-setting">
+
+                      <input type="checkbox" id="return_date_override_remember" name="return_date_override_remember" />
+
+                      <label for="return_date_override_remember"> Remember due date for next check in</label>
+                    </div>
+                  </div> <!-- /.date-select -->
+
+                  <!-- overduecharges -->
+
+                  <div id="book-drop-mode" class="circ-setting">
+
+                    <input type="checkbox" id="dropboxcheck" name="dropboxmode" value="dropboxmode" />
+
+                    <label for="dropboxcheck">Book drop mode</label>
+                  </div>
+
+                  <div class="forgive-manual-hold-fees circ-setting">
+
+                    <input type="checkbox" id="forgivemanualholdsexpire" name="forgivemanualholdsexpire"
+                      value="forgivemanualholdsexpire" />
+
+                    <label for="forgivemanualholdsexpire">Forgive fees for manually expired holds</label>
+                  </div>
+                  <!-- overduecharges -->
+
+                </div> <!-- /.circ-settings -->
+              </fieldset> <!-- /#circ_returns_checkin -->
+            </form> <!-- /#checkin-form -->
+
+          </div> <!-- /.col-md-10.col-md-offset-1.col-lg-8.col-lg-offset-2 -->
+        </div> <!-- /.row -->
+
+      </main>
+    </div> <!-- /.col-sm-12 -->
+  </div> <!-- /.row -->
+</div>
