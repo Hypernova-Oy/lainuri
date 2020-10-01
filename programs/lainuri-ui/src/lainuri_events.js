@@ -696,18 +696,22 @@ class LEUserLoginAbort extends LEvent {
 class LEException extends LEvent {
   static event = 'exception';
 
-  static serializable_attributes = ['exception'];
-  exception;
-  e;
+  static serializable_attributes = ['etype','description','trace'];
+  etype;
+  description;
+  trace;
 
-  constructor(e, sender, recipient, event_id = undefined) {
+  constructor(etype, description, trace, sender, recipient, event_id = undefined) {
     super(event_id);
-    if (e instanceof Error) {
-      this.e = e;
-      this.exception = e.message + "\n" + e.stack;
+    if (etype instanceof Error) {
+      this.etype = etype.getClass().getCanonicalName();
+      this.description = etype+"";
+      this.trace = etype.stack
     }
     else {
-      this.exception = e;
+      this.etype = etype;
+      this.description = description;
+      this.trace = trace;
     }
     this.construct(sender, recipient);
     this.validate_params()

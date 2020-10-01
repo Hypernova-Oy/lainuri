@@ -144,7 +144,7 @@ import StatusBar from './components/StatusBar.vue'
 import {ItemBib} from './item_bib'
 import {splice_bib_item_from_array, find_tag_by_key} from './helpers'
 import {start_ws, lainuri_set_vue, lainuri_ws, abort_user_login} from './lainuri'
-import {Status, LEAdminModeEnter, LEAdminModeLeave, LEItemBibFullDataResponse, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
+import {Status, LEAdminModeEnter, LEAdminModeLeave, LEException, LEItemBibFullDataResponse, LERFIDTagsNew, LERFIDTagsLost, LERFIDTagsPresentRequest, LERFIDTagsPresent} from './lainuri_events'
 
 
 let shared = {
@@ -176,6 +176,10 @@ export default {
     lainuri_ws.attach_event_listener(LEAdminModeLeave, this, function(event) {
       log.info(`Event 'LEAdminModeLeave' received.`);
       this.app_mode = 'mode_main_menu'
+    });
+    lainuri_ws.attach_event_listener(LEException, this, function(event) {
+      log.info(`Event 'LEException' received. (${event.type}):`, event);
+      this.show_exception(event);
     });
     lainuri_ws.attach_event_listener(LERFIDTagsNew, this, function(event) {
       log.info(`Event 'LERFIDTagsNew' received. New RFID tags (${event.tags_new.length}):`, event.tags_new, event.tags_present);

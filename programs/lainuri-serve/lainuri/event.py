@@ -665,14 +665,20 @@ class LETestMockDevices(LEvent):
 class LEException(LEvent):
   event = 'exception'
 
-  serializable_attributes = ['exception']
-  exception = Exception()
+  serializable_attributes = ['etype','description','trace']
+  etype = ''
+  description = ''
+  trace = ''
 
-  def __init__(self, exception, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
-    if isinstance(exception, Exception):
-      self.exception = traceback.format_exc()
+  def __init__(self, etype, description, trace, client: WebSocket = None, recipient: WebSocket = None, event_id: str = None):
+    if isinstance(etype, Exception):
+      self.etype = type(etype).__name__
+      self.description = str(etype)
+      self.trace = traceback.format_exc()
     else:
-      self.exception = exception
+      self.etype = etype
+      self.description = description
+      self.trace = trace
 
     super().__init__(event=self.event, client=client, recipient=recipient, event_id=event_id)
     self.validate_params()

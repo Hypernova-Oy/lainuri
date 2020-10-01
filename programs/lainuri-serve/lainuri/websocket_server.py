@@ -90,7 +90,7 @@ def message_clients(event: lainuri.event.LEvent):
       log.info(f"Message to clients '{[client.address for client in clients]}' event_id '{event.event_id}'")
 
   for client in clients:
-    if (event.recipient and event.recipient == client) or (not(event.recipient) and not(client == event.client)):
+    if (event.recipient and (event.recipient == 'client' or event.recipient == client)) or (not(event.recipient) and not(client == event.client)):
       client.send_message(event.serialize_ws())
 
 def register_client(event):

@@ -5,7 +5,7 @@
     v-on:click.native="close"
   >
     <v-row align="center">
-      <v-col class="grow">{{exceptions_count > 1 ? '('+exceptions_count+')' : ''}} {{t('Exception/'+e_type)}}</v-col>
+      <v-col class="grow">{{exceptions_count > 1 ? '('+exceptions_count+')' : ''}} {{t('Exception/'+e_type)}} {{exception.description}}</v-col>
       <v-col class="shrink">
         <v-btn x-large>OK</v-btn>
       </v-col>
@@ -29,6 +29,7 @@ export default {
       this.start_close_timeout()
       if (this.exception.status && this.exception.states && this.exception.states.exception && this.exception.states.exception.type) return this.exception.states.exception.type;
       if (this.exception.type) return this.exception.type;
+      if (this.exception.etype) return this.exception.etype;
       return '<NO EXCEPTION TYPE>'
     },
     e_trace: function () {

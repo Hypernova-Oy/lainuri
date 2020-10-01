@@ -3,6 +3,8 @@
 import context
 import lainuri.config
 
+import lainuri.event
+import lainuri.event_queue
 from lainuri.exception import NoResults
 import lainuri.exception.ils as exception_ils
 from lainuri.koha_api import koha_api, MARCRecord, get_fleshed_item_record
@@ -17,6 +19,9 @@ def test_authenticate():
   koha_api.deauthenticate()
   assert koha_api.authenticated() == 0
 
+  good_user = lainuri.config.c['koha']['userid']
+  good_pass = lainuri.config.c['koha']['password']
+
   # Lainuri boots and whenever authentication times out.
   lainuri.config.c['koha']['userid'] = 'l-t-dev-bad'
   lainuri.config.c['koha']['password'] = 'bad_pass'
@@ -25,8 +30,8 @@ def test_authenticate():
     lambda: koha_api.authenticate()
   )
 
-  lainuri.config.c['koha']['userid'] = 'demotunnus'
-  lainuri.config.c['koha']['password'] = 'Baba-Gnome1'
+  lainuri.config.c['koha']['userid'] = good_user
+  lainuri.config.c['koha']['password'] = good_pass
   koha_api.current_event_id = 'event-id-3'
   assert koha_api.authenticate()
   assert koha_api.sessionid
@@ -40,10 +45,22 @@ def test_user_login():
 
   # Borrower login event
   koha_api.current_event_id = 'auth-user-5'
-  borrower = koha_api.authenticate_user('demotunnus')
+  borrower = koha_api.authenticate_user(lainuri.config.c['koha']['userid'])
   assert borrower['patron_id']
   assert borrower['borrowernumber']
-  assert borrower['cardnumber'] == 'demotunnus'
+  assert borrower['cardnumber'] == lainuri.config.c['koha']['userid']
+
+def test_permission_missing_dispatches_LEException():
+  lainuri.event_queue.flush_all()
+
+  context.assert_raises('Testing missing REST API permissions', exception_ils.PermissionMissing, 'order_manage',
+    lambda: koha_api.get_order_1()
+  )
+  event = lainuri.event_queue.pop_event()
+  assert type(event) == lainuri.event.LEException
+  assert event.etype == 'PermissionMissing'
+  assert len(event.description) > 10
+  assert len(event.trace) > 10
 
 def test_get_item():
   global borrower, item, record

@@ -5,6 +5,8 @@ log = logging.getLogger(__name__)
 log_scrape = logging.getLogger('lainuri.scraping')
 
 from lainuri.constants import Status
+import lainuri.event
+import lainuri.event_queue
 import lainuri.exception as exception
 import lainuri.exception.ils as exception_ils
 import lainuri.locale
@@ -25,11 +27,9 @@ import urllib3.exceptions
 
 class KohaAPI():
   required_permissions = {
-    'auth': 'get_session',
-    'borrowers': 'view_borrowers',
-  #  'catalogue': 'staff_login',
+    'borrowers': '1',
     'circulate': 'circulate_remaining_permissions',
-    'editcatalogue': '*',
+    'catalogue': '1',
   }
 
   sessionid = ''
@@ -131,8 +131,10 @@ class KohaAPI():
   def _maybe_missing_permission(self, payload):
     if isinstance(payload, dict) and payload.get('error', None):
       if payload.get('required_permissions'):
+        e = exception_ils.PermissionMissing(payload.get('required_permissions'))
+        lainuri.event_queue.push_event(lainuri.event.LEException(e, None, None, 'server', 'client'))
         lainuri.status.update_status('ils_credentials_status', Status.PENDING)
-        raise exception_ils.PermissionMissing(payload.get('required_permissions'))
+        raise e
     lainuri.status.update_status('ils_credentials_status', Status.SUCCESS)
 
   def _transparent_reauthentication(self):
@@ -430,6 +432,20 @@ class KohaAPI():
 
   def availability(self, borrowernumber, itemnumber):
     return {'available': True}
+
+  def get_order_1(self):
+    """
+    This should always fail due to missing permissions, and is used to check that the REST API permission checking works.
+    should raise exception_ils.PermissionMissing
+    Lainuri doesn't need permissions to do acquisitions. Yet...
+    """
+    (response, payload) = self._request(
+      'GET',
+      self.koha_baseurl + f'/api/v1/acquisitions/orders/1',
+      headers = {
+        'Cookie': f'CGISESSID={self.sessionid}',
+      },
+    )
 
 image_types_matcher = re.compile("(?:"+"|.".join(lainuri.config.image_types(True))+"|image)", re.I)
 class MARCRecord():
