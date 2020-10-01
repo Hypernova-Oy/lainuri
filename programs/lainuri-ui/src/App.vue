@@ -72,12 +72,12 @@
 
     <v-container fluid max-height="800">
       <StatusBar/>
-      <transition name="fade" mode="out-in" appear>
-        <Exception v-if="exceptions.length" :key="exceptions.length"
-          :exception="exceptions[exceptions.length-1]" :exceptions_count="exceptions.length"
-          v-on:exception_close="exceptions.pop()"
+      <transition-group name="fade" mode="out-in" appear tag="span" class="exceptions-listing">
+        <Exception v-for="(exc) in exceptions" :key="exc.eid"
+          :exception="exc" :exceptions_count="exceptions.length" :eid="exc.eid"
+          v-on:exception_close="close_exception(exc)"
         />
-      </transition>
+      </transition-group>
       <MainMenuView v-if="app_mode === 'mode_main_menu'"
         :rfid_tags_present="rfid_tags_present"
         v-on:exception="show_exception"
@@ -292,7 +292,15 @@ export default {
       this.enter_main_menu();
     },
     show_exception: function (event) {
+      event.eid = Math.random()
       this.$data.exceptions.push(event);
+    },
+    close_exception: function (exception) {
+      /* Due to a race condition of multiple timers ending when closing multiple Exception notifications, we cannot simply shift the array,
+        we need to splice the correct item, as the shifted array index might not be the one that actually times out, even if they are in
+        the correct order of timing out. */
+      let idx = this.$data.exceptions.findIndex((el) => el === exception);
+      this.$data.exceptions.splice(idx,1);
     },
     repl_execute: function () {
       let resp = eval(this.$data.repl);
@@ -328,6 +336,11 @@ body::-webkit-scrollbar {
 
 * {
   cursor: none !important
+}
+
+span.exceptions-listing {
+  display: flex;
+  flex-direction: column-reverse;
 }
 
 .item_scrollview {

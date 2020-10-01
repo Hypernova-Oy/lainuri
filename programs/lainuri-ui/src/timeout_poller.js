@@ -25,7 +25,7 @@ function start(timer_name, timer_callback, timer_timeout, interval_callback, int
         terminate(timer_name);
         timer_callback(timer_name);
       }
-    }, 4000);
+    }, 1000);
   }
   if (interval_callback) {
     interval_pollers[timer_name] = window.setInterval(() => {

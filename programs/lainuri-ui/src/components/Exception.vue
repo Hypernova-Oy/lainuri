@@ -5,7 +5,7 @@
     v-on:click.native="close"
   >
     <v-row align="center">
-      <v-col class="grow">{{exceptions_count > 1 ? '('+exceptions_count+')' : ''}} {{t('Exception/'+e_type)}} {{exception.description}}</v-col>
+      <v-col class="grow">{{t('Exception/'+e_type)}} {{exception.description}}</v-col>
       <v-col class="shrink">
         <v-btn x-large>OK</v-btn>
       </v-col>
@@ -14,19 +14,27 @@
 </template>
 
 <script>
+
+import * as Timeout from '../timeout_poller'
+
 export default {
   name: 'Exception',
   props: {
     exception: Object,
     exceptions_count: Number,
+    eid: Number, // Used to uniquely identify the exception instance so we can trigger specific timers for it
   },
-  updated: function () {
-    this.start_close_timeout()
+  created: function () {
+    Timeout.start("exception"+this.eid, () => {
+      this.$emit('exception_close')
+    }, this.$appConfig.ui.popup_inactivity_timeout_s);
+  },
+  destroyed: function () {
+    Timeout.terminate("exception"+this.eid)
   },
   computed: {
     // Normalize invocations, detect if Exception object is given, or a event, or a ItemBib
     e_type: function () {
-      this.start_close_timeout()
       if (this.exception.status && this.exception.states && this.exception.states.exception && this.exception.states.exception.type) return this.exception.states.exception.type;
       if (this.exception.type) return this.exception.type;
       if (this.exception.etype) return this.exception.etype;
@@ -39,13 +47,6 @@ export default {
     }
   },
   methods: {
-    start_close_timeout: function () {
-      if (this.close_timeout) window.clearTimeout(this.close_timeout);
-      this.close_timeout = window.setTimeout(
-        function() {this.close()}.bind(this),
-        5000
-      );
-    },
     close: function () {
       this.$emit('exception_close')
     },
