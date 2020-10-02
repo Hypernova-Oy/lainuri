@@ -315,7 +315,11 @@ class KohaAPI():
       states['not_checked_out'] = True
       states['status'] = Status.SUCCESS # If the item is not checked out, it wont be registered as a checkin in the table#checkedintable
 
-    m_return_to_another_branch = re.compile('Please return this item to (?P<branchname>.+?)\n', re.S | re.M)
+    m_return_to_another_branch = re.compile('id="item-transfer-modal".+?Please return this item to (?P<branchname>.+?)\n', re.S | re.M)
+    match = m_return_to_another_branch.search(message)
+    if match:
+      states['return_to_another_branch'] = match.group('branchname')
+    m_return_to_another_branch = re.compile('id="wrong-transfer-modal".+?Please return item to: (?P<branchname>.+?)\n', re.S | re.M)
     match = m_return_to_another_branch.search(message)
     if match:
       states['return_to_another_branch'] = match.group('branchname')
@@ -326,7 +330,7 @@ class KohaAPI():
       states['no_item'] = True
       states['status'] = Status.ERROR
 
-    m_holds = re.compile(f'id="hold-found2".+?biblionumber=(?P<biblionumber>\d+)">\s*{re.escape(barcode)}:', re.S | re.M)
+    m_holds = re.compile(f'id="hold-found2".+?biblionumber=(?P<biblionumber>\d+)', re.S | re.M)
     match = m_holds.search(message)
     if match:
       states['hold_found'] = match.group('biblionumber')

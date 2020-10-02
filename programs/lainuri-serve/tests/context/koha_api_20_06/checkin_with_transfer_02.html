@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<!-- TEMPLATE FILE: returns.tt -->
+<html lang="en">
+ <head>
+  <title>
+   Koha › Circulation › Check in Johtamisen psykologia :
+  </title>
+  <!-- local colors -->
+ </head>
+ <body class="circ" id="circ_returns">
+  <span class="audio-alert-success">
+  </span>
+  <div class="gradient">
+   <h1 id="logo">
+    <a href="/cgi-bin/koha/mainpage.pl">
+     Xamk
+    </a>
+   </h1>
+   <!-- Begin Checkin Resident Search Box -->
+  </div>
+  <!-- /gradient -->
+  <!-- End Checkin Resident Search Box -->
+  <div class="main container-fluid">
+   <div class="row">
+    <div class="col-sm-12">
+     <main>
+      <div class="row">
+       <div class="col-sm-10 col-sm-push-2">
+        <!-- case of a mistake in transfer loop -->
+        <div class="modal fade audio-alert-action block" id="wrong-transfer-modal">
+         <div class="modal-dialog">
+          <div class="modal-content">
+           <div class="modal-header">
+            <h3>
+             Please return item to: Kouvolan kampuskirjasto
+            </h3>
+           </div>
+           <div class="modal-body">
+            <p>
+             <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=142095">
+              1623207211: Johtamisen psykologia :
+             </a>
+            </p>
+            <!-- Patron has added an issue note -->
+            <!-- Patron has fines -->
+            <!-- Item has return claim(s) -->
+            <!-- Patron has waiting holds -->
+            <!-- Patron is restricted and checkin was backdated -->
+            <div class="dialog alert audio-alert-warning">
+             <h3>
+              Check in message
+             </h3>
+             <p>
+              <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=142095">
+               1623207211: Johtamisen psykologia :
+              </a>
+             </p>
+             <p class="problem">
+              Not checked out.
+             </p>
+            </div>
+            <!-- /.dialog.dialog-alert -->
+           </div>
+           <div class="modal-footer">
+            <!-- CONFIRM -->
+            <button class="btn btn-default approve" data-dismiss="modal" type="button">
+             <i class="fa fa-check">
+             </i>
+             OK
+            </button>
+            <!-- PRINT SLIP -->
+            <button class="btn btn-default print openWin" data-dismiss="modal" data-url="transfer-slip.pl?transferitem=71279&amp;&amp;branchcode=KOU&amp;op=slip" type="button">
+             <i class="fa fa-print">
+             </i>
+             Print transfer slip
+            </button>
+            <!-- CANCEL TRANSFER -->
+            <form action="returns.pl" method="post" name="mainform">
+             <button class="btn btn-default deny" type="submit">
+              <i class="fa fa-times">
+              </i>
+              Cancel transfer
+             </button>
+             <input name="return_date_override" type="hidden" value=""/>
+             <input name="return_date_override_remember" type="hidden" value=""/>
+             <input name="itemnumber" type="hidden" value="71279"/>
+             <input name="canceltransfer" type="hidden" value="1"/>
+             <input name="ri-0" type="hidden" value="1623207211"/>
+             <input name="dd-0" type="hidden" value="0"/>
+             <input name="bn-0" type="hidden" value=""/>
+            </form>
+            <!-- /mainform -->
+           </div>
+           <!-- /.modal-footer -->
+          </div>
+          <!-- /.modal-content -->
+         </div>
+         <!-- /.modal-dialog -->
+        </div>
+        <!-- /#wrong-transfer-modal -->
+        <div class="static_checkin_messages">
+         <!-- Patron has added an issue note -->
+         <!-- Patron has fines -->
+         <!-- Item has return claim(s) -->
+         <!-- Patron has waiting holds -->
+         <!-- Patron is restricted and checkin was backdated -->
+         <div class="dialog alert audio-alert-warning">
+          <h3>
+           Check in message
+          </h3>
+          <p>
+           <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=142095">
+            1623207211: Johtamisen psykologia :
+           </a>
+          </p>
+          <p class="problem">
+           Not checked out.
+          </p>
+         </div>
+         <!-- /.dialog.dialog-alert -->
+        </div>
+        <form action="/cgi-bin/koha/circ/returns.pl" autocomplete="off" id="checkin-form" method="post">
+         <fieldset id="circ_returns_checkin">
+          <div class="show_checkin_dialog" style="float:right;display:none">
+           <button class="btn btn-default btn-sm" data-toggle="tooltip" title="Show the last checkin message" type="button">
+            <i class="fa fa-info">
+            </i>
+           </button>
+          </div>
+          <h3>
+           Check in
+          </h3>
+          <div class="row">
+           <div class="col-sm-6">
+            <div class="hint">
+             Enter item barcode:
+            </div>
+            <div class="form-control-group">
+             <input class="barcode focus" id="barcode" name="barcode" size="14"/>
+             <button class="btn btn-default" type="submit">
+              Check in
+             </button>
+             <input name="ri-0" type="hidden" value="1623207211"/>
+             <input name="dd-0" type="hidden" value="0"/>
+             <input name="bn-0" type="hidden" value=""/>
+            </div>
+            <div id="show-circ-settings">
+             <a href="#">
+              <i class="fa circ-settings-icon fa-caret-down">
+              </i>
+              Checkin settings
+             </a>
+            </div>
+           </div>
+           <div class="col-sm-6">
+            <div class="checkin-active-setting" id="exemptfines" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Fines for returned items are forgiven.
+             </p>
+            </div>
+            <div class="checkin-active-setting" id="forgivemanualholdsexpire-alert" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Fines are not charged for manually cancelled holds.
+             </p>
+            </div>
+            <div class="checkin-active-setting" id="dropboxmode" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Book drop mode.
+              <span class="single-line">
+               ( Effective checkin date is 29.09.2020 00:00 )
+              </span>
+             </p>
+            </div>
+            <div class="checkin-active-setting" id="return_date_remember" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Saved check-in date:
+              <span class="single-line" id="saved_return_date">
+              </span>
+             </p>
+            </div>
+           </div>
+          </div>
+          <div class="circ-settings">
+           <div class="date-select" id="return_date_override_fields">
+            <div class="hint">
+             Specify return date (DD.MM.YYYY)
+:
+            </div>
+            <input id="return_date_override" name="return_date_override" size="13" type="text" value=""/>
+            <button class="action btn btn-default btn-xs" id="cleardate" name="cleardate" type="button">
+             Clear
+            </button>
+            <div class="circ-setting">
+             <input id="return_date_override_remember" name="return_date_override_remember" type="checkbox"/>
+             <label for="return_date_override_remember">
+              Remember due date for next check in
+             </label>
+            </div>
+           </div>
+           <!-- /.date-select -->
+           <!-- overduecharges -->
+           <div class="circ-setting" id="book-drop-mode">
+            <input id="dropboxcheck" name="dropboxmode" type="checkbox" value="dropboxmode"/>
+            <label for="dropboxcheck">
+             Book drop mode
+            </label>
+           </div>
+           <div class="forgive-manual-hold-fees circ-setting">
+            <input id="forgivemanualholdsexpire" name="forgivemanualholdsexpire" type="checkbox" value="forgivemanualholdsexpire"/>
+            <label for="forgivemanualholdsexpire">
+             Forgive fees for manually expired holds
+            </label>
+           </div>
+           <!-- overduecharges -->
+          </div>
+          <!-- /.circ-settings -->
+         </fieldset>
+         <!-- /#circ_returns_checkin -->
+        </form>
+        <!-- /#checkin-form -->
+        <h2>
+         Checked-in items
+        </h2>
+        <table id="checkedintable">
+         <thead>
+          <tr>
+           <th class="ci-duedate">
+            Due date
+           </th>
+           <th class="ci-title">
+            Title
+           </th>
+           <th class="ci-author">
+            Author
+           </th>
+           <th class="ci-barcode">
+            Barcode
+           </th>
+           <th class="ci-homelibrary">
+            Home library
+           </th>
+           <th class="ci-holdinglibrary">
+            Holding library
+           </th>
+           <th class="ci-shelvinglocation">
+            Shelving location
+           </th>
+           <th class="ci-callnumber">
+            Call number
+           </th>
+           <th class="ci-dateaccessioned">
+            Date acquired
+           </th>
+           <th class="ci-recordlevelitemtype">
+            Record-level itemtype
+           </th>
+           <th class="ci-itemtype">
+            Item type
+           </th>
+           <th class="ci-collection">
+            Collection
+           </th>
+           <th class="ci-patron">
+            Patron
+           </th>
+           <th class="ci-note">
+            Note
+           </th>
+          </tr>
+         </thead>
+         <tr>
+          <td class="ci-duedate">
+           Not checked out
+          </td>
+          <td class="ci-title">
+           <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=142095">
+            Johtamisen psykologia :
+           </a>
+          </td>
+          <td class="ci-author">
+          </td>
+          <td class="ci-barcode">
+           <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=142095&amp;itemnumber=71279#item71279">
+            1623207211
+           </a>
+          </td>
+          <td class="ci-homelibrary">
+           Kouvolan kampuskirjasto
+          </td>
+          <td class="ci-holdinglibrary">
+           Mikkelin kampuskirjasto
+          </td>
+          <td class="ci-shelvinglocation">
+           <span class="shelvingloc">
+            Lainattavat
+           </span>
+          </td>
+          <td class="ci-callnumber">
+           69.11 JOHTAMISEN
+          </td>
+          <td class="ci-dateaccessioned">
+           04.02.2014
+          </td>
+          <td class="ci-recordlevelitemtype">
+          </td>
+          <td class="ci-itemtype">
+           Laina14
+          </td>
+          <td class="ci-collection">
+          </td>
+          <td class="ci-patron">
+           Not checked out
+          </td>
+          <td class="ci-note">
+          </td>
+         </tr>
+        </table>
+        <!-- /#checkedintable -->
+       </div>
+       <!-- /.col-sm-10.col-sm-push-2 -->
+       <div class="col-sm-2 col-sm-pull-10">
+        <aside>
+         <div id="navmenu">
+          <div id="navmenulist">
+           <ul>
+            <li>
+             <a href="/cgi-bin/koha/circ/circulation-home.pl">
+              Circulation home
+             </a>
+            </li>
+           </ul>
+           <h5>
+            Circulation
+           </h5>
+           <ul>
+            <li>
+             <a href="/cgi-bin/koha/circ/circulation.pl">
+              Check out
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/returns.pl">
+              Check in
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/renew.pl">
+              Renew
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/branchtransfers.pl">
+              Transfer
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/set-library.pl">
+              Set library
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/cataloguing/addbiblio.pl?frameworkcode=FA">
+              Fast cataloging
+             </a>
+            </li>
+           </ul>
+           <h5>
+            Circulation reports
+           </h5>
+           <ul>
+            <li>
+             <a href="/cgi-bin/koha/circ/view_holdsqueue.pl">
+              Holds queue
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/pendingreserves.pl">
+              Holds to pull
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/waitingreserves.pl">
+              Holds awaiting pickup
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/reserveratios.pl">
+              Hold ratios
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/transferstoreceive.pl">
+              Transfers to receive
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/overdue.pl">
+              Overdues
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/branchoverdues.pl">
+              Overdues with fines
+             </a>
+            </li>
+           </ul>
+          </div>
+         </div>
+        </aside>
+       </div>
+       <!-- /.col-sm-2.col-sm-pull-10 -->
+      </div>
+      <!-- /.row -->
+     </main>
+    </div>
+    <!-- /.col-sm-12 -->
+   </div>
+   <!-- /.row -->
+  </div>
+  <div class="navbar navbar-default navbar-fixed-bottom" id="changelanguage">
+   <div class="container-fluid">
+    <ul class="nav navbar-nav" id="i18nMenu">
+     <li>
+      <a href="/cgi-bin/koha/changelanguage.pl?language=fi-FI">
+       Suomi
+      </a>
+     </li>
+     <li class="navbar-text">
+      <span class="currentlanguage">
+       English
+      </span>
+     </li>
+    </ul>
+   </div>
+  </div>
+  <span id="audio-alert">
+  </span>
+  <!-- koha core js -->
+  <!-- validator-strings.inc -->
+  <!-- / validator-strings.inc -->
+  <!-- js_includes.inc: IntranetUserJS -->
+  <!-- / js_includes.inc: IntranetUserJS -->
+  <!-- js_includes.inc -->
+  <!-- / js_includes.inc -->
+  <!-- format-price.inc -->
+  <!-- / format-price.inc -->
+  <!-- columns_settings.inc -->
+  <!-- / columns_settings.inc -->
+  <!-- calendar.inc -->
+  <!-- / calendar.inc -->
+  <!-- timepicker.inc -->
+  <!-- / timepicker.inc -->
+ </body>
+</html>

@@ -28,6 +28,13 @@ def test_sorting_checkin_success_01():
   assert lainuri.sorting.sort(status, states) == SortBin.OK
 
 def test_sorting_checkin_success_hold_01():
+  (status, states) = mock_handle_html('koha_api_20_06/checkin_with_hold_01.html', '1620111663')
+
+  assert states == {'hold_found': '132953'}
+  assert status == Status.SUCCESS
+  assert lainuri.sorting.sort(status, states) == SortBin.ERROR
+
+def test_sorting_checkin_success_hold_not_checked_out_01():
   (status, states) = mock_handle_html('koha_api_20_06/checkin_with_hold_not_checked_out_01.html', 'kis12345')
 
   assert states == {'hold_found': '33', 'not_checked_out': True}
@@ -38,6 +45,13 @@ def test_sorting_checkin_success_transfer_01():
   (status, states) = mock_handle_html('koha_api_20_06/checkin_with_transfer_01.html', 'ki12345')
 
   assert states == {'return_to_another_branch': 'HAMKin kirjasto'}
+  assert status == Status.SUCCESS
+  assert lainuri.sorting.sort(status, states) == SortBin.ERROR
+
+def test_sorting_checkin_success_transfer_02():
+  (status, states) = mock_handle_html('koha_api_20_06/checkin_with_transfer_02.html', '1623207211')
+
+  assert states == {'return_to_another_branch': 'Kouvolan kampuskirjasto', 'not_checked_out': True}
   assert status == Status.SUCCESS
   assert lainuri.sorting.sort(status, states) == SortBin.ERROR
 
