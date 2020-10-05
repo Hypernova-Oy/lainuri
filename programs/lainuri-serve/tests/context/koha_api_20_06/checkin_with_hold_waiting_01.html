@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<!-- TEMPLATE FILE: returns.tt -->
+<html lang="en">
+ <head>
+  <title>
+   Koha › Circulation › Check in Sosiaalisuus ja sosiaaliset taidot /
+  </title>
+  <!-- local colors -->
+ </head>
+ <body class="circ" id="circ_returns">
+  <span class="audio-alert-success">
+  </span>
+  <div class="gradient">
+   <h1 id="logo">
+    <a href="/cgi-bin/koha/mainpage.pl">
+     Xamk
+    </a>
+   </h1>
+   <!-- Begin Checkin Resident Search Box -->
+  </div>
+  <!-- /gradient -->
+  <!-- End Checkin Resident Search Box -->
+  <div class="main container-fluid">
+   <div class="row">
+    <div class="col-sm-12">
+     <main>
+      <div class="row">
+       <div class="col-sm-10 col-sm-push-2">
+        <!-- case of a mistake in transfer loop -->
+        <div class="modal fade audio-alert-action block" id="hold-found1">
+         <div class="modal-dialog">
+          <div class="modal-content">
+           <form action="returns.pl" class="confirm" method="post">
+            <div class="modal-header">
+             <h3>
+              Hold found (item is already waiting):
+              <br/>
+              <a href="/cgi-bin/koha/catalogue/detail.pl?type=intra&amp;biblionumber=139058">
+               Sosiaalisuus ja sosiaaliset taidot /
+              </a>
+              <div class="hold-found-barcode">
+               <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=139058&amp;itemnumber=65069">
+                1620128264
+               </a>
+              </div>
+             </h3>
+            </div>
+            <div class="modal-body">
+             <h4>
+              Hold for:
+             </h4>
+             <ul>
+              <li>
+               <a href="/cgi-bin/koha/circ/circulation.pl?borrowernumber=1266#reserves">
+                2620021410
+               </a>
+               <span class="patron-category">
+                - Xamk henkilökunta
+               </span>
+              </li>
+              <li class="patronaddress1">
+               Vesitorninkatu 9 A 7
+              </li>
+              <li class="patroncity">
+               50130 MIKKELI
+              </li>
+              <li>
+               0503477351
+              </li>
+              <li>
+               <a href="mailto:katariinaha@gmail.com" id="boremail">
+                katariinaha@gmail.com
+               </a>
+              </li>
+             </ul>
+             <h4>
+              <strong>
+               Hold at
+              </strong>
+              Mikkelin kampuskirjasto
+             </h4>
+             <input name="ri-0" type="hidden" value="1620128264"/>
+             <input name="dd-0" type="hidden" value="2020-11-02 23:59"/>
+             <input name="bn-0" type="hidden" value="7905"/>
+             <input name="itemnumber" type="hidden" value="65069"/>
+             <input name="borrowernumber" type="hidden" value="1266"/>
+             <input name="biblionumber" type="hidden" value="139058"/>
+             <input name="reserve_id" type="hidden" value="23518"/>
+             <input name="diffBranch" type="hidden" value="MIK"/>
+             <input name="exemptfine" type="hidden" value=""/>
+             <input name="dropboxmode" type="hidden" value=""/>
+             <input name="forgivemanualholdsexpire" type="hidden" value=""/>
+             <input name="return_date_override" type="hidden" value=""/>
+             <input name="return_date_override_remember" type="hidden" value=""/>
+             <!-- Patron has added an issue note -->
+             <!-- Patron has fines -->
+             <div class="dialog alert">
+              <h3>
+               Patron has outstanding fines of 3.70.
+              </h3>
+              <p>
+               <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=7905">
+                Make payment
+               </a>
+               .
+              </p>
+             </div>
+             <!-- Item has return claim(s) -->
+             <!-- Patron has waiting holds -->
+             <!-- Patron is restricted and checkin was backdated -->
+            </div>
+            <!-- /.modal-body -->
+            <div class="modal-footer">
+             <input name="cancel_reserve" type="hidden" value="0"/>
+             <input name="barcode" type="hidden" value="1620128264"/>
+             <button class="btn btn-default approve" data-dismiss="modal" type="submit">
+              <i class="fa fa-check">
+              </i>
+              Confirm hold
+             </button>
+             <input name="print_slip" type="hidden" value="0"/>
+             <button class="btn btn-default print" type="button">
+              <i class="fa fa-print">
+              </i>
+              Print slip and confirm
+             </button>
+             <button class="btn btn-default deny cancel-hold" type="button">
+              <i class="fa fa-times">
+              </i>
+              Cancel hold
+             </button>
+            </div>
+            <!-- /.modal-footer -->
+           </form>
+           <!-- /.confirm -->
+          </div>
+          <!-- /.modal-content -->
+         </div>
+         <!-- /.modal-dialog -->
+        </div>
+        <!-- /#hold-found1 -->
+        <!-- case of simple return no issue or transfer but with a reservation  -->
+        <div class="static_checkin_messages">
+         <!-- Patron has added an issue note -->
+         <!-- Patron has fines -->
+         <div class="dialog alert">
+          <h3>
+           Patron has outstanding fines of 3.70.
+          </h3>
+          <p>
+           <a href="/cgi-bin/koha/members/pay.pl?borrowernumber=7905">
+            Make payment
+           </a>
+           .
+          </p>
+         </div>
+         <!-- Item has return claim(s) -->
+         <!-- Patron has waiting holds -->
+         <!-- Patron is restricted and checkin was backdated -->
+        </div>
+        <form action="/cgi-bin/koha/circ/returns.pl" autocomplete="off" id="checkin-form" method="post">
+         <fieldset id="circ_returns_checkin">
+          <div class="show_checkin_dialog" style="float:right;display:none">
+           <button class="btn btn-default btn-sm" data-toggle="tooltip" title="Show the last checkin message" type="button">
+            <i class="fa fa-info">
+            </i>
+           </button>
+          </div>
+          <h3>
+           Check in
+          </h3>
+          <div class="row">
+           <div class="col-sm-6">
+            <div class="hint">
+             Enter item barcode:
+            </div>
+            <div class="form-control-group">
+             <input class="barcode focus" id="barcode" name="barcode" size="14"/>
+             <button class="btn btn-default" type="submit">
+              Check in
+             </button>
+             <input name="ri-0" type="hidden" value="1620128264"/>
+             <input name="dd-0" type="hidden" value="2020-11-02 23:59"/>
+             <input name="bn-0" type="hidden" value="7905"/>
+            </div>
+            <div id="show-circ-settings">
+             <a href="#">
+              <i class="fa circ-settings-icon fa-caret-down">
+              </i>
+              Checkin settings
+             </a>
+            </div>
+           </div>
+           <div class="col-sm-6">
+            <div class="checkin-active-setting" id="exemptfines" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Fines for returned items are forgiven.
+             </p>
+            </div>
+            <div class="checkin-active-setting" id="forgivemanualholdsexpire-alert" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Fines are not charged for manually cancelled holds.
+             </p>
+            </div>
+            <div class="checkin-active-setting" id="dropboxmode" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Book drop mode.
+              <span class="single-line">
+               ( Effective checkin date is 29.09.2020 00:00 )
+              </span>
+             </p>
+            </div>
+            <div class="checkin-active-setting" id="return_date_remember" style="display:none;">
+             <p>
+              <i class="fa fa-check">
+              </i>
+              Saved check-in date:
+              <span class="single-line" id="saved_return_date">
+              </span>
+             </p>
+            </div>
+           </div>
+          </div>
+          <div class="circ-settings">
+           <div class="date-select" id="return_date_override_fields">
+            <div class="hint">
+             Specify return date (DD.MM.YYYY)
+:
+            </div>
+            <input id="return_date_override" name="return_date_override" size="13" type="text" value=""/>
+            <button class="action btn btn-default btn-xs" id="cleardate" name="cleardate" type="button">
+             Clear
+            </button>
+            <div class="circ-setting">
+             <input id="return_date_override_remember" name="return_date_override_remember" type="checkbox"/>
+             <label for="return_date_override_remember">
+              Remember due date for next check in
+             </label>
+            </div>
+           </div>
+           <!-- /.date-select -->
+           <!-- overduecharges -->
+           <div class="circ-setting" id="book-drop-mode">
+            <input id="dropboxcheck" name="dropboxmode" type="checkbox" value="dropboxmode"/>
+            <label for="dropboxcheck">
+             Book drop mode
+            </label>
+           </div>
+           <div class="forgive-manual-hold-fees circ-setting">
+            <input id="forgivemanualholdsexpire" name="forgivemanualholdsexpire" type="checkbox" value="forgivemanualholdsexpire"/>
+            <label for="forgivemanualholdsexpire">
+             Forgive fees for manually expired holds
+            </label>
+           </div>
+           <!-- overduecharges -->
+          </div>
+          <!-- /.circ-settings -->
+         </fieldset>
+         <!-- /#circ_returns_checkin -->
+        </form>
+        <!-- /#checkin-form -->
+        <h2>
+         Checked-in items
+        </h2>
+        <table id="checkedintable">
+         <thead>
+          <tr>
+           <th class="ci-duedate">
+            Due date
+           </th>
+           <th class="ci-title">
+            Title
+           </th>
+           <th class="ci-author">
+            Author
+           </th>
+           <th class="ci-barcode">
+            Barcode
+           </th>
+           <th class="ci-homelibrary">
+            Home library
+           </th>
+           <th class="ci-holdinglibrary">
+            Holding library
+           </th>
+           <th class="ci-shelvinglocation">
+            Shelving location
+           </th>
+           <th class="ci-callnumber">
+            Call number
+           </th>
+           <th class="ci-dateaccessioned">
+            Date acquired
+           </th>
+           <th class="ci-recordlevelitemtype">
+            Record-level itemtype
+           </th>
+           <th class="ci-itemtype">
+            Item type
+           </th>
+           <th class="ci-collection">
+            Collection
+           </th>
+           <th class="ci-patron">
+            Patron
+           </th>
+           <th class="ci-note">
+            Note
+           </th>
+          </tr>
+         </thead>
+         <tr>
+          <td class="ci-duedate">
+           02.11.2020 23:59
+          </td>
+          <td class="ci-title">
+           <a href="/cgi-bin/koha/catalogue/detail.pl?biblionumber=139058">
+            Sosiaalisuus ja sosiaaliset taidot /
+           </a>
+          </td>
+          <td class="ci-author">
+           Keltikangas-Järvinen, Liisa.
+          </td>
+          <td class="ci-barcode">
+           <a href="/cgi-bin/koha/catalogue/moredetail.pl?biblionumber=139058&amp;itemnumber=65069#item65069">
+            1620128264
+           </a>
+          </td>
+          <td class="ci-homelibrary">
+           Mikkelin kampuskirjasto
+          </td>
+          <td class="ci-holdinglibrary">
+           Mikkelin kampuskirjasto
+          </td>
+          <td class="ci-shelvinglocation">
+           <span class="shelvingloc">
+            Lainattavat
+           </span>
+          </td>
+          <td class="ci-callnumber">
+           159.9 KELTIKANGAS-JÄRVINEN
+          </td>
+          <td class="ci-dateaccessioned">
+           04.02.2014
+          </td>
+          <td class="ci-recordlevelitemtype">
+          </td>
+          <td class="ci-itemtype">
+           Laina14
+          </td>
+          <td class="ci-collection">
+          </td>
+          <td class="ci-patron">
+           <a href="/cgi-bin/koha/members/moremember.pl?borrowernumber=7905">
+            2621800223
+           </a>
+          </td>
+          <td class="ci-note">
+          </td>
+         </tr>
+        </table>
+        <!-- /#checkedintable -->
+       </div>
+       <!-- /.col-sm-10.col-sm-push-2 -->
+       <div class="col-sm-2 col-sm-pull-10">
+        <aside>
+         <div id="navmenu">
+          <div id="navmenulist">
+           <ul>
+            <li>
+             <a href="/cgi-bin/koha/circ/circulation-home.pl">
+              Circulation home
+             </a>
+            </li>
+           </ul>
+           <h5>
+            Circulation
+           </h5>
+           <ul>
+            <li>
+             <a href="/cgi-bin/koha/circ/circulation.pl">
+              Check out
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/returns.pl">
+              Check in
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/renew.pl">
+              Renew
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/branchtransfers.pl">
+              Transfer
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/set-library.pl">
+              Set library
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/cataloguing/addbiblio.pl?frameworkcode=FA">
+              Fast cataloging
+             </a>
+            </li>
+           </ul>
+           <h5>
+            Circulation reports
+           </h5>
+           <ul>
+            <li>
+             <a href="/cgi-bin/koha/circ/view_holdsqueue.pl">
+              Holds queue
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/pendingreserves.pl">
+              Holds to pull
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/waitingreserves.pl">
+              Holds awaiting pickup
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/reserveratios.pl">
+              Hold ratios
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/transferstoreceive.pl">
+              Transfers to receive
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/overdue.pl">
+              Overdues
+             </a>
+            </li>
+            <li>
+             <a href="/cgi-bin/koha/circ/branchoverdues.pl">
+              Overdues with fines
+             </a>
+            </li>
+           </ul>
+          </div>
+         </div>
+        </aside>
+       </div>
+       <!-- /.col-sm-2.col-sm-pull-10 -->
+      </div>
+      <!-- /.row -->
+     </main>
+    </div>
+    <!-- /.col-sm-12 -->
+   </div>
+   <!-- /.row -->
+  </div>
+  <div class="navbar navbar-default navbar-fixed-bottom" id="changelanguage">
+   <div class="container-fluid">
+    <ul class="nav navbar-nav" id="i18nMenu">
+     <li>
+      <a href="/cgi-bin/koha/changelanguage.pl?language=fi-FI">
+       Suomi
+      </a>
+     </li>
+     <li class="navbar-text">
+      <span class="currentlanguage">
+       English
+      </span>
+     </li>
+    </ul>
+   </div>
+  </div>
+  <span id="audio-alert">
+  </span>
+  <!-- koha core js -->
+  <!-- validator-strings.inc -->
+  <!-- / validator-strings.inc -->
+  <!-- js_includes.inc: IntranetUserJS -->
+  <!-- / js_includes.inc: IntranetUserJS -->
+  <!-- js_includes.inc -->
+  <!-- / js_includes.inc -->
+  <!-- format-price.inc -->
+  <!-- / format-price.inc -->
+  <!-- columns_settings.inc -->
+  <!-- / columns_settings.inc -->
+  <!-- calendar.inc -->
+  <!-- / calendar.inc -->
+  <!-- timepicker.inc -->
+  <!-- / timepicker.inc -->
+ </body>
+</html>

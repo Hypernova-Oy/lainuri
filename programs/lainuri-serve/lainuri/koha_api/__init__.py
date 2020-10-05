@@ -330,7 +330,7 @@ class KohaAPI():
       states['no_item'] = True
       states['status'] = Status.ERROR
 
-    m_holds = re.compile(f'id="hold-found2".+?biblionumber=(?P<biblionumber>\d+)', re.S | re.M)
+    m_holds = re.compile(f'id="hold-found[12]".+?biblionumber=(?P<biblionumber>\d+)', re.S | re.M)
     match = m_holds.search(message)
     if match:
       states['hold_found'] = match.group('biblionumber')

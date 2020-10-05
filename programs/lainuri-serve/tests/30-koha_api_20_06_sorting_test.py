@@ -27,6 +27,13 @@ def test_sorting_checkin_success_01():
   assert len(states) == 0
   assert lainuri.sorting.sort(status, states) == SortBin.OK
 
+def test_sortin_checking_success_hold_waiting_01():
+  (status, states) = mock_handle_html('koha_api_20_06/checkin_with_hold_waiting_01.html', '1620128264')
+
+  assert states == {'hold_found': '139058'}
+  assert status == Status.SUCCESS
+  assert lainuri.sorting.sort(status, states) == SortBin.ERROR
+
 def test_sorting_checkin_success_hold_01():
   (status, states) = mock_handle_html('koha_api_20_06/checkin_with_hold_01.html', '1620111663')
 
