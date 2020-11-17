@@ -435,6 +435,36 @@ class KohaAPI():
     return receipt_text
 
   def availability(self, borrowernumber, itemnumber):
+    # The New Koha REST API doesn't have a suitable availability endpoint for checkouts.
+    # So we can atleast check a special case where we prevent checkouts for items that
+    # are waiting for pickup for other borrowers.
+    self.current_request_url = self.koha_baseurl + f'/api/v1/holds'
+    log.info(f"Get availability: itemnumber='{itemnumber}'")
+    (response, payload) = self._request(
+      'GET',
+      self.current_request_url,
+      headers = {
+        'Cookie': f'CGISESSID={self.sessionid}',
+      },
+      fields = {
+        'item_id': itemnumber,
+        'status': 'W',
+      },
+    )
+
+    if isinstance(payload, dict) and payload.get('error', None):
+      error = payload.get('error', None)
+      if error:
+        raise Exception(f"Unknown error '{error}'")
+
+    for ava in payload:
+      if ava.get('patron_id', None) != borrowernumber:
+        return {
+          'available': False,
+          "Item::Held::Waiting": True,
+          "confirmations": {"Item::Held": {'status': "Waiting"}}, # This is the old API way.
+        }
+
     return {'available': True}
 
   def get_order_1(self):

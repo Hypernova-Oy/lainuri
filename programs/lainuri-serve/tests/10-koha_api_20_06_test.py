@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+import json
+import unittest.mock
+
 import context
 import lainuri.config
 
@@ -92,6 +95,18 @@ def test_enrich_rfid_tag_with_marc():
   assert item_bib['title']
   assert item_bib['author']
   #assert item_bib['book_cover_url']
+
+def test_availability():
+  global borrower, item, record
+  availability = koha_api.availability(borrowernumber=borrower['borrowernumber'], itemnumber=item['itemnumber'])
+  assert availability['available'] == True
+
+def test_availability_mocked_wait_for_pickup():
+  mock_response = json.loads('[{"biblio_id":23,"cancellation_date":null,"cancellation_reason":null,"expiration_date":"2020-11-15","hold_date":"2020-10-29","hold_id":56,"item_id":"18","item_level":false,"item_type":null,"lowest_priority":false,"non_priority":false,"notes":"","patron_id":68,"pickup_library_id":"CPL","priority":0,"status":"W","suspended":false,"suspended_until":null,"timestamp":"2020-11-13T21:46:21+02:00","waiting_date":"2020-11-13"}]')
+  with unittest.mock.patch.object(lainuri.koha_api.KohaAPI, '_receive_json', side_effect=lambda x: mock_response) as api_overload:
+    availability = koha_api.availability(borrowernumber=borrower['borrowernumber'], itemnumber=item['itemnumber'])
+    assert availability['available'] == False
+    assert availability['confirmations']['Item::Held']['status'] == 'Waiting'
 
 def test_checkout():
   global borrower, item, record
