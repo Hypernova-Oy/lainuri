@@ -1,3 +1,4 @@
 *.FCStd1
 installer_secret_passphrase
 .vscode
+*.sch-bak
